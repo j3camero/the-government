@@ -4,17 +4,17 @@ const token = '***REMOVED***';
 
 const ranks = [
     {title: 'n00b', insignia: '(n00b)', role: null},
-    {title: 'Recruit', insignia: '●', role: 'Grunt'},
-    {title: 'Corporal', insignia: '●●', role: 'Grunt'},
-    {title: 'Sergeant', insignia: '●●●', role: 'Grunt'},
-    {title: 'Lieutenant', insignia: '●', role: 'Officer'},
-    {title: 'Captain', insignia: '●●', role: 'Officer'},
-    {title: 'Major', insignia: '●●●', role: 'Officer'},
-    {title: 'Colonel', insignia: '●●●●', role: 'Officer'},
-    {title: 'General', insignia: '★', role: 'General'},
-    {title: 'General', insignia: '★★', role: 'General'},
-    {title: 'General', insignia: '★★★', role: 'General'},
-    {title: 'General', insignia: '★★★★', role: 'General'},
+    {title: 'Recruit', insignia: '●', role: 'Grunts'},
+    {title: 'Corporal', insignia: '●●', role: 'Grunts'},
+    {title: 'Sergeant', insignia: '●●●', role: 'Grunts'},
+    {title: 'Lieutenant', insignia: '●', role: 'Officers'},
+    {title: 'Captain', insignia: '●●', role: 'Officers'},
+    {title: 'Major', insignia: '●●●', role: 'Officers'},
+    {title: 'Colonel', insignia: '●●●●', role: 'Officers'},
+    {title: 'General', insignia: '★', role: 'Generals'},
+    {title: 'General', insignia: '★★', role: 'Generals'},
+    {title: 'General', insignia: '★★★', role: 'Generals'},
+    {title: 'General', insignia: '★★★★', role: 'Generals'},
 ];
 
 const client = new Discord.Client();
