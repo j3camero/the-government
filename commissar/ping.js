@@ -2,7 +2,7 @@ const Discord = require('discord.js');
 
 const token = '***REMOVED***';
 
-const ranks = [
+const rankMetaData = [
     {title: 'n00b', insignia: '(n00b)', role: null},
     {title: 'Recruit', insignia: '●', role: 'Grunts'},
     {title: 'Corporal', insignia: '●●', role: 'Grunts'},
@@ -34,6 +34,27 @@ function ApplyRankToMember(rank, member, guild) {
     member.setRoles([role]);
 }
 
+// Returns an array with numMembers elements, each an integer rank index.
+function CalculateRanks(numMembers) {
+    let ranks = [];
+    let numGenerals = numMembers;
+    for (let rankIndex = 1; rankIndex <= 7; ++rankIndex) {
+	const count = Math.floor(numMembers / 8) + ((rankIndex <= (numMembers % 8)) ? 1 : 0);
+	numGenerals -= count;
+	for (let i = 0; i < count; ++i) {
+	    ranks.push(rankIndex);
+	}
+    }
+    // Produces the series 8, 9, 8, 10, 9, 8, 11, 10, 9, 8, 12, ...
+    for (let topRank = 8; numGenerals > 0; ++topRank) {
+	for (let r = topRank; numGenerals > 0 && r >= 8; --r) {
+	    ranks.push(r);
+	    --numGenerals;
+	}
+    }
+    return ranks.sort(function (a, b) { return a - b; });
+}
+
 function RankGuildMembers(guild) {
     let candidates = [];
     for (let member of guild.members.values()) {
@@ -41,13 +62,10 @@ function RankGuildMembers(guild) {
 	    candidates.push(member);
 	}
     }
-    candidates.sort(function(a, b) {
-	return b.joinedTimestamp - a.joinedTimestamp;
-    });
-    let rank = 1;
-    for (let member of candidates) {
-	ApplyRankToMember(ranks[rank], member, guild);
-	++rank;
+    candidates.sort(function(a, b) { return b.joinedTimestamp - a.joinedTimestamp; });
+    const ranks = CalculateRanks(candidates.length);
+    for (let i = 0; i < candidates.length; ++i) {
+	ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild);
     }
 }
 
@@ -61,6 +79,10 @@ client.on('ready', () => {
 client.on('guildMemberAdd', member => {
     const greeting = 'Everybody welcome ' + member.user.username + ' to the server!';
     member.guild.defaultChannel.send(greeting);
+    RankGuildMembers(member.guild);
+});
+
+client.on('guildMemberRemove', member => {
     RankGuildMembers(member.guild);
 });
 
