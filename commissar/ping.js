@@ -58,11 +58,22 @@ function CalculateRanks(numMembers) {
 function RankGuildMembers(guild) {
     let candidates = [];
     for (let member of guild.members.values()) {
-	if (member.user.id != guild.ownerID && !member.user.bot) {
+	if (!member.user.bot) {
 	    candidates.push(member);
 	}
     }
-    candidates.sort(function(a, b) { return b.joinedTimestamp - a.joinedTimestamp; });
+    candidates.sort(function(a, b) {
+	if (a.user.id == guild.ownerID && b.user.id == guild.ownerID) {
+	    return 0;
+	}
+	if (a.user.id == guild.ownerID) {
+	    return -1;
+	}
+	if (b.user.id == guild.ownerID) {
+	    return 1;
+	}
+	return b.joinedTimestamp - a.joinedTimestamp;
+    });
     const ranks = CalculateRanks(candidates.length);
     for (let i = 0; i < candidates.length; ++i) {
 	ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild);
