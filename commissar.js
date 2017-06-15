@@ -3,6 +3,7 @@ var express = require('express');
 var session = require('express-session');
 var passport = require('passport');
 var DiscordStrategy = require('passport-discord').Strategy;
+var util = require('util');
 
 const token = 'MzE4OTQ3NjczMzg4NjEzNjMy.DBUn5A.ur1A_fONyluMUTx4iRJCGDm2JfE';
 
@@ -85,7 +86,7 @@ function RankGuildMembers(guild) {
 }
 
 client.on('ready', () => {
-    console.log('ready');
+    console.log('Chatbot started.');
     for (let guild of client.guilds.values()) {
 	RankGuildMembers(guild);
     }
@@ -110,12 +111,12 @@ passport.deserializeUser(function(obj, done) {
   done(null, obj);
 });
 
-var scopes = ['identify', 'email', /* 'connections', (it is currently broken) */ 'guilds', 'guilds.join'];
+var scopes = ['identify', 'email', 'connections', 'guilds', 'guilds.join'];
 
 passport.use(new DiscordStrategy({
     clientID: '318947673388613632',
     clientSecret: 'ryPdC5BChVaFO6q4Jk7QEOtXqzA3Jomq',
-    callbackURL: 'http://secretclan.net:5000/callback',
+    callbackURL: 'http://secretclan.net/callback',
     scope: scopes
 }, function(accessToken, refreshToken, profile, done) {
     process.nextTick(function() {
@@ -126,23 +127,33 @@ passport.use(new DiscordStrategy({
 var app = express();
 
 app.use(session({
-    secret: 'keyboard cat',
+    secret: '5bhr6agyuh7gmyu8btfbz1h0ju',
     resave: false,
     saveUninitialized: false
 }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.get('/', passport.authenticate('discord', { scope: scopes }), function(req, res) {});
+app.get('/', function (req, res) {
+    if (req.isAuthenticated()) {
+	res.redirect('/info');
+    } else {
+	res.send('<a href=\"/login\">Login with Discord</a>');
+    }
+});
+app.get('/login', passport.authenticate('discord', { scope: scopes }),
+	function(req, res) {});
 app.get('/callback',
-    passport.authenticate('discord', { failureRedirect: '/' }), function(req, res) { res.redirect('/info') } // auth success
-);
+	passport.authenticate('discord', {
+	    failureRedirect: '/'
+	}), function(req, res) {
+	    res.redirect('/info')
+	});
 app.get('/logout', function(req, res) {
     req.logout();
     res.redirect('/');
 });
 app.get('/info', checkAuth, function(req, res) {
-    //console.log(req.user)
-    res.json(req.user);
+    res.send('Welcome, ' + req.user.username + '! <a href=\"/logout\">Logout</a>');
 });
 
 function checkAuth(req, res, next) {
@@ -150,7 +161,7 @@ function checkAuth(req, res, next) {
     res.send('not logged in :(');
 }
 
-app.listen(5000, function (err) {
+app.listen(80, function (err) {
     if (err) return console.log(err)
-    console.log('Listening at http://localhost:5000/')
+    console.log('Webserver started.')
 })
