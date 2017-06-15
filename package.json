@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/j3camero/secretclan#readme",
   "dependencies": {
+    "aws-sdk": "^2.70.0",
     "discord.js": "^11.1.0",
     "express": "^4.15.3",
     "express-session": "^1.15.3",
