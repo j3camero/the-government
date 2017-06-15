@@ -1,3 +1,4 @@
+var AWS = require('aws-sdk');
 const Discord = require('discord.js');
 var express = require('express');
 var session = require('express-session');
@@ -124,6 +125,13 @@ passport.use(new DiscordStrategy({
     });
 }));
 
+AWS.config.update({
+    region: 'us-west-2',
+    endpoint: 'https://dynamodb.us-west-2.amazonaws.com'
+});
+
+var dynamo = new AWS.DynamoDB.DocumentClient();
+
 var app = express();
 
 app.use(session({
@@ -146,6 +154,22 @@ app.get('/callback',
 	passport.authenticate('discord', {
 	    failureRedirect: '/'
 	}), function(req, res) {
+	    let currentTime = new Date();
+	    var params = {
+		TableName: 'commissar-login-log',
+		Item:{
+		    'year': currentTime.getFullYear().toString(),
+		    'timestamp': currentTime.toISOString(),
+		    'username': req.user.username
+		}
+	    };
+	    dynamo.put(params, function(err, data) {
+		if (err) {
+		    console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+		} else {
+		    //console.log("Added item:", JSON.stringify(data, null, 2));
+		}
+	    });
 	    res.redirect('/info')
 	});
 app.get('/logout', function(req, res) {
