@@ -24,6 +24,10 @@
   },
   "homepage": "https://github.com/j3camero/secretclan#readme",
   "dependencies": {
-    "discord.js": "^11.1.0"
+    "discord.js": "^11.1.0",
+    "express": "^4.15.3",
+    "express-session": "^1.15.3",
+    "passport": "^0.3.2",
+    "passport-discord": "^0.1.2"
   }
 }
