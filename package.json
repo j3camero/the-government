@@ -1,0 +1,29 @@
+{
+  "name": "secretclan",
+  "version": "1.0.0",
+  "description": "Software for managing a gaming clan.",
+  "main": "commissar.js",
+  "scripts": {
+    "test": "node commisar.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/j3camero/secretclan.git"
+  },
+  "keywords": [
+    "commissar",
+    "clan",
+    "gaming",
+    "discord",
+    "steam"
+  ],
+  "author": "Jeff Cameron",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/j3camero/secretclan/issues"
+  },
+  "homepage": "https://github.com/j3camero/secretclan#readme",
+  "dependencies": {
+    "discord.js": "^11.1.0"
+  }
+}
