@@ -3,6 +3,7 @@ const Discord = require('discord.js');
 var express = require('express');
 var session = require('express-session');
 var passport = require('passport');
+var path = require('path');
 var DiscordStrategy = require('passport-discord').Strategy;
 var util = require('util');
 
@@ -179,10 +180,22 @@ app.get('/logout', function(req, res) {
 app.get('/info', checkAuth, function(req, res) {
     res.send('Welcome, ' + req.user.username + '! <a href=\"/logout\">Logout</a>');
 });
+app.get('/style.css', function(req, res) {
+    res.sendFile(path.join(__dirname, '/style.css'));
+});
+app.get('/secret-style.css', checkAuth, function(req, res) {
+    res.sendFile(path.join(__dirname, '/secret-style.css'));
+});
+app.get('*', function(req, res){
+    res.redirect('/');
+});
 
 function checkAuth(req, res, next) {
-    if (req.isAuthenticated()) return next();
-    res.send('not logged in :(');
+    if (req.isAuthenticated()) {
+	return next();
+    } else {
+	res.redirect('/');
+    }
 }
 
 app.listen(80, function (err) {
