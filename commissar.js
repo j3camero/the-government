@@ -7,21 +7,26 @@ var path = require('path');
 var DiscordStrategy = require('passport-discord').Strategy;
 var util = require('util');
 
+AWS.config.update({
+    region: 'us-west-2',
+    endpoint: 'https://dynamodb.us-west-2.amazonaws.com'
+});
+var dynamo = new AWS.DynamoDB.DocumentClient();
 const token = 'MzE4OTQ3NjczMzg4NjEzNjMy.DBUn5A.ur1A_fONyluMUTx4iRJCGDm2JfE';
 
 const rankMetaData = [
-    {title: 'n00b', insignia: '(n00b)', role: null},
-    {title: 'Recruit', insignia: '●', role: 'Grunts'},
-    {title: 'Corporal', insignia: '●●', role: 'Grunts'},
-    {title: 'Sergeant', insignia: '●●●', role: 'Grunts'},
-    {title: 'Lieutenant', insignia: '●', role: 'Officers'},
-    {title: 'Captain', insignia: '●●', role: 'Officers'},
-    {title: 'Major', insignia: '●●●', role: 'Officers'},
-    {title: 'Colonel', insignia: '●●●●', role: 'Officers'},
-    {title: 'General', insignia: '★', role: 'Generals'},
-    {title: 'General', insignia: '★★', role: 'Generals'},
-    {title: 'General', insignia: '★★★', role: 'Generals'},
-    {title: 'General', insignia: '★★★★', role: 'Generals'},
+    {index: 0, title: 'n00b', insignia: '(n00b)', role: null},
+    {index: 1, title: 'Recruit', insignia: '●', role: 'Grunts'},
+    {index: 2, title: 'Corporal', insignia: '●●', role: 'Grunts'},
+    {index: 3, title: 'Sergeant', insignia: '●●●', role: 'Grunts'},
+    {index: 4, title: 'Lieutenant', insignia: '●', role: 'Officers'},
+    {index: 5, title: 'Captain', insignia: '●●', role: 'Officers'},
+    {index: 6, title: 'Major', insignia: '●●●', role: 'Officers'},
+    {index: 7, title: 'Colonel', insignia: '●●●●', role: 'Officers'},
+    {index: 8, title: 'General', insignia: '★', role: 'Generals'},
+    {index: 9, title: 'General', insignia: '★★', role: 'Generals'},
+    {index: 10, title: 'General', insignia: '★★★', role: 'Generals'},
+    {index: 11, title: 'General', insignia: '★★★★', role: 'Generals'},
 ];
 
 const client = new Discord.Client();
@@ -34,11 +39,32 @@ function GetRoleByName(guild, roleName) {
     }
 }
 
+function DefaultDynamoDbErrorHandler(err, data) {
+    if (err) {
+	console.error("DynamoDB Error:", JSON.stringify(err, null, 2));
+    }
+}
+
+function AddNewMemberToDynamoDb(member, rankIndex) {
+    var params = {
+	TableName: 'commissar-members',
+	Item:{
+	    'guildid': member.guild.id,
+	    'userid': member.user.id,
+	    'username': member.user.username,
+	    'totalvotes': 0,
+	    'rankindex': rankIndex,
+	}
+    };
+    dynamo.put(params, DefaultDynamoDbErrorHandler);
+}
+
 function ApplyRankToMember(rank, member, guild) {
     console.log('Rank ' + member.user.username + ' ' + rank.title + ' ' + rank.insignia);
     member.setNickname(member.user.username + ' ' + rank.insignia);
     const role = GetRoleByName(guild, rank.role);
     member.setRoles([role]);
+    AddNewMemberToDynamoDb(member, rank.index);
 }
 
 // Returns an array with numMembers elements, each an integer rank index.
@@ -126,13 +152,6 @@ passport.use(new DiscordStrategy({
     });
 }));
 
-AWS.config.update({
-    region: 'us-west-2',
-    endpoint: 'https://dynamodb.us-west-2.amazonaws.com'
-});
-
-var dynamo = new AWS.DynamoDB.DocumentClient();
-
 var app = express();
 
 app.use(session({
@@ -164,14 +183,8 @@ app.get('/callback',
 		    'username': req.user.username
 		}
 	    };
-	    dynamo.put(params, function(err, data) {
-		if (err) {
-		    console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
-		} else {
-		    //console.log("Added item:", JSON.stringify(data, null, 2));
-		}
-	    });
-	    res.redirect('/info')
+	    dynamo.put(params, DefaultDynamoDbErrorHandler);
+	    res.redirect('/info');
 	});
 app.get('/logout', function(req, res) {
     req.logout();
@@ -199,6 +212,8 @@ function checkAuth(req, res, next) {
 }
 
 app.listen(80, function (err) {
-    if (err) return console.log(err)
-    console.log('Webserver started.')
+    if (err) {
+	return console.log(err);
+    }
+    console.log('Webserver started.');
 })
