@@ -4,7 +4,8 @@
   "description": "Software for managing a gaming clan.",
   "main": "commissar.js",
   "scripts": {
-    "test": "node commisar.js"
+    "start": "node commissar.js",
+    "test": "mocha './{,!(node_modules)/**}/*-test.js'"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
     "discord.js": "^11.1.0",
     "express": "^4.15.3",
     "express-session": "^1.15.3",
+    "mocha": "^6.1.4",
     "passport": "^0.3.2",
     "passport-discord": "^0.1.2",
     "path": "^0.12.7",
