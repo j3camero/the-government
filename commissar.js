@@ -1,8 +1,7 @@
 const Discord = require('discord.js');
-var passport = require('passport');
-var path = require('path');
-var DiscordStrategy = require('passport-discord').Strategy;
-var util = require('util');
+const DiscordStrategy = require('passport-discord').Strategy;
+const passport = require('passport');
+const rank = require('./rank');
 
 const token = 'MzE4OTQ3NjczMzg4NjEzNjMy.DBUn5A.ur1A_fONyluMUTx4iRJCGDm2JfE';
 
@@ -48,30 +47,6 @@ function ApplyRankToMember(rank, member, guild) {
   }
 }
 
-// Returns an array with numMembers elements, each an integer rank index.
-function CalculateRanks(numMembers) {
-  let ranks = [];
-  let numGenerals = numMembers;
-  for (let rankIndex = 1; rankIndex <= 7; ++rankIndex) {
-  	let count = Math.floor(numMembers / 8)
-    if (rankIndex <= (numMembers % 8)) {
-      count += 1;
-    }
-  	numGenerals -= count;
-  	for (let i = 0; i < count; ++i) {
-  	    ranks.push(rankIndex);
-  	}
-  }
-  // Produces the series 8, 9, 8, 10, 9, 8, 11, 10, 9, 8, 12, ...
-  for (let topRank = 8; numGenerals > 0; ++topRank) {
-  	for (let r = topRank; numGenerals > 0 && r >= 8; --r) {
-  	    ranks.push(r);
-  	    --numGenerals;
-  	}
-  }
-  return ranks.sort(function (a, b) { return a - b; });
-}
-
 function RankGuildMembers(guild) {
   let candidates = [];
   for (let member of guild.members.values()) {
@@ -79,7 +54,7 @@ function RankGuildMembers(guild) {
         candidates.push(member);
     }
   }
-  candidates.sort(function(a, b) {
+  candidates.sort((a, b) => {
     if (a.user.id == guild.ownerID && b.user.id == guild.ownerID) {
         return 0;
     }
@@ -92,7 +67,7 @@ function RankGuildMembers(guild) {
     return b.joinedTimestamp - a.joinedTimestamp;
   });
   console.log('Ranking', candidates.length, 'members.');
-  const ranks = CalculateRanks(candidates.length);
+  const ranks = rank.GenerateIdealRanksSorted(candidates.length);
   for (let i = 0; i < candidates.length; ++i) {
     ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild);
   }
