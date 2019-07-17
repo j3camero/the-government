@@ -35,7 +35,6 @@ function ApplyRankToMember(rank, member, guild) {
     // Don't rank the owner because it causes permission issues with the bot.
     return;
   }
-  //console.log('Rank ' + member.user.username + ' ' + rank.title + ' ' + rank.insignia);
   const nickname = member.user.username + ' ' + rank.insignia;
   if (member.nickname != nickname) {
     console.log('Update', nickname);
@@ -90,6 +89,14 @@ client.on('guildMemberAdd', member => {
 client.on('guildMemberRemove', member => {
   console.log('Someone quit the server.');
   RankGuildMembers(member.guild);
+});
+
+client.on('guildMemberSpeaking', (member, speaking) => {
+  console.log('guildMemberSpeaking', member.nickname, speaking);
+});
+
+client.on('voiceStateUpdate', (oldMember, newMember) => {
+  console.log('voiceStateUpdate', oldMember.nickname, newMember.nickname);
 });
 
 client.login(token);
