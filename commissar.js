@@ -72,9 +72,52 @@ function RankGuildMembers(guild) {
   }
 }
 
+// Returns a list of text channels with names that match channelName.
+function GetAllMatchingTextChannels(guild, channelName) {
+  const matchingChannels = [];
+  guild.channels.forEach((channel) => {
+    if (channel.name === channelName && channel.type === 'text') {
+      matchingChannels.push(channel);
+    }
+  });
+  return matchingChannels;
+}
+
+function SaveBotMemory(guild, memoriesJson) {
+  const matchingChannels = GetAllMatchingTextChannels(guild, 'commissar');
+  if (matchingChannels.length < 1) {
+    console.log('No commissar channel found. Cannot sync user data.');
+    return;
+  }
+  if (matchingChannels.length > 1) {
+    console.log('More than 1 commissar channel found. Cannot sync user data.');
+    return;
+  }
+  const channel = matchingChannels[0];
+  channel.fetchPinnedMessages()
+    .then((pinned) => {
+      const serialized = JSON.stringify(memoriesJson, null, 2);
+      const buffer = Buffer.from(serialized, 'utf8');
+      const attachment = new Discord.Attachment(buffer, 'memories.txt');
+      if (pinned.size === 0) {
+        channel.send('My memories', attachment).then((message) => {
+          message.pin();
+        });
+      } else if (pinned.size === 1) {
+        pinned.forEach((message) => {
+          message.edit('My memories edited', attachment);
+        });
+      } else {
+        console.log('Too many pinned messages found. Can\'t save.');
+      }
+    })
+    .catch(console.error);
+}
+
 client.on('ready', () => {
   console.log('Chatbot started.');
   for (let guild of client.guilds.values()) {
+    SaveBotMemory(guild, { name: 'Jeff', users: ['mdraper', 'bob'] });
     RankGuildMembers(guild);
   }
 });
