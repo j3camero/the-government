@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const DiscordStrategy = require('passport-discord').Strategy;
 const passport = require('passport');
 const rank = require('./rank');
+const request = require('request');
 
 const token = '***REMOVED***';
 
@@ -31,11 +32,16 @@ function GetRoleByName(guild, roleName) {
 }
 
 function ApplyRankToMember(rank, member, guild) {
+  const nickname = member.user.username + ' ' + rank.insignia;
+  const guildDB = persistentMemory[guild.id];
+  guildDB.users[member.user.id] = {
+    nickname,
+    rank: rank.index,
+  };
   if (member.user.id == guild.ownerID) {
-    // Don't rank the owner because it causes permission issues with the bot.
+    // Don't update the owner because it causes permission issues with the bot.
     return;
   }
-  const nickname = member.user.username + ' ' + rank.insignia;
   if (member.nickname != nickname) {
     console.log('Update', nickname);
     member.setNickname(nickname);
@@ -66,6 +72,12 @@ function RankGuildMembers(guild) {
     return b.joinedTimestamp - a.joinedTimestamp;
   });
   console.log('Ranking', candidates.length, 'members.');
+  const defaultGuildDB = {
+    users: {},
+  };
+  const guildDB = persistentMemory[guild.id] || defaultGuildDB;
+  guildDB.users = {};
+  persistentMemory[guild.id] = guildDB;
   const ranks = rank.GenerateIdealRanksSorted(candidates.length);
   for (let i = 0; i < candidates.length; ++i) {
     ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild);
@@ -83,7 +95,24 @@ function GetAllMatchingTextChannels(guild, channelName) {
   return matchingChannels;
 }
 
-function SaveBotMemory(guild, memoriesJson) {
+function UtcTimeStamp() {
+  return new Date().toJSON().substring(0, 19)
+    .split('-').join('')
+    .split('T').join('')
+    .split(':').join('');
+}
+
+function UtcDateStamp() {
+  return UtcTimeStamp().substring(0, 8);
+}
+
+// Some JSON keyed by discord guild id. Gets periodically backed to a pinned
+// message in a special text chat channel in each guild. When a new instance of
+// the bot starts, it loads the latest backup.
+const persistentMemory = {};
+
+function SaveBotMemory(guild) {
+  console.log('Saving memory for guild', guild.id);
   const matchingChannels = GetAllMatchingTextChannels(guild, 'commissar');
   if (matchingChannels.length < 1) {
     console.log('No commissar channel found. Cannot sync user data.');
@@ -96,20 +125,69 @@ function SaveBotMemory(guild, memoriesJson) {
   const channel = matchingChannels[0];
   channel.fetchPinnedMessages()
     .then((pinned) => {
+      if (pinned.size > 1) {
+        console.log('Too many pinned messages found. Can\'t save.');
+        return;
+      }
+      const memoriesJson = persistentMemory[guild.id] || {};
       const serialized = JSON.stringify(memoriesJson, null, 2);
       const buffer = Buffer.from(serialized, 'utf8');
-      const attachment = new Discord.Attachment(buffer, 'memories.txt');
-      if (pinned.size === 0) {
-        channel.send('My memories', attachment).then((message) => {
-          message.pin();
-        });
-      } else if (pinned.size === 1) {
-        pinned.forEach((message) => {
-          message.edit('My memories edited', attachment);
-        });
-      } else {
-        console.log('Too many pinned messages found. Can\'t save.');
+      const filename = `commissar-database-${UtcTimeStamp()}.txt`;
+      const attachment = new Discord.Attachment(buffer, filename);
+      if (pinned.size === 1) {
+        const message = pinned.first();
+        message.delete();
       }
+      channel.send('My memories', attachment).then((message) => {
+        message.pin();
+        console.log('Save success');
+      });
+    })
+    .catch(console.error);
+}
+
+// Loads the bot's persistent memories. Calls the callback on success.
+function LoadBotMemory(guild, callback) {
+  console.log('Loading memory for guild', guild.id);
+  const matchingChannels = GetAllMatchingTextChannels(guild, 'commissar');
+  if (matchingChannels.length < 1) {
+    console.log('No commissar channel found. Cannot sync user data.');
+    return;
+  }
+  if (matchingChannels.length > 1) {
+    console.log('More than 1 commissar channel found. Cannot sync user data.');
+    return;
+  }
+  const channel = matchingChannels[0];
+  channel.fetchPinnedMessages()
+    .then((pinned) => {
+      if (pinned.size !== 1) {
+        console.log('No memory to load. Continuing.');
+        callback();
+        return;
+      }
+      const message = pinned.first();
+      if (message.attachments.size !== 1) {
+        console.log('Too many attachments found. Can\'t load memory.');
+        return;
+      }
+      const attachment = message.attachments.first();
+      const useragent = 'Commissar Bot (Jeff Cameron) <cameron.jp@gmail.com>';
+      request.get({
+        url: attachment.url,
+        json: true,
+        headers: { 'User-Agent': useragent }
+      }, (err, res, data) => {
+        if (err) {
+          console.log('Error downloading attachment:', err);
+        } else if (res.statusCode !== 200) {
+          console.log('Bad status downloading attachment:', res.statusCode);
+        } else {
+          persistentMemory[guild.id] = data;
+          console.log('Load success.');
+          callback();
+        }
+      });
     })
     .catch(console.error);
 }
@@ -117,8 +195,10 @@ function SaveBotMemory(guild, memoriesJson) {
 client.on('ready', () => {
   console.log('Chatbot started.');
   for (let guild of client.guilds.values()) {
-    SaveBotMemory(guild, { name: 'Jeff', users: ['mdraper', 'bob'] });
-    RankGuildMembers(guild);
+    LoadBotMemory(guild, () => {
+      RankGuildMembers(guild);
+      SaveBotMemory(guild);
+    });
   }
 });
 
@@ -127,11 +207,13 @@ client.on('guildMemberAdd', member => {
   const greeting = 'Everybody welcome ' + member.user.username + ' to the server!';
   member.guild.defaultChannel.send(greeting);
   RankGuildMembers(member.guild);
+  SaveBotMemory(guild);
 });
 
 client.on('guildMemberRemove', member => {
   console.log('Someone quit the server.');
   RankGuildMembers(member.guild);
+  SaveBotMemory(guild);
 });
 
 client.on('guildMemberSpeaking', (member, speaking) => {
