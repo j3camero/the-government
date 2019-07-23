@@ -301,7 +301,7 @@ client.on('guildMemberAdd', member => {
   const greeting = 'Everybody welcome ' + member.user.username + ' to the server!';
   member.guild.defaultChannel.send(greeting);
   RankGuildMembers(member.guild);
-  SaveBotMemory(guild);
+  SaveBotMemory(member.guild);
 });
 
 client.on('guildMemberRemove', member => {
