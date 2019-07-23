@@ -21,6 +21,9 @@ const rankMetaData = [
   {index: 11, title: 'General', insignia: '★★★★', role: 'Generals'},
 ];
 
+// Daily decay of 0.9962 implies a half-life of 6 months (183 days).
+const participationDecay = 0.9962;
+
 const client = new Discord.Client();
 
 function GetRoleByName(guild, roleName) {
@@ -35,14 +38,36 @@ function GetRoleByName(guild, roleName) {
 //   rank: a JSON object with some info about the member's new updated rank.
 //   member: the Discord member object.
 //   guild: the Discord guild object.
-//   oldRankIndex: the member's old rankIndex from before the update. Is an
-//                 integer, or possible null or undefined.
-function ApplyRankToMember(rank, member, guild, oldRankIndex) {
+//   oldUser: the member's old user record.
+function ApplyRankToMember(rank, member, guild, oldUser) {
   const nickname = member.user.username + ' ' + rank.insignia;
   const guildDB = persistentMemory[guild.id];
-  guildDB.users[member.user.id] = {
+  const newUser = {
+    nickname,
     rankIndex: rank.index,
   };
+  // Update the participation score.
+  const today = UtcDateStamp();
+  const yesterday = YesterdayDateStamp();
+  if (!oldUser || !oldUser.participationScore ||
+      !oldUser.participationUpdateDate) {
+    // The user has no participation score. Start them off with zero.
+    newUser.participationScore = 0;
+    // The update date is yesterday in case they want to take part today.
+    newUser.participationUpdateDate = yesterday;
+  } else if (oldUser.participationUpdateDate !== today &&
+             oldUser.participationUpdateDate !== yesterday) {
+    // The user has a participation score, but it's from before yesterday.
+    const op = oldUser.participationScore;
+    // Decay the score.
+    newUser.participationScore = op * participationDecay;
+    // The update date is yesterday in case they want to take part today.
+    newUser.participationUpdateDate = yesterday;
+  } else {
+    newUser.participationScore = oldUser.participationScore;
+    newUser.participationUpdateDate = oldUser.participationUpdateDate;
+  }
+  guildDB.users[member.user.id] = newUser;
   if (member.user.id == guild.ownerID) {
     // Don't update the owner because it causes permission issues with the bot.
     return;
@@ -55,10 +80,10 @@ function ApplyRankToMember(rank, member, guild, oldRankIndex) {
   if (member._roles.indexOf(role) < 0) {
     member.setRoles([role]);
   }
-  if (oldRankIndex && rank.index > oldRankIndex) {
+  if (oldUser && oldUser.rankIndex && rank.index > oldUser.rankIndex) {
     const msg = `${nickname} is promoted to ${rank.title} ${rank.insignia}`;
     guild.defaultChannel.send(msg);
-    member.createDM().then(dm => dm.send(msg));
+    //member.createDM().then(dm => dm.send(msg));
   }
 }
 
@@ -69,17 +94,48 @@ function RankGuildMembers(guild) {
         candidates.push(member);
     }
   }
+  // Sort the guild members for ranking purposes.
   candidates.sort((a, b) => {
-    if (a.user.id == guild.ownerID && b.user.id == guild.ownerID) {
+    // Users tie with themselves.
+    if (a.user.id == b.user.id) {
         return 0;
     }
+    // The ower of the guild sorts to the bottom.
     if (a.user.id == guild.ownerID) {
         return -1;
     }
     if (b.user.id == guild.ownerID) {
         return 1;
     }
-    return b.joinedTimestamp - a.joinedTimestamp;
+    // Try to load participation scores from the database.
+    const guildDB = persistentMemory[guild.id];
+    if (!guildDB || !guildDB.users) {
+      // If no database found, revert to pure seniority.
+      return b.joinedTimestamp - a.joinedTimestamp;
+    }
+    const aDB = guildDB.users[a.user.id];
+    const bDB = guildDB.users[b.user.id];
+    if (!aDB && !bDB) {
+      // If no database found, revert to pure seniority.
+      return b.joinedTimestamp - a.joinedTimestamp;
+    }
+    // If one user has a database entry and the other doesn't, they win.
+    if (!aDB) {
+      return -1;
+    }
+    if (!bDB) {
+      return 1;
+    }
+    const ap = aDB.participationScore || 0;
+    const bp = bDB.participationScore || 0;
+    const threshold = 0.0000000001;
+    if (Math.abs(ap - bp) <= threshold) {
+      // If the participation scores are close to equal, revert to seniority.
+      return b.joinedTimestamp - a.joinedTimestamp;
+    } else {
+      // If all data is available, rank users by participation score.
+      return ap - bp;
+    }
   });
   console.log('Ranking', candidates.length, 'members.');
   const defaultGuildDB = {
@@ -93,9 +149,7 @@ function RankGuildMembers(guild) {
   for (let i = candidates.length - 1; i >= 0; --i) {
     const userId = candidates[i].user.id;
     const oldUser = oldUsers[userId] || {};
-    const oldRankIndex = oldUser.rankIndex;
-    ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild,
-                      oldRankIndex);
+    ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild, oldUser);
   }
 }
 
@@ -119,6 +173,12 @@ function UtcTimeStamp() {
 
 function UtcDateStamp() {
   return UtcTimeStamp().substring(0, 8);
+}
+
+function YesterdayDateStamp() {
+  let d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toJSON().substring(0, 10).split('-').join('');
 }
 
 // Some JSON keyed by discord guild id. Gets periodically backed to a pinned
@@ -207,6 +267,25 @@ function LoadBotMemory(guild, callback) {
     .catch(console.error);
 }
 
+// Returns a list of non-muted users active in voice channels right now.
+function GetVoiceActiveMembers(guild) {
+  let guildActive = [];
+  guild.channels.forEach((channel) => {
+    if (channel.type === 'voice') {
+      const channelActive = [];
+      channel.members.forEach((member) => {
+        if (!member.mute) {
+          channelActive.push(member);
+        }
+      });
+      if (channelActive.length >= 2) {
+        guildActive = guildActive.concat(channelActive);
+      }
+    }
+  });
+  return guildActive;
+}
+
 client.on('ready', () => {
   console.log('Chatbot started.');
   for (let guild of client.guilds.values()) {
@@ -236,7 +315,36 @@ client.on('guildMemberSpeaking', (member, speaking) => {
 });
 
 client.on('voiceStateUpdate', (oldMember, newMember) => {
-  console.log('voiceStateUpdate', oldMember.nickname, newMember.nickname);
+  console.log('voiceStateUpdate', newMember.nickname);
+  const guild = newMember.guild;
+  const guildDB = persistentMemory[guild.id];
+  if (!guildDB || !guildDB.users) {
+    // No points because the database isn't loaded.
+    return;
+  }
+  // Detect active voice users.
+  const active = GetVoiceActiveMembers(guild);
+  if (active.length < 2) {
+    // No points because there are less than 2 people online & active.
+    return;
+  }
+  // Update all the detected active members.
+  active.forEach((member) => {
+    const user = guildDB.users[member.user.id] || {};
+    const today = UtcDateStamp();
+    if (user.participationUpdateDate === today) {
+      // No points because this user already got points today.
+      console.log('No points for', member.nickname, '!');
+      return;
+    }
+    const op = user.participationScore;
+    user.participationScore = 1 - (1 - op) * participationDecay;
+    user.participationUpdateDate = today;
+    guildDB.users[member.user.id] = user;
+    console.log('Gave points to', member.nickname);
+  });
+  RankGuildMembers(guild);
+  botMemoryNeedsBackup = true;
 });
 
 client.login(token);
@@ -260,3 +368,27 @@ passport.use(new DiscordStrategy({
     return done(null, profile);
   });
 }));
+
+// Routine update & backup once per hour.
+setInterval(() => {
+  console.log('Hourly update and backup tiiiime!');
+  for (let guild of client.guilds.values()) {
+    RankGuildMembers(guild);
+    SaveBotMemory(guild);
+  }
+}, 60 * 60 * 1000);
+
+let botMemoryNeedsBackup = false;
+
+// Routine update & backup once per hour.
+setInterval(() => {
+  if (!botMemoryNeedsBackup) {
+    return;
+  }
+  botMemoryNeedsBackup = false;
+  console.log('Intermittent backup.');
+  for (let guild of client.guilds.values()) {
+    RankGuildMembers(guild);
+    SaveBotMemory(guild);
+  }
+}, 10 * 1000);
