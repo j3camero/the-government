@@ -31,12 +31,17 @@ function GetRoleByName(guild, roleName) {
   }
 }
 
-function ApplyRankToMember(rank, member, guild) {
+// Update the rank of a Discord guild member.
+//   rank: a JSON object with some info about the member's new updated rank.
+//   member: the Discord member object.
+//   guild: the Discord guild object.
+//   oldRankIndex: the member's old rankIndex from before the update. Is an
+//                 integer, or possible null or undefined.
+function ApplyRankToMember(rank, member, guild, oldRankIndex) {
   const nickname = member.user.username + ' ' + rank.insignia;
   const guildDB = persistentMemory[guild.id];
   guildDB.users[member.user.id] = {
-    nickname,
-    rank: rank.index,
+    rankIndex: rank.index,
   };
   if (member.user.id == guild.ownerID) {
     // Don't update the owner because it causes permission issues with the bot.
@@ -49,6 +54,11 @@ function ApplyRankToMember(rank, member, guild) {
   const role = GetRoleByName(guild, rank.role);
   if (member._roles.indexOf(role) < 0) {
     member.setRoles([role]);
+  }
+  if (oldRankIndex && rank.index > oldRankIndex) {
+    const msg = `${nickname} is promoted to ${rank.title} ${rank.insignia}`;
+    guild.defaultChannel.send(msg);
+    member.createDM().then(dm => dm.send(msg));
   }
 }
 
@@ -76,11 +86,16 @@ function RankGuildMembers(guild) {
     users: {},
   };
   const guildDB = persistentMemory[guild.id] || defaultGuildDB;
+  const oldUsers = guildDB.users;
   guildDB.users = {};
   persistentMemory[guild.id] = guildDB;
   const ranks = rank.GenerateIdealRanksSorted(candidates.length);
-  for (let i = 0; i < candidates.length; ++i) {
-    ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild);
+  for (let i = candidates.length - 1; i >= 0; --i) {
+    const userId = candidates[i].user.id;
+    const oldUser = oldUsers[userId] || {};
+    const oldRankIndex = oldUser.rankIndex;
+    ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild,
+                      oldRankIndex);
   }
 }
 
