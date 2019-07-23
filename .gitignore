@@ -1,2 +1,6 @@
 # Emacs temp files.
 *~
+
+# Node and NPM files.
+node_modules/
+package-lock.json
