@@ -307,7 +307,7 @@ client.on('guildMemberAdd', member => {
 client.on('guildMemberRemove', member => {
   console.log('Someone quit the server.');
   RankGuildMembers(member.guild);
-  SaveBotMemory(guild);
+  SaveBotMemory(member.guild);
 });
 
 client.on('guildMemberSpeaking', (member, speaking) => {
