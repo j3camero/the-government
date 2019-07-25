@@ -60,10 +60,11 @@ function UpdateMemberRankRoles(member, rankName) {
     default:
       throw `Invalid rank category name: ${rankName}`;
   };
-  // Add roles that are to added, remove those that are to be removed.
+  // Add role.
   if (member._roles.indexOf(addThisRole) < 0) {
     member.addRole(addThisRole);
   }
+  // Remove roles.
   removeTheseRoles.forEach((roleToRemove) => {
     if (member._roles.indexOf(roleToRemove) >= 0) {
       member.removeRole(roleToRemove);
@@ -73,12 +74,13 @@ function UpdateMemberRankRoles(member, rankName) {
 
 // Checks if a Discord guild member has a role, by name.
 function GuildMemberHasRole(member, roleName) {
+  let found = false;
   member.roles.forEach((role) => {
     if (role.name === roleName) {
-      return true;
+      found = true;
     }
   });
-  return false;
+  return found;
 }
 
 // Update the rank of a Discord guild member.
@@ -153,6 +155,13 @@ function RankGuildMembers(guild) {
     }
     if (b.user.id == guild.ownerID) {
         return 1;
+    }
+    // Members with the role 'Special' sort to the bottom.
+    if (GuildMemberHasRole(a, 'Special')) {
+      return -1;
+    }
+    if (GuildMemberHasRole(b, 'Special')) {
+      return 1;
     }
     // Try to load participation scores from the database.
     const guildDB = persistentMemory[guild.id];
