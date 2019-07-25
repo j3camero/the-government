@@ -26,12 +26,59 @@ const participationDecay = 0.9962;
 
 const client = new Discord.Client();
 
+// Looks up the ID of a Discord role by name.
 function GetRoleByName(guild, roleName) {
   for (let role of guild.roles.values()) {
     if (role.name === roleName) {
         return role.id;
     }
   }
+}
+
+// Updates a guild member's color.
+function UpdateMemberRankRoles(member, rankName) {
+  // Look up the IDs of the 3 big categories.
+  const grunts = GetRoleByName(member.guild, 'Grunts');
+  const officers = GetRoleByName(member.guild, 'Officers');
+  const generals = GetRoleByName(member.guild, 'Generals');
+  // Work out which roles are being added and which removed.
+  let addThisRole;
+  let removeTheseRoles;
+  switch (rankName) {
+    case 'Grunts':
+      addThisRole = grunts;
+      removeTheseRoles = [officers, generals];
+      break;
+    case 'Officers':
+      addThisRole = officers;
+      removeTheseRoles = [grunts, generals];
+      break;
+    case 'Generals':
+      addThisRole = generals;
+      removeTheseRoles = [grunts, officers];
+      break;
+    default:
+      throw `Invalid rank category name: ${rankName}`;
+  };
+  // Add roles that are to added, remove those that are to be removed.
+  if (member._roles.indexOf(addThisRole) < 0) {
+    member.addRole(addThisRole);
+  }
+  removeTheseRoles.forEach((roleToRemove) => {
+    if (member._roles.indexOf(roleToRemove) >= 0) {
+      member.removeRole(roleToRemove);
+    }
+  });
+}
+
+// Checks if a Discord guild member has a role, by name.
+function GuildMemberHasRole(member, roleName) {
+  member.roles.forEach((role) => {
+    if (role.name === roleName) {
+      return true;
+    }
+  });
+  return false;
 }
 
 // Update the rank of a Discord guild member.
@@ -72,14 +119,14 @@ function ApplyRankToMember(rank, member, guild, oldUser) {
     // Don't update the owner because it causes permission issues with the bot.
     return;
   }
+  // Update nickname (including rank insignia).
   if (member.nickname != nickname) {
     console.log('Update', nickname);
     member.setNickname(nickname);
   }
-  const role = GetRoleByName(guild, rank.role);
-  if (member._roles.indexOf(role) < 0) {
-    member.setRoles([role]);
-  }
+  // Update role (including rank color).
+  UpdateMemberRankRoles(member, rank.role);
+  // If a guild member got promoted, announce it.
   if (oldUser && oldUser.rankIndex && rank.index > oldUser.rankIndex) {
     const msg = `${nickname} is promoted to ${rank.title} ${rank.insignia}`;
     guild.defaultChannel.send(msg);
@@ -380,7 +427,7 @@ setInterval(() => {
 
 let botMemoryNeedsBackup = false;
 
-// Routine update & backup once per hour.
+// Routinely check the botMemoryNeedsBackup flag and backup if needed.
 setInterval(() => {
   if (!botMemoryNeedsBackup) {
     return;
@@ -391,4 +438,4 @@ setInterval(() => {
     RankGuildMembers(guild);
     SaveBotMemory(guild);
   }
-}, 10 * 1000);
+}, 60 * 1000);
