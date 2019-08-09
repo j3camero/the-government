@@ -83,13 +83,18 @@ function GuildMemberHasRole(member, roleName) {
   return found;
 }
 
+// Removes forbidden characters from the ends of a string (space, ★, ●).
+function StripUsername(username) {
+  return username.replace(/★/g, '.').replace(/●/g, '.').trim();
+}
+
 // Update the rank of a Discord guild member.
 //   rank: a JSON object with some info about the member's new updated rank.
 //   member: the Discord member object.
 //   guild: the Discord guild object.
 //   oldUser: the member's old user record.
 function ApplyRankToMember(rank, member, guild, oldUser) {
-  const nickname = member.user.username + ' ' + rank.insignia;
+  const nickname = StripUsername(member.user.username) + ' ' + rank.insignia;
   const guildDB = persistentMemory[guild.id];
   const newUser = {
     nickname,
