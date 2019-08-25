@@ -136,8 +136,8 @@ function ApplyRankToMember(rank, member, guild, oldUser) {
   // If a guild member got promoted, announce it.
   if (oldUser && oldUser.rankIndex && rank.index > oldUser.rankIndex) {
     const msg = `${nickname} is promoted to ${rank.title} ${rank.insignia}`;
-    guild.defaultChannel.send(msg);
-    //member.createDM().then(dm => dm.send(msg));
+    const channel = GetMainChatChannel(guild);
+    channel.send(msg);
   }
 }
 
@@ -223,6 +223,31 @@ function GetAllMatchingTextChannels(guild, channelName) {
     }
   });
   return matchingChannels;
+}
+
+function GetMainChatChannel(guild) {
+  // First, look for any text channel called #main.
+  const mains = GetAllMatchingTextChannels(guild, 'main');
+  if (mains.length > 0) {
+    return mains[0];
+  }
+  // If no #main found, look for any text channel called #general.
+  const generals = GetAllMatchingTextChannels(guild, 'general');
+  if (generals.length > 0) {
+    return generals[0];
+  }
+  // If no #main or #general found, return any text channel at all.
+  let matchingChannel;
+  guild.channels.forEach((channel) => {
+    if (channel.type === 'text') {
+      matchingChannel = channel;
+    }
+  });
+  if (matchingChannel) {
+    return matchingChannel;
+  }
+  // If no text channels found at all, give up.
+  return null;
 }
 
 function UtcTimeStamp() {
@@ -359,8 +384,9 @@ client.on('ready', () => {
 
 client.on('guildMemberAdd', member => {
   console.log('New member joined the server.');
-  const greeting = 'Everybody welcome ' + member.user.username + ' to the server!';
-  member.guild.defaultChannel.send(greeting);
+  const greeting = `Everybody welcome ${member.user.username} to the server!`;
+  const channel = GetMainChatChannel(member.guild);
+  channel.send(greeting);
   RankGuildMembers(member.guild);
   SaveBotMemory(member.guild);
 });
