@@ -1,6 +1,4 @@
 const database = require('./database');
-const Discord = require('discord.js');
-const DiscordStrategy = require('passport-discord').Strategy;
 const DiscordUtil = require('./discord-util');
 const passport = require('passport');
 const rank = require('./rank');
@@ -25,8 +23,6 @@ const rankMetaData = [
 
 // Daily decay of 0.9962 implies a half-life of 6 months (183 days).
 const participationDecay = 0.9962;
-
-const client = new Discord.Client();
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
@@ -196,7 +192,29 @@ function RankGuildMembers(guild) {
   }
 }
 
-client.on('ready', () => {
+// Routine update & backup once per hour.
+setInterval(() => {
+  console.log('Hourly update and backup tiiiime!');
+  for (let guild of client.guilds.values()) {
+    RankGuildMembers(guild);
+    database.SaveBotMemory(guild);
+  }
+}, 60 * 60 * 1000);
+
+// Routinely check the botMemoryNeedsBackup flag and backup if needed.
+setInterval(() => {
+  if (!database.botMemoryNeedsBackup) {
+    return;
+  }
+  database.botMemoryNeedsBackup = false;
+  console.log('Intermittent backup.');
+  for (let guild of client.guilds.values()) {
+    RankGuildMembers(guild);
+    database.SaveBotMemory(guild);
+  }
+}, 60 * 1000);
+
+function ready() {
   console.log('Chatbot started.');
   for (let guild of client.guilds.values()) {
     database.LoadBotMemory(guild, () => {
@@ -204,28 +222,24 @@ client.on('ready', () => {
       database.SaveBotMemory(guild);
     });
   }
-});
+}
 
-client.on('guildMemberAdd', member => {
+function guildMemberAdd(member) {
   console.log('New member joined the server.');
   const greeting = `Everybody welcome ${member.user.username} to the server!`;
   const channel = DiscordUtil.GetMainChatChannel(member.guild);
   channel.send(greeting);
   RankGuildMembers(member.guild);
   database.SaveBotMemory(member.guild);
-});
+}
 
-client.on('guildMemberRemove', member => {
+function guildMemberRemove(member) {
   console.log('Someone quit the server.');
   RankGuildMembers(member.guild);
   database.SaveBotMemory(member.guild);
-});
+}
 
-client.on('guildMemberSpeaking', (member, speaking) => {
-  console.log('guildMemberSpeaking', member.nickname, speaking);
-});
-
-client.on('voiceStateUpdate', (oldMember, newMember) => {
+function voiceStateUpdate(oldMember, newMember) {
   console.log('voiceStateUpdate', newMember.nickname);
   const guild = newMember.guild;
   const guildDB = database.persistentMemory[guild.id];
@@ -256,48 +270,11 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
   });
   RankGuildMembers(guild);
   database.botMemoryNeedsBackup = true;
-});
+}
 
-client.login(token);
-
-passport.serializeUser(function(user, done) {
-  done(null, user);
-});
-passport.deserializeUser(function(obj, done) {
-  done(null, obj);
-});
-
-var scopes = ['identify', 'email', 'connections', 'guilds', 'guilds.join'];
-
-passport.use(new DiscordStrategy({
-  clientID: '318947673388613632',
-  clientSecret: 'ryPdC5BChVaFO6q4Jk7QEOtXqzA3Jomq',
-  callbackURL: 'http://secretclan.net/callback',
-  scope: scopes
-}, function(accessToken, refreshToken, profile, done) {
-  process.nextTick(function() {
-    return done(null, profile);
-  });
-}));
-
-// Routine update & backup once per hour.
-setInterval(() => {
-  console.log('Hourly update and backup tiiiime!');
-  for (let guild of client.guilds.values()) {
-    RankGuildMembers(guild);
-    database.SaveBotMemory(guild);
-  }
-}, 60 * 60 * 1000);
-
-// Routinely check the botMemoryNeedsBackup flag and backup if needed.
-setInterval(() => {
-  if (!database.botMemoryNeedsBackup) {
-    return;
-  }
-  database.botMemoryNeedsBackup = false;
-  console.log('Intermittent backup.');
-  for (let guild of client.guilds.values()) {
-    RankGuildMembers(guild);
-    database.SaveBotMemory(guild);
-  }
-}, 60 * 1000);
+module.exports = {
+  guildMemberAdd,
+  guildMemberRemove,
+  ready,
+  voiceStateUpdate,
+};
