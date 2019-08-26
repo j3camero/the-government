@@ -1,15 +1,20 @@
 const commissar = require('./commissar');
 const Discord = require('discord.js');
 const DiscordStrategy = require('passport-discord').Strategy;
+const passport = require('passport');
 
-// Set up Discord events and login the Commissar bot.
+// Set up Discord events.
 const client = new Discord.Client();
-client.on('ready', commissar.ready);
+client.on('ready', () => commissar.ready(client));
 client.on('guildMemberAdd', commissar.guildMemberAdd);
 client.on('guildMemberRemove', commissar.guildMemberRemove);
 client.on('voiceStateUpdate', commissar.voiceStateUpdate);
+
+// Login the Commissar bot to Discord.
+const token = 'MzE4OTQ3NjczMzg4NjEzNjMy.DBUn5A.ur1A_fONyluMUTx4iRJCGDm2JfE';
 client.login(token);
 
+// Make the Discord bot invitable by web link.
 passport.serializeUser(function(user, done) {
   done(null, user);
 });

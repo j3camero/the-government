@@ -1,10 +1,7 @@
 const database = require('./database');
 const DiscordUtil = require('./discord-util');
-const passport = require('passport');
 const rank = require('./rank');
 const TimeUtil = require('./time-util');
-
-const token = 'MzE4OTQ3NjczMzg4NjEzNjMy.DBUn5A.ur1A_fONyluMUTx4iRJCGDm2JfE';
 
 const rankMetaData = [
   {index: 0, title: 'n00b', insignia: '(n00b)', role: null},
@@ -214,7 +211,7 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-function ready() {
+function ready(client) {
   console.log('Chatbot started.');
   for (let guild of client.guilds.values()) {
     database.LoadBotMemory(guild, () => {
