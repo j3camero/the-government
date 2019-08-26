@@ -14,6 +14,10 @@ client.on('voiceStateUpdate', commissar.voiceStateUpdate);
 const token = 'MzE4OTQ3NjczMzg4NjEzNjMy.DBUn5A.ur1A_fONyluMUTx4iRJCGDm2JfE';
 client.login(token);
 
+// Set up heartbeat events for the bot.
+setInterval(() => commissar.hourHeartbeat(client), 60 * 60 * 1000);
+setInterval(() => commissar.minuteHeartbeat(client), 60 * 1000);
+
 // Make the Discord bot invitable by web link.
 passport.serializeUser(function(user, done) {
   done(null, user);
