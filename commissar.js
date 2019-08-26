@@ -189,17 +189,17 @@ function RankGuildMembers(guild) {
   }
 }
 
-// Routine update & backup once per hour.
-setInterval(() => {
+function hourHeartbeat(client) {
+  // Routine update & backup once per hour.
   console.log('Hourly update and backup tiiiime!');
   for (let guild of client.guilds.values()) {
     RankGuildMembers(guild);
     database.SaveBotMemory(guild);
   }
-}, 60 * 60 * 1000);
+}
 
-// Routinely check the botMemoryNeedsBackup flag and backup if needed.
-setInterval(() => {
+function minuteHeartbeat(client) {
+  // Routinely check the botMemoryNeedsBackup flag and backup if needed.
   if (!database.botMemoryNeedsBackup) {
     return;
   }
@@ -209,7 +209,7 @@ setInterval(() => {
     RankGuildMembers(guild);
     database.SaveBotMemory(guild);
   }
-}, 60 * 1000);
+}
 
 function ready(client) {
   console.log('Chatbot started.');
@@ -272,6 +272,8 @@ function voiceStateUpdate(oldMember, newMember) {
 module.exports = {
   guildMemberAdd,
   guildMemberRemove,
+  hourHeartbeat,
+  minuteHeartbeat,
   ready,
   voiceStateUpdate,
 };
