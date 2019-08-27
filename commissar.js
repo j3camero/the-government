@@ -1,5 +1,6 @@
 const database = require('./database');
 const DiscordUtil = require('./discord-util');
+const moment = require('moment');
 const rank = require('./rank');
 const TimeUtil = require('./time-util');
 
@@ -64,16 +65,22 @@ function StripUsername(username) {
 }
 
 // Update the rank of a Discord guild member.
-//   rank: a JSON object with some info about the member's new updated rank.
+//   rankIndex: the index of the member's new target rank.
 //   member: the Discord member object.
 //   guild: the Discord guild object.
 //   oldUser: the member's old user record.
-function ApplyRankToMember(rank, member, guild, oldUser) {
-  const nickname = StripUsername(member.user.username) + ' ' + rank.insignia;
+function ApplyRankToMember(rankIndex, member, guild, oldUser) {
   const guildDB = database.persistentMemory[guild.id];
+  if (oldUser.rankLimit) {
+    rankIndex = Math.min(rankIndex, oldUser.rankLimit);
+  }
+  const rank = rankMetaData[rankIndex];
+  const nickname = StripUsername(member.user.username) + ' ' + rank.insignia;
   const newUser = {
     nickname,
     rankIndex: rank.index,
+    rankLimit: oldUser.rankLimit,
+    rankLimitCooldown: oldUser.rankLimitCooldown,
   };
   // Update the participation score.
   const today = TimeUtil.UtcDateStamp();
@@ -185,8 +192,71 @@ function RankGuildMembers(guild) {
   for (let i = candidates.length - 1; i >= 0; --i) {
     const userId = candidates[i].user.id;
     const oldUser = oldUsers[userId] || {};
-    ApplyRankToMember(rankMetaData[ranks[i]], candidates[i], guild, oldUser);
+    ApplyRankToMember(ranks[i], candidates[i], guild, oldUser);
   }
+}
+
+// Start a rank limit at 1 (Recruit) for a newly joined member.
+function ApplyRankLimit(member) {
+  const defaultGuildDB = {
+    users: {},
+  };
+  if (!(member.guild.id in database.persistentMemory)) {
+    database.persistentMemory[member.guild.id] = defaultGuildDB;
+  }
+  const guildDB = database.persistentMemory[member.guild.id];
+  if (!(member.user.id in guildDB.users)) {
+    guildDB.users[member.user.id] = {};
+  }
+  const user = guildDB.users[member.user.id];
+  user.rankLimit = 1;
+  user.rankLimitCooldown = moment().format();
+}
+
+// Update the daily participation points for a user.
+function MaybeUpdateParticipationPoints(member, guildDB) {
+  const user = guildDB.users[member.user.id] || {};
+  const today = TimeUtil.UtcDateStamp();
+  if (user.participationUpdateDate === today) {
+    // No points because this user already got points today.
+    console.log('No points for', member.nickname, '!');
+    return;
+  }
+  const op = user.participationScore;
+  user.participationScore = 1 - (1 - op) * participationDecay;
+  user.participationUpdateDate = today;
+  guildDB.users[member.user.id] = user;
+  console.log('Gave points to', member.nickname);
+}
+
+// Update a user's rank limit, if applicable.
+function MaybeUpdateRankLimit(member, guildDB) {
+  const user = guildDB.users[member.user.id] || {};
+  if (!user.rankLimit || !user.rankLimitCooldown) {
+    // This user doesn't have a rank limit. Do nothing.
+    return;
+  }
+  if (!moment(user.rankLimitCooldown).isBefore(moment())) {
+    // This user's rank limit is still on cooldown. Do nothing, for now.
+    return;
+  }
+  // Increase the user's rank limit by 1.
+  user.rankLimit += 1;
+  // Set a new cooldown for 12 hours in the future.
+  user.rankLimitCooldown = moment().add(12, 'hours').format();
+  // Once the rank limit is high enough, remove it completely.
+  if (user.rankLimit >= 10) {
+    delete user.rankLimit;
+    delete user.rankLimitCooldown;
+  }
+  guildDB.users[member.user.id] = user;
+  console.log('Updated rank limit for', member.nickname);
+}
+
+// This function triggers periodically for members active in voice chat.
+function MemberIsActiveInVoiceChat(member, guildDB) {
+  MaybeUpdateParticipationPoints(member, guildDB);
+  MaybeUpdateRankLimit(member, guildDB);
 }
 
 function hourHeartbeat(client) {
@@ -226,6 +296,7 @@ function guildMemberAdd(member) {
   const greeting = `Everybody welcome ${member.user.username} to the server!`;
   const channel = DiscordUtil.GetMainChatChannel(member.guild);
   channel.send(greeting);
+  ApplyRankLimit(member);
   RankGuildMembers(member.guild);
   database.SaveBotMemory(member.guild);
 }
@@ -252,18 +323,7 @@ function voiceStateUpdate(oldMember, newMember) {
   }
   // Update all the detected active members.
   active.forEach((member) => {
-    const user = guildDB.users[member.user.id] || {};
-    const today = TimeUtil.UtcDateStamp();
-    if (user.participationUpdateDate === today) {
-      // No points because this user already got points today.
-      console.log('No points for', member.nickname, '!');
-      return;
-    }
-    const op = user.participationScore;
-    user.participationScore = 1 - (1 - op) * participationDecay;
-    user.participationUpdateDate = today;
-    guildDB.users[member.user.id] = user;
-    console.log('Gave points to', member.nickname);
+    MemberIsActiveInVoiceChat(member, guildDB);
   });
   RankGuildMembers(guild);
   database.botMemoryNeedsBackup = true;
