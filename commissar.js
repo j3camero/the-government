@@ -1,5 +1,6 @@
 const database = require('./database');
 const DiscordUtil = require('./discord-util');
+const log = require('./log');
 const moment = require('moment');
 const rank = require('./rank');
 const TimeUtil = require('./time-util');
@@ -253,6 +254,29 @@ function MaybeUpdateRankLimit(member, guildDB) {
   console.log('Updated rank limit for', member.nickname);
 }
 
+function logVoiceStateUpdate(oldMember, newMember) {
+  if (oldMember.voiceChannelID == newMember.voiceChannelID) {
+    // The user did not enter or leave a voice chat. Ignore this event.
+    return;
+  }
+  if (oldMember.voiceChannelID) {
+    log.info('left vc', {
+      action: 'left vc',
+      guild: oldMember.guild.id,
+      user: oldMember.user.id,
+      voiceChannelID: oldMember.voiceChannelID,
+    });
+  }
+  if (newMember.voiceChannelID) {
+    log.info('joined vc', {
+      action: 'joined vc',
+      guild: newMember.guild.id,
+      user: newMember.user.id,
+      voiceChannelID: newMember.voiceChannelID,
+    });
+  }
+}
+
 // This function triggers periodically for members active in voice chat.
 function MemberIsActiveInVoiceChat(member, guildDB) {
   MaybeUpdateParticipationPoints(member, guildDB);
@@ -309,6 +333,7 @@ function guildMemberRemove(member) {
 
 function voiceStateUpdate(oldMember, newMember) {
   console.log('voiceStateUpdate', newMember.nickname);
+  logVoiceStateUpdate(oldMember, newMember);
   const guild = newMember.guild;
   const guildDB = database.persistentMemory[guild.id];
   if (!guildDB || !guildDB.users) {
