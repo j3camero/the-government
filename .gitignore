@@ -4,3 +4,7 @@
 # Node and NPM files.
 node_modules/
 package-lock.json
+*.log
+
+# Config file.
+config.js
