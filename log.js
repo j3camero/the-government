@@ -1,3 +1,4 @@
+const config = require('./config');
 const winston = require('winston');
 const CloudWatchTransport = require('winston-aws-cloudwatch');
 
@@ -10,22 +11,7 @@ const logger = new winston.Logger({
   ]
 });
 
-const config = {
-  logGroupName: 'commissar',
-  logStreamName: 'prod',
-  createLogGroup: false,
-  createLogStream: true,
-  awsConfig: {
-    accessKeyId: '***REMOVED***',
-    secretAccessKey: '***REMOVED***',
-    region: 'us-west-2',
-  },
-  formatLog: function (item) {
-    return item.level + ': ' + item.message + ' ' + JSON.stringify(item.meta);
-  }
-}
-
-logger.add(CloudWatchTransport, config);
+logger.add(CloudWatchTransport, config.winstonConfig);
 logger.level = 'info';
 
 logger.stream = {
