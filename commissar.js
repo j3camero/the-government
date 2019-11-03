@@ -144,13 +144,6 @@ function RankGuildMembers(guild) {
     if (b.user.id == guild.ownerID) {
         return 1;
     }
-    // Members with the role 'Special' sort to the bottom.
-    if (DiscordUtil.GuildMemberHasRole(a, 'Special')) {
-      return -1;
-    }
-    if (DiscordUtil.GuildMemberHasRole(b, 'Special')) {
-      return 1;
-    }
     // Try to load participation scores from the database.
     const guildDB = database.persistentMemory[guild.id];
     if (!guildDB || !guildDB.users) {
