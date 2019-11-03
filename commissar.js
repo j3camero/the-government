@@ -6,6 +6,7 @@ const moment = require('moment');
 const mysql = require('mysql');
 const rank = require('./rank');
 const TimeUtil = require('./time-util');
+const UserCache = require('./commissar-user');
 
 const rankMetaData = [
   {index: 0, title: 'n00b', insignia: '(n00b)', role: null},
@@ -282,6 +283,28 @@ function MemberIsActiveInVoiceChat(member, guildDB) {
   MaybeUpdateRankLimit(member, guildDB);
 }
 
+function AddGuildMembersToSqlDatabase(guild) {
+    const guildDB = database.persistentMemory[guild.id];
+    for (let member of guild.members.values()) {
+	if (!member.user.bot) {
+	    const u = guildDB.users[member.user.id];
+	    UserCache.CreateNewDatabaseUser(
+		sqlConnection,
+		member.user.id,
+		null,
+		member.user.username,
+		u.rankIndex,
+		u.participationScore,
+		u.participationUpdateDate,
+		u.rankLimit,
+		u.rankLimitCooldown,
+		() => {
+		    console.log('Successfully added user to database.');
+		});
+	}
+    }
+}
+
 function hourHeartbeat(client) {
   // Routine update & backup once per hour.
   if (!sqlConnected) {
@@ -311,20 +334,24 @@ function minuteHeartbeat(client) {
 }
 
 function ready(client) {
-  console.log('Chatbot started.');
-  for (let guild of client.guilds.values()) {
-    database.LoadBotMemory(guild, () => {
-      RankGuildMembers(guild);
-      database.SaveBotMemory(guild);
+    console.log('Chatbot started. Connecting to SQL database now.');
+    sqlConnection.connect((err) => {
+	if (err) {
+	    throw err;
+	}
+	console.log('SQL database connected. Loading commissar user data now.');
+	UserCache.LoadAllUsersFromDatabase(sqlConnection, () => {
+	    sqlConnected = true;
+	    console.log('Commissar user data loaded.');
+	    for (let guild of client.guilds.values()) {
+		database.LoadBotMemory(guild, () => {
+		    RankGuildMembers(guild);
+		    //AddGuildMembersToSqlDatabase(guild);
+		    database.SaveBotMemory(guild);
+		});
+	    }
+	});
     });
-  }
-  sqlConnection.connect((err) => {
-    if (err) {
-      throw err;
-    }
-    sqlConnected = true;
-    console.log('SQL database connected.');
-  });
 }
 
 function guildMemberAdd(member) {
