@@ -1,7 +1,9 @@
+const config = require('./config');
 const database = require('./database');
 const DiscordUtil = require('./discord-util');
 const log = require('./log');
 const moment = require('moment');
+const mysql = require('mysql');
 const rank = require('./rank');
 const TimeUtil = require('./time-util');
 
@@ -22,6 +24,10 @@ const rankMetaData = [
 
 // Daily decay of 0.9962 implies a half-life of 6 months (183 days).
 const participationDecay = 0.9962;
+
+// Create a SQL database connection object.
+let sqlConnected = false;
+const sqlConnection = mysql.createConnection(config.sqlConfig);
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
@@ -278,6 +284,9 @@ function MemberIsActiveInVoiceChat(member, guildDB) {
 
 function hourHeartbeat(client) {
   // Routine update & backup once per hour.
+  if (!sqlConnected) {
+    return;
+  }
   console.log('Hourly update and backup tiiiime!');
   for (let guild of client.guilds.values()) {
     RankGuildMembers(guild);
@@ -286,6 +295,9 @@ function hourHeartbeat(client) {
 }
 
 function minuteHeartbeat(client) {
+  if (!sqlConnected) {
+    return;
+  }
   // Routinely check the botMemoryNeedsBackup flag and backup if needed.
   if (!database.botMemoryNeedsBackup) {
     return;
@@ -306,10 +318,20 @@ function ready(client) {
       database.SaveBotMemory(guild);
     });
   }
+  sqlConnection.connect((err) => {
+    if (err) {
+      throw err;
+    }
+    sqlConnected = true;
+    console.log('SQL database connected.');
+  });
 }
 
 function guildMemberAdd(member) {
   console.log('New member joined the server.');
+  if (!sqlConnected) {
+    return;
+  }
   const greeting = `Everybody welcome ${member.user.username} to the server!`;
   const channel = DiscordUtil.GetMainChatChannel(member.guild);
   channel.send(greeting);
@@ -320,12 +342,18 @@ function guildMemberAdd(member) {
 
 function guildMemberRemove(member) {
   console.log('Someone quit the server.');
+  if (!sqlConnected) {
+    return;
+  }
   RankGuildMembers(member.guild);
   database.SaveBotMemory(member.guild);
 }
 
 function voiceStateUpdate(oldMember, newMember) {
   console.log('voiceStateUpdate', newMember.nickname);
+  if (!sqlConnected) {
+    return;
+  }
   logVoiceStateUpdate(oldMember, newMember);
   const guild = newMember.guild;
   const guildDB = database.persistentMemory[guild.id];
