@@ -105,9 +105,11 @@ function LoadAllUsersFromDatabase(connection, callback) {
 
 // Write only the dirty records to the database.
 function WriteDirtyUsersToDatabase(connection) {
-    users.forEach((id) => {
-	const u = users[id];
+    console.log(`Writing dirty users to the DB.`);
+    Object.keys(commissarUserCache).forEach((id) => {
+	const u = commissarUserCache[id];
 	if (u.dirty) {
+	    console.log(`    * ${u.nickname}`);
 	    u.writeToDatabase(connection);
 	}
     });
@@ -115,8 +117,9 @@ function WriteDirtyUsersToDatabase(connection) {
 
 // Update all the cached users in the database.
 function WriteAllUsersToDatabase(connection) {
-    users.forEach((id) => {
-	const u = users[id];
+    console.log(`Writing all users to the DB.`);
+    Object.keys(commissarUserCache).forEach((id) => {
+	const u = commissarUserCache[id];
 	u.writeToDatabase(connection);
     });
 }
@@ -144,6 +147,7 @@ function GetCachedUserByDiscordId(discord_id) {
 
 // Creates a new user in the database. On success, the new user is added to the cache and the callback is called.
 function CreateNewDatabaseUser(connection, discord_id, steam_id, nickname, rank, participation_score, participation_update_date, rank_limit, rank_limit_cooldown, callback) {
+    console.log(`Create a new DB user for ${nickname}`);
     const fields = {discord_id, steam_id, nickname, rank, participation_score, participation_update_date, rank_limit, rank_limit_cooldown};
     connection.query('INSERT INTO users SET ?', fields, (err, result) => {
 	if (err) {

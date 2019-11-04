@@ -13,5 +13,4 @@ client.on('voiceStateUpdate', commissar.voiceStateUpdate);
 client.login(config.discordBotToken);
 
 // Set up heartbeat events for the bot.
-setInterval(() => commissar.hourHeartbeat(client), 60 * 60 * 1000);
 setInterval(() => commissar.minuteHeartbeat(client), 60 * 1000);

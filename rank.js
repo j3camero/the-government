@@ -44,8 +44,24 @@ function GenerateIdealRanksSorted(n) {
   return ranks.sort(function (a, b) { return a - b; });
 }
 
+const metadata = [
+    {index: 0, title: 'n00b', insignia: '(n00b)', role: null},
+    {index: 1, title: 'Recruit', insignia: '●', role: 'Grunts'},
+    {index: 2, title: 'Corporal', insignia: '●●', role: 'Grunts'},
+    {index: 3, title: 'Sergeant', insignia: '●●●', role: 'Grunts'},
+    {index: 4, title: 'Lieutenant', insignia: '●', role: 'Officers'},
+    {index: 5, title: 'Captain', insignia: '●●', role: 'Officers'},
+    {index: 6, title: 'Major', insignia: '●●●', role: 'Officers'},
+    {index: 7, title: 'Colonel', insignia: '●●●●', role: 'Officers'},
+    {index: 8, title: 'General', insignia: '★', role: 'Generals'},
+    {index: 9, title: 'General', insignia: '★★', role: 'Generals'},
+    {index: 10, title: 'General', insignia: '★★★', role: 'Generals'},
+    {index: 11, title: 'General', insignia: '★★★★', role: 'Generals'},
+];
+
 module.exports = {
-  GenerateIdealRanks,
-  GenerateIdealRanksSorted,
-  RangeRepeat,
+    GenerateIdealRanks,
+    GenerateIdealRanksSorted,
+    metadata,
+    RangeRepeat,
 };
