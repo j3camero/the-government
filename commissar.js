@@ -51,9 +51,22 @@ function UpdateMemberRankRoles(member, rankName) {
   });
 }
 
-// Removes forbidden characters from the ends of a string (space, ★, ●).
-function StripUsername(username) {
-  return username.replace(/★/g, '.').replace(/●/g, '.').trim();
+// Removes some characters, replaces others.
+function FilterUsername(username) {
+    const allowedChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_` ()!?\'*+/\\:=~';
+    let s = '';
+    for (let i = 0; i < username.length; i++) {
+	const c = username.charAt(i);
+	if (allowedChars.indexOf(c) >= 0) {
+	    s += c;
+	}
+    }
+    const maxNameLength = 16;
+    s = s.trim().slice(0, maxNameLength).trim();
+    if (s.length === 0) {
+	s = '???';
+    }
+    return s;
 }
 
 // Update the rank of a Discord guild member.
@@ -66,7 +79,7 @@ function ApplyRankToMember(rankIndex, member, guild) {
       rankIndex = Math.min(rankIndex, cu.rank_limit);
   }
   const rankData = rank.metadata[rankIndex];
-    const nickname = StripUsername(member.user.username)
+    const nickname = FilterUsername(member.user.username)
   if (nickname !== cu.nickname) {
     cu.setNickname(nickname);
   }
@@ -260,7 +273,7 @@ function guildMemberAdd(member) {
     if (!cu) {
 	// We have no record of this Discord user. Create a new record in the cache.
 	const yesterday = TimeUtil.YesterdayDateStamp();
-	UserCache.CreateNewDatabaseUser(sqlConnection, member.user.id, null, StripUsername(member.user.username), 1, 0, yesterday, 1, moment.format(), () => {
+	UserCache.CreateNewDatabaseUser(sqlConnection, member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment.format(), () => {
 	    RankGuildMembers(member.guild);
 	});
     }
