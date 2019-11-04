@@ -4,7 +4,7 @@
   "description": "Software for managing a gaming clan.",
   "main": "commissar.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node commissar.js",
     "test": "mocha './{,!(node_modules)/**}/*-test.js'"
   },
   "repository": {

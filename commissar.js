@@ -1,18 +1,18 @@
 const config = require('./config');
+const db = require('./database');
+const Discord = require('discord.js');
 const DiscordUtil = require('./discord-util');
 const log = require('./log');
 const moment = require('moment');
-const mysql = require('mysql');
 const rank = require('./rank');
 const TimeUtil = require('./time-util');
 const UserCache = require('./commissar-user');
 
+// This flag sets to true once the bot is fully booted and ready to handle traffic.
+let botActive = false;
+
 // Daily decay of 0.9962 implies a half-life of 6 months (183 days).
 const participationDecay = 0.9962;
-
-// Create a SQL database connection object.
-let sqlConnected = false;
-const sqlConnection = mysql.createConnection(config.sqlConfig);
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
@@ -236,34 +236,20 @@ function MemberIsActiveInVoiceChat(member) {
   MaybeUpdateRankLimit(member);
 }
 
-function minuteHeartbeat(client) {
-  if (!sqlConnected) {
-    return;
-  }
-  // Routine backup once per minute.
-  UserCache.WriteDirtyUsersToDatabase(sqlConnection);
-}
+// Create the Discord client. Does not connect yet.
+const client = new Discord.Client();
+let discordConnected = false;
 
-function ready(client) {
-    console.log('Chatbot started. Connecting to SQL database now.');
-    sqlConnection.connect((err) => {
-	if (err) {
-	    throw err;
-	}
-	console.log('SQL database connected. Loading commissar user data now.');
-	UserCache.LoadAllUsersFromDatabase(sqlConnection, () => {
-	    sqlConnected = true;
-	    console.log('Commissar user data loaded.');
-	    for (let guild of client.guilds.values()) {
-		RankGuildMembers(guild);
-	    }
-	});
-    });
-}
+// This Discord event fires when the bot successfully connects to Discord.
+client.on('ready', () => {
+    console.log('Discord bot connected.');
+    discordConnected = true;
+});
 
-function guildMemberAdd(member) {
+// This Discord event fires when someone joins a Discord guild that the bot is a member of.
+client.on('guildMemberAdd', (member) => {
     console.log('New member joined the server.');
-    if (!sqlConnected) {
+    if (!botActive) {
 	return;
     }
     const greeting = `Everybody welcome ${member.user.username} to the server!`;
@@ -273,44 +259,74 @@ function guildMemberAdd(member) {
     if (!cu) {
 	// We have no record of this Discord user. Create a new record in the cache.
 	const yesterday = TimeUtil.YesterdayDateStamp();
-	UserCache.CreateNewDatabaseUser(sqlConnection, member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment.format(), () => {
+	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment.format(), () => {
 	    RankGuildMembers(member.guild);
 	});
     }
-}
+});
 
-function guildMemberRemove(member) {
+// This Discord event fires when someone quits a Discord guild that the bot is a member of.
+client.on('guildMemberRemove', (member) => {
     console.log('Someone quit the server.');
-    if (!sqlConnected) {
+    if (!botActive) {
 	return;
     }
     RankGuildMembers(member.guild);
-}
+});
 
-function voiceStateUpdate(oldMember, newMember) {
-  console.log('voiceStateUpdate', newMember.nickname);
-  if (!sqlConnected) {
+// This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
+// unmutes, deafens, undefeans, and possibly other circumstances as well.
+client.on('voiceStateUpdate', (oldMember, newMember) => {
+    console.log('voiceStateUpdate', newMember.nickname);
+    if (!botActive) {
+	return;
+    }
+    logVoiceStateUpdate(oldMember, newMember);
+    const guild = newMember.guild;
+    // Detect active voice users.
+    const active = DiscordUtil.GetVoiceActiveMembers(guild);
+    if (active.length < 2) {
+	// No points because there are less than 2 people online & active.
+	return;
+    }
+    // Update all the detected active members.
+    active.forEach((member) => {
+	MemberIsActiveInVoiceChat(member);
+    });
+    RankGuildMembers(guild);
+});
+
+// Set up a 60-second heartbeat event. Take care of things that need attention each minute.
+const oneMinute = 60 * 1000;
+setInterval(() => {
+  if (!botActive) {
     return;
   }
-  logVoiceStateUpdate(oldMember, newMember);
-  const guild = newMember.guild;
-  // Detect active voice users.
-  const active = DiscordUtil.GetVoiceActiveMembers(guild);
-  if (active.length < 2) {
-    // No points because there are less than 2 people online & active.
-    return;
-  }
-  // Update all the detected active members.
-  active.forEach((member) => {
-    MemberIsActiveInVoiceChat(member);
-  });
-  RankGuildMembers(guild);
+  // Routine backup.
+  UserCache.WriteDirtyUsersToDatabase(db.getConnection());
+}, oneMinute);
+
+// Login the Commissar bot to Discord.
+console.log('Connecting the Discord bot.');
+client.login(config.discordBotToken);
+
+// Waits for the database and bot to both be connected, then finishes booting the bot.
+function waitForEverythingToConnect() {
+    console.log('Waiting for everything to connect.', db.isConnected(), discordConnected);
+    if (!db.isConnected() || !discordConnected) {
+	setTimeout(waitForEverythingToConnect, 1000);
+	return;
+    }
+    console.log('Everything connected.');
+    console.log('Loading commissar user data.');
+    UserCache.LoadAllUsersFromDatabase(db.getConnection(), () => {
+	console.log('Commissar user data loaded.');
+	for (let guild of client.guilds.values()) {
+	    RankGuildMembers(guild);
+	}
+	// Now the bot is booted and open for business!
+	botActive = true;
+    });
 }
 
-module.exports = {
-  guildMemberAdd,
-  guildMemberRemove,
-  minuteHeartbeat,
-  ready,
-  voiceStateUpdate,
-};
+waitForEverythingToConnect();
