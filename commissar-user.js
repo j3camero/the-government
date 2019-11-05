@@ -1,4 +1,5 @@
 const rankModule = require('./rank');
+const TimeUtil = require('./time-util');
 
 // This class represents a member of the clan.
 
