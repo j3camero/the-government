@@ -260,6 +260,7 @@ module.exports = {
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     LoadAllUsersFromDatabase,
+    MaybeDecayParticipationPoints,
     UpdateRanks,
     WriteAllUsersToDatabase,
     WriteDirtyUsersToDatabase,

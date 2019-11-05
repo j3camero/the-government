@@ -23,36 +23,41 @@ const participationDecay = 0.9962;
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
-  // Look up the IDs of the 3 big categories.
-  const grunts = DiscordUtil.GetRoleByName(member.guild, 'Grunts');
-  const officers = DiscordUtil.GetRoleByName(member.guild, 'Officers');
-  const generals = DiscordUtil.GetRoleByName(member.guild, 'Generals');
+  // Look up the IDs of the 4 big categories.
+  const grunts = DiscordUtil.GetRoleByName(member.guild, 'Grunt');
+  const officers = DiscordUtil.GetRoleByName(member.guild, 'Officer');
+  const generals = DiscordUtil.GetRoleByName(member.guild, 'General');
+  const marshals = DiscordUtil.GetRoleByName(member.guild, 'Marshal');
   // Work out which roles are being added and which removed.
   let addThisRole;
   let removeTheseRoles;
   switch (rankName) {
-    case 'Grunts':
+    case 'Grunt':
       addThisRole = grunts;
-      removeTheseRoles = [officers, generals];
+      removeTheseRoles = [officers, generals, marshals];
       break;
-    case 'Officers':
+    case 'Officer':
       addThisRole = officers;
-      removeTheseRoles = [grunts, generals];
+      removeTheseRoles = [grunts, generals, marshals];
       break;
-    case 'Generals':
+    case 'General':
       addThisRole = generals;
-      removeTheseRoles = [grunts, officers];
+      removeTheseRoles = [grunts, officers, marshals];
+      break;
+    case 'Marshal':
+      addThisRole = marshals;
+      removeTheseRoles = [grunts, officers, generals];
       break;
     default:
       throw `Invalid rank category name: ${rankName}`;
   };
   // Add role.
-  if (member._roles.indexOf(addThisRole) < 0) {
+  if (addThisRole && member._roles.indexOf(addThisRole) < 0) {
     member.addRole(addThisRole);
   }
   // Remove roles.
   removeTheseRoles.forEach((roleToRemove) => {
-    if (member._roles.indexOf(roleToRemove) >= 0) {
+    if (roleToRemove && member._roles.indexOf(roleToRemove) >= 0) {
       member.removeRole(roleToRemove);
     }
   });
@@ -175,7 +180,7 @@ function UpdateMemberAppearance(member, promotions) {
 	const yesterday = TimeUtil.YesterdayDateStamp();
 	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment().format(), () => {
 	    // Try updating the member again after the new user record has been created.
-	    UpdateMemberAppearance(member);
+	    UpdateMemberAppearance(member, promotions);
 	});
 	return;
     }
@@ -194,7 +199,7 @@ function UpdateMemberAppearance(member, promotions) {
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData.role);
     // If a guild member got promoted, announce it.
-    const promoted = promotions.includes(cu.discord_id);
+    const promoted = promotions.includes(cu.commissar_id);
     if (promoted) {
 	const msg = `${nickname_with_insignia} is promoted to ${rankData.title} ${rankData.insignia}`;
 	console.log(msg);
@@ -209,6 +214,58 @@ function UpdateAllDiscordMemberAppearances(promotions) {
 	    UpdateMemberAppearance(member, promotions);
 	});
     });
+}
+
+function SetupRolesInNewGuild(guild) {
+    console.log('Setting up roles in guild', guild.name);
+    const gruntPermissions = [
+	'READ_MESSAGES', 'VIEW_CHANNEL', 'SEND_MESSAGES', 'EMBED_LINKS',
+	'ATTACH_FILES', 'READ_MESSAGE_HISTORY', 'ADD_REACTIONS',
+	'CONNECT', 'SPEAK', 'USE_VAD',
+    ];
+    const officerPermissions = gruntPermissions.concat([
+	'USE_EXTERNAL_EMOJIS',
+    ]);
+    const generalPermissions = officerPermissions.concat([
+	'CREATE_INSTANT_INVITE',
+    ]);
+    guild.createRole({
+	color: '#3ccc1a',
+	hoist: true,
+	mentionable: false,
+	name: 'Marshal',
+	permissions: generalPermissions,
+    });
+    guild.createRole({
+	color: 'GOLD',
+	hoist: true,
+	mentionable: false,
+	name: 'General',
+	permissions: generalPermissions,
+    });
+    guild.createRole({
+	color: '#d40000',
+	hoist: true,
+	mentionable: false,
+	name: 'Officer',
+	permissions: officerPermissions,
+    });
+    guild.createRole({
+	color: '#1750e2',
+	hoist: true,
+	mentionable: false,
+	name: 'Grunt',
+	position: 0,
+	permissions: gruntPermissions,
+    });
+    console.log('Created roles.');
+    const msg = ('Commissar is happy to be here. Check `Server Settings > Roles` to see ' +
+		 'your colorful new rank system. You level up by voice chatting with ' +
+		 'your comrades. Set permissions on any chatroom to only allow those with ' +
+		 'high enough rank. Tip: keep the new roles high in your role ordering ' +
+		 'for best effect. The Commissar role must stay above the others.');
+    const channel = DiscordUtil.GetMainChatChannel(guild);
+    channel.send(msg);
 }
 
 // This Discord event fires when the bot successfully connects to Discord.
@@ -242,15 +299,6 @@ client.on('guildMemberAdd', (member) => {
     }
 });
 
-// This Discord event fires when someone quits a Discord guild that the bot is a member of.
-client.on('guildMemberRemove', (member) => {
-    console.log('Someone left a guild.');
-    if (!botActive) {
-	return;
-    }
-    // Nothing to do here for now.
-});
-
 // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
 // unmutes, deafens, undefeans, and possibly other circumstances as well.
 client.on('voiceStateUpdate', (oldMember, newMember) => {
@@ -270,6 +318,33 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
     active.forEach((member) => {
 	MemberIsActiveInVoiceChat(member);
     });
+});
+
+client.on('guildCreate', (guild) => {
+    console.log('Joined a new guild:', guild.name);
+    const requiredPermissions = [
+	'MANAGE_ROLES', 'CHANGE_NICKNAME', 'MANAGE_NICKNAMES', 'SEND_MESSAGES',
+	'ATTACH_FILES', 'ADD_REACTIONS', 'SPEAK', 'READ_MESSAGES',
+	'EMBED_LINKS', 'READ_MESSAGE_HISTORY', 'CONNECT', 'USE_VAD',
+    ];
+    // Wait a few seconds to let the bot's permissions kick in.
+    setTimeout(() => {
+	console.log('Checking for minimum permissions.');
+	const satisfied = guild.me.hasPermission(requiredPermissions);
+	if (satisfied) {
+	    console.log('Minimum permissions satisfied.');
+	    SetupRolesInNewGuild(guild);
+	} else {
+	    console.log('Minimum permissions not satisfied. Leaving guild.');
+	    const msg = 'Commissar needs more permissions to work. Invite me again using http://secretclan.net';
+	    const channel = DiscordUtil.GetMainChatChannel(guild);
+	    channel.send(msg);
+	    setTimeout(() => {
+		// Storm out in a huff.
+		guild.leave();
+	    }, 2000);
+	}
+    }, 10 * 1000);
 });
 
 // Set up a 60-second heartbeat event. Take care of things that need attention each minute.

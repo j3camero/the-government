@@ -7,6 +7,7 @@ function GetRoleByName(guild, roleName) {
         return role.id;
     }
   }
+  return null;
 }
 
 // Checks if a Discord guild member has a role, by name.
