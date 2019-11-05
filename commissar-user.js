@@ -1,3 +1,5 @@
+const rankModule = require('./rank');
+
 // This class represents a member of the clan.
 
 class CommissarUser {
@@ -16,43 +18,59 @@ class CommissarUser {
     }
 
     setDiscordId(discord_id) {
+	if (discord_id !== this.discord_id) {
+	    this.dirty = true;
+	}
 	this.discord_id = discord_id;
-	this.dirty = true;
     }
 
     setSteamId(steam_id) {
+	if (steam_id !== this.steam_id) {
+	    this.dirty = true;
+	}
 	this.steam_id = steam_id;
-	this.dirty = true;
     }
 
     setNickname(nickname) {
+	if (nickname !== this.nickname) {
+	    this.dirty = true;
+	}
 	this.nickname = nickname;
-	this.dirty = true;
     }
 
     setRank(rank) {
+	if (rank !== this.rank) {
+	    this.dirty = true;
+	}
 	this.rank = rank;
-	this.dirty = true;
     }
 
     setParticipationScore(participation_score) {
+	if (participation_score !== this.participation_score) {
+	    this.dirty = true;
+	}
 	this.participation_score = participation_score;
-	this.dirty = true;
     }
 
     setParticipationUpdateDate(participation_update_date) {
+	if (participation_update_date !== this.participation_update_date) {
+	    this.dirty = true;
+	}
 	this.participation_update_date = participation_update_date;
-	this.dirty = true;
     }
 
     setRankLimit(rank_limit) {
+	if (rank_limit !== this.rank_limit) {
+	    this.dirty = true;
+	}
 	this.rank_limit = rank_limit;
-	this.dirty = true;
     }
 
     setRankLimitCooldown(rank_limit_cooldown) {
+	if (rank_limit_cooldown !== this.rank_limit_cooldown) {
+	    this.dirty = true;
+	}
 	this.rank_limit_cooldown = rank_limit_cooldown;
-	this.dirty = true;
     }
 
     writeToDatabase(connection) {
@@ -105,12 +123,16 @@ function LoadAllUsersFromDatabase(connection, callback) {
 
 // Write only the dirty records to the database.
 function WriteDirtyUsersToDatabase(connection) {
-    console.log(`Writing dirty users to the DB.`);
+    let firstOne = true;
     Object.keys(commissarUserCache).forEach((id) => {
 	const u = commissarUserCache[id];
 	if (u.dirty) {
-	    console.log(`    * ${u.nickname}`);
 	    u.writeToDatabase(connection);
+	    if (firstOne) {
+		console.log(`Writing dirty users to the DB.`);
+		firstOne = false;
+	    }
+	    console.log(`    * ${u.nickname}`);
 	}
     });
 }
@@ -172,12 +194,73 @@ function CreateNewDatabaseUser(connection, discord_id, steam_id, nickname, rank,
     });
 }
 
+// Sort and rank all clan members together. Return a list of promotions to announce.
+function UpdateRanks() {
+    let candidates = [];
+    Object.keys(commissarUserCache).forEach((commissar_id) => {
+	const user = commissarUserCache[commissar_id];
+	candidates.push(user);
+    });
+    // Sort the clan members for ranking purposes.
+    candidates.sort((a, b) => {
+	// Users tie with themselves.
+	if (a.commissar_id == b.commissar_id) {
+            return 0;
+	}
+	const ap = a.participation_score || 0;
+	const bp = b.participation_score || 0;
+	const threshold = 0.0000000001;
+	if (Math.abs(ap - bp) > threshold) {
+	    // Normal case: rank users by participation score.
+	    return ap - bp;
+	} else {
+	    // If the participation scores are close to equal, revert to seniority.
+	    return b.commissar_id - a.commissar_id;
+	}
+    });
+    const promotions = [];
+    const ranks = rankModule.GenerateIdealRanksSorted(candidates.length);
+    for (let i = 0; i < candidates.length; ++i) {
+	const c = candidates[i];
+	let r = ranks[i];
+	if (c.rank_limit && r > c.rank_limit) {
+	    // Enforce rank limit.
+	    r = c.rank_limit;
+	}
+	if (r > c.rank) {
+	    // Promotion detected.
+	    promotions.push(c.commissar_id);
+	}
+	candidates[i].setRank(r);
+    }
+    return promotions;
+}
+
+function MaybeDecayParticipationPoints() {
+    const participationDecay = 0.9962;
+    const today = TimeUtil.UtcDateStamp();
+    const yesterday = TimeUtil.YesterdayDateStamp();
+    Object.keys(commissarUserCache).forEach((commissar_id) => {
+	const cu = commissarUserCache[commissar_id];
+	if (!moment(cu.participation_update_date).isSame(today, 'day') &&
+	    !moment(cu.participation_update_date).isSame(yesterday, 'day')) {
+	    // The user has a participation score, but it's from before yesterday.
+	    const op = cu.participation_score;
+	    // Decay the score.
+	    cu.setParticipationScore(op * participationDecay);
+	    // The update date is yesterday in case they want to take part today.
+	    cu.setParticipationUpdateDate(yesterday);
+	}
+    });
+}
+
 module.exports = {
     CommissarUser,
     CreateNewDatabaseUser,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     LoadAllUsersFromDatabase,
+    UpdateRanks,
     WriteAllUsersToDatabase,
     WriteDirtyUsersToDatabase,
 };

@@ -8,10 +8,17 @@ const rank = require('./rank');
 const TimeUtil = require('./time-util');
 const UserCache = require('./commissar-user');
 
+// Create the Discord client. Does not connect yet.
+const client = new Discord.Client();
+
+// This flag sets to true once the bot is connected to Discord (but not yet booted).
+let discordConnected = false;
+
 // This flag sets to true once the bot is fully booted and ready to handle traffic.
 let botActive = false;
 
-// Daily decay of 0.9962 implies a half-life of 6 months (183 days).
+// Daily decay of 0.9962 implies a half-life of 6 months (183 days)
+// for the participation points.
 const participationDecay = 0.9962;
 
 // Updates a guild member's color.
@@ -69,105 +76,12 @@ function FilterUsername(username) {
     return s;
 }
 
-// Update the rank of a Discord guild member.
-//   rankIndex: the index of the member's new target rank.
-//   member: the Discord member object.
-//   guild: the Discord guild object.
-function ApplyRankToMember(rankIndex, member, guild) {
-  const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
-  if (cu.rank_limit) {
-      rankIndex = Math.min(rankIndex, cu.rank_limit);
-  }
-  const rankData = rank.metadata[rankIndex];
-    const nickname = FilterUsername(member.user.username)
-  if (nickname !== cu.nickname) {
-    cu.setNickname(nickname);
-  }
-  if (rankData.index !== cu.rank) {
-    cu.setRank(rankData.index);
-  }
-  // Update the participation score.
-  const today = TimeUtil.UtcDateStamp();
-  const yesterday = TimeUtil.YesterdayDateStamp();
-  if (!moment(cu.participation_update_date).isSame(today, 'day') &&
-      !moment(cu.participation_update_date).isSame(yesterday, 'day')) {
-    // The user has a participation score, but it's from before yesterday.
-    const op = cu.participation_score;
-    // Decay the score.
-    cu.setParticipationScore(op * participationDecay);
-    // The update date is yesterday in case they want to take part today.
-    cu.setParticipationUpdateDate(yesterday);
-  }
-  // Update nickname (including rank insignia).
-  const nickname_with_insignia = nickname + ' ' + rankData.insignia;
-  if (member.nickname != nickname_with_insignia) {
-    console.log('Update', nickname_with_insignia);
-    member.setNickname(nickname_with_insignia);
-  }
-  // Update role (including rank color).
-  UpdateMemberRankRoles(member, rankData.role);
-  // If a guild member got promoted, announce it.
-  // if (oldUser && oldUser.rankIndex && rankData.index > oldUser.rankIndex) {
-  //  const msg = `${nickname_with_insignia} is promoted to ${rankData.title} ${rankData.insignia}`;
-  //  const channel = DiscordUtil.GetMainChatChannel(guild);
-  //  channel.send(msg);
-  //}
-}
-
-function RankGuildMembers(guild) {
-  let candidates = [];
-  for (let member of guild.members.values()) {
-    if (!member.user.bot) {
-        candidates.push(member);
-    }
-  }
-  // Sort the guild members for ranking purposes.
-  candidates.sort((a, b) => {
-    // Users tie with themselves.
-    if (a.user.id == b.user.id) {
-        return 0;
-    }
-    // The ower of the guild sorts to the bottom.
-    if (a.user.id == guild.ownerID) {
-        return -1;
-    }
-    if (b.user.id == guild.ownerID) {
-        return 1;
-    }
-    // Load participation scores from the user cache.
-    const au = UserCache.GetCachedUserByDiscordId(a.user.id);
-    const bu = UserCache.GetCachedUserByDiscordId(b.user.id);
-    if (!au && !bu) {
-      // If no database found, revert to pure seniority.
-      return b.joinedTimestamp - a.joinedTimestamp;
-    }
-    // If one user has a database entry and the other doesn't, they win.
-    if (!au) {
-      return -1;
-    }
-    if (!bu) {
-      return 1;
-    }
-    const ap = au.participation_score || 0;
-    const bp = bu.participation_score || 0;
-    const threshold = 0.0000000001;
-    if (Math.abs(ap - bp) <= threshold) {
-      // If the participation scores are close to equal, revert to seniority.
-      return b.joinedTimestamp - a.joinedTimestamp;
-    } else {
-      // If all data is available, rank users by participation score.
-      return ap - bp;
-    }
-  });
-  console.log('Ranking', candidates.length, 'members.');
-  const ranks = rank.GenerateIdealRanksSorted(candidates.length);
-  for (let i = candidates.length - 1; i >= 0; --i) {
-    ApplyRankToMember(ranks[i], candidates[i], guild);
-  }
-}
-
 // Update the daily participation points for a user.
 function MaybeUpdateParticipationPoints(member) {
+    if (member.user.bot) {
+	// Ignore other bots.
+	return;
+    }
     const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
     if (!cu) {
 	return;
@@ -186,6 +100,10 @@ function MaybeUpdateParticipationPoints(member) {
 
 // Update a user's rank limit, if applicable.
 function MaybeUpdateRankLimit(member) {
+    if (member.user.bot) {
+	// Ignore other bots.
+	return;
+    }
     const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
     if (!cu.rank_limit || !cu.rank_limit_cooldown) {
 	// This user doesn't have a rank limit. Do nothing.
@@ -207,7 +125,20 @@ function MaybeUpdateRankLimit(member) {
     console.log('Updated rank limit for', member.nickname);
 }
 
+// This function triggers periodically for members active in voice chat.
+function MemberIsActiveInVoiceChat(member) {
+    if (member.user.bot) {
+	// Ignore other bots.
+	return;
+    }
+    MaybeUpdateParticipationPoints(member);
+    MaybeUpdateRankLimit(member);
+}
+
 function logVoiceStateUpdate(oldMember, newMember) {
+  if (oldMember.user.bot || newMember.user.bot) {
+    // Ignore other bots.
+  }
   if (oldMember.voiceChannelID == newMember.voiceChannelID) {
     // The user did not enter or leave a voice chat. Ignore this event.
     return;
@@ -230,15 +161,55 @@ function logVoiceStateUpdate(oldMember, newMember) {
   }
 }
 
-// This function triggers periodically for members active in voice chat.
-function MemberIsActiveInVoiceChat(member) {
-  MaybeUpdateParticipationPoints(member);
-  MaybeUpdateRankLimit(member);
+// Update the rank insignia, nickname, and roles of a Discord guild
+// member based on the latest info stored in the user cache.
+function UpdateMemberAppearance(member, promotions) {
+    if (member.user.bot) {
+	// Ignore other bots.
+	return;
+    }
+    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+    if (!cu) {
+	// We have no record of this Discord user. Create a new record in the cache.
+	console.log('New Discord user detected.');
+	const yesterday = TimeUtil.YesterdayDateStamp();
+	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment().format(), () => {
+	    // Try updating the member again after the new user record has been created.
+	    UpdateMemberAppearance(member);
+	});
+	return;
+    }
+    if (!cu.rank) {
+	// The user has not been assigned a rank yet. Bail.
+	return;
+    }
+    const rankData = rank.metadata[cu.rank];
+    const nickname = FilterUsername(member.user.username);
+    cu.setNickname(nickname);
+    const nickname_with_insignia = nickname + ' ' + rankData.insignia;
+    if (member.nickname != nickname_with_insignia && member.user.id !== member.guild.ownerID) {
+	console.log('Updated nickname', nickname_with_insignia);
+	member.setNickname(nickname_with_insignia);
+    }
+    // Update role (including rank color).
+    UpdateMemberRankRoles(member, rankData.role);
+    // If a guild member got promoted, announce it.
+    const promoted = promotions.includes(cu.discord_id);
+    if (promoted) {
+	const msg = `${nickname_with_insignia} is promoted to ${rankData.title} ${rankData.insignia}`;
+	console.log(msg);
+	const channel = DiscordUtil.GetMainChatChannel(member.guild);
+	channel.send(msg);
+    }
 }
 
-// Create the Discord client. Does not connect yet.
-const client = new Discord.Client();
-let discordConnected = false;
+function UpdateAllDiscordMemberAppearances(promotions) {
+    client.guilds.forEach((guild) => {
+	guild.members.forEach((member) => {
+	    UpdateMemberAppearance(member, promotions);
+	});
+    });
+}
 
 // This Discord event fires when the bot successfully connects to Discord.
 client.on('ready', () => {
@@ -248,8 +219,12 @@ client.on('ready', () => {
 
 // This Discord event fires when someone joins a Discord guild that the bot is a member of.
 client.on('guildMemberAdd', (member) => {
-    console.log('New member joined the server.');
+    console.log('Someone joined a guild.');
     if (!botActive) {
+	return;
+    }
+    if (member.user.bot) {
+	// Ignore other bots.
 	return;
     }
     const greeting = `Everybody welcome ${member.user.username} to the server!`;
@@ -258,20 +233,22 @@ client.on('guildMemberAdd', (member) => {
     const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
     if (!cu) {
 	// We have no record of this Discord user. Create a new record in the cache.
+	console.log('New Discord user detected.');
 	const yesterday = TimeUtil.YesterdayDateStamp();
-	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment.format(), () => {
-	    RankGuildMembers(member.guild);
+	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment().format(), () => {
+	    // Nothing to do for new users at this time.
+	    // They get picked up in the next ranking cycle.
 	});
     }
 });
 
 // This Discord event fires when someone quits a Discord guild that the bot is a member of.
 client.on('guildMemberRemove', (member) => {
-    console.log('Someone quit the server.');
+    console.log('Someone left a guild.');
     if (!botActive) {
 	return;
     }
-    RankGuildMembers(member.guild);
+    // Nothing to do here for now.
 });
 
 // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
@@ -293,18 +270,34 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
     active.forEach((member) => {
 	MemberIsActiveInVoiceChat(member);
     });
-    RankGuildMembers(guild);
 });
 
 // Set up a 60-second heartbeat event. Take care of things that need attention each minute.
 const oneMinute = 60 * 1000;
 setInterval(() => {
-  if (!botActive) {
-    return;
-  }
-  // Routine backup.
-  UserCache.WriteDirtyUsersToDatabase(db.getConnection());
+    if (!botActive) {
+	return;
+    }
+    console.log('Minute heartbeat');
+    // Routine backup.
+    UserCache.WriteDirtyUsersToDatabase(db.getConnection());
+    // Sort and rank the clan members all together.
+    const promotions = UserCache.UpdateRanks();
+    // Update the nickname, insignia, and roles of the members of the Discord channels.
+    UpdateAllDiscordMemberAppearances(promotions);
 }, oneMinute);
+
+// Set up an hourly heartbeat event. Take care of things that need
+// attention once an hour.
+const oneHour = 60 * oneMinute;
+setInterval(() => {
+    if (!botActive) {
+	return;
+    }
+    console.log('Hourly heartbeat');
+    // Participation points decay slowly over time.
+    UserCache.MaybeDecayParticipationPoints();
+}, oneHour);
 
 // Login the Commissar bot to Discord.
 console.log('Connecting the Discord bot.');
@@ -321,11 +314,10 @@ function waitForEverythingToConnect() {
     console.log('Loading commissar user data.');
     UserCache.LoadAllUsersFromDatabase(db.getConnection(), () => {
 	console.log('Commissar user data loaded.');
-	for (let guild of client.guilds.values()) {
-	    RankGuildMembers(guild);
-	}
+	console.log('Commissar is alive.');
 	// Now the bot is booted and open for business!
 	botActive = true;
+	UserCache.UpdateRanks();
     });
 }
 
