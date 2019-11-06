@@ -23,44 +23,56 @@ const participationDecay = 0.9962;
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
-  // Look up the IDs of the 4 big categories.
-  const grunts = DiscordUtil.GetRoleByName(member.guild, 'Grunt');
-  const officers = DiscordUtil.GetRoleByName(member.guild, 'Officer');
-  const generals = DiscordUtil.GetRoleByName(member.guild, 'General');
-  const marshals = DiscordUtil.GetRoleByName(member.guild, 'Marshal');
-  // Work out which roles are being added and which removed.
-  let addThisRole;
-  let removeTheseRoles;
-  switch (rankName) {
+    // Look up the IDs of the 4 big categories.
+    const grunts = DiscordUtil.GetRoleByName(member.guild, 'Grunt');
+    const officers = DiscordUtil.GetRoleByName(member.guild, 'Officer');
+    const generals = DiscordUtil.GetRoleByName(member.guild, 'General');
+    const marshals = DiscordUtil.GetRoleByName(member.guild, 'Marshal');
+    // Work out which roles are being added and which removed.
+    let addThisRole;
+    let removeTheseRoles;
+    switch (rankName) {
     case 'Grunt':
-      addThisRole = grunts;
-      removeTheseRoles = [officers, generals, marshals];
-      break;
+	addThisRole = grunts;
+	removeTheseRoles = [officers, generals, marshals];
+	break;
     case 'Officer':
-      addThisRole = officers;
-      removeTheseRoles = [grunts, generals, marshals];
-      break;
+	addThisRole = officers;
+	removeTheseRoles = [grunts, generals, marshals];
+	break;
     case 'General':
-      addThisRole = generals;
-      removeTheseRoles = [grunts, officers, marshals];
-      break;
+	addThisRole = generals;
+	removeTheseRoles = [grunts, officers, marshals];
+	break;
     case 'Marshal':
-      addThisRole = marshals;
-      removeTheseRoles = [grunts, officers, generals];
-      break;
+	addThisRole = marshals;
+	removeTheseRoles = [grunts, officers, generals];
+	break;
     default:
-      throw `Invalid rank category name: ${rankName}`;
-  };
-  // Add role.
-  if (addThisRole && member._roles.indexOf(addThisRole) < 0) {
-    member.addRole(addThisRole);
-  }
-  // Remove roles.
-  removeTheseRoles.forEach((roleToRemove) => {
-    if (roleToRemove && member._roles.indexOf(roleToRemove) >= 0) {
-      member.removeRole(roleToRemove);
+	throw `Invalid rank category name: ${rankName}`;
+    };
+    // Add role.
+    if (addThisRole && member._roles.indexOf(addThisRole) < 0) {
+	console.log(`Adding role ${addThisRole.name} to ${member.nickname}. `);
+	member.addRole(addThisRole)
+	    .then((member) => {
+		console.log('OK');
+	    }).catch((err) => {
+		console.log('ERROR!');
+	    });
     }
-  });
+    // Remove roles.
+    removeTheseRoles.forEach((roleToRemove) => {
+	if (roleToRemove && member._roles.indexOf(roleToRemove) >= 0) {
+	    console.log(`Removing role ${roleToRemove.name} from ${member.nickname}. `);
+	    member.removeRole(roleToRemove)
+		.then((member) => {
+		    console.log('OK');
+		}).catch((err) => {
+		    console.log('ERROR!');
+		});
+	}
+    });
 }
 
 // Removes some characters, replaces others.
@@ -193,8 +205,13 @@ function UpdateMemberAppearance(member, promotions) {
     cu.setNickname(nickname);
     const nickname_with_insignia = nickname + ' ' + rankData.insignia;
     if (member.nickname != nickname_with_insignia && member.user.id !== member.guild.ownerID) {
-	console.log('Updated nickname', nickname_with_insignia);
-	member.setNickname(nickname_with_insignia);
+	console.log(`Updating nickname ${nickname_with_insignia}. `);
+	member.setNickname(nickname_with_insignia)
+	    .then((member) => {
+		console.log('OK');
+	    }).catch((err) => {
+		console.log('ERROR!');
+	    });
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData.role);
