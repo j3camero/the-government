@@ -1,47 +1,18 @@
 
-function RangeRepeat(n, trials) {
-  const r = [];
-  for (let i = 1; i <= trials; ++i) {
-    for (let j = 1; j <= n; ++j) {
-      r.push(j);
-    }
-  }
-  return r;
-}
-
-function GenerateIdealRanks(n) {
-  // The first few dozen ranks are hard coded.
-  const ranks = [
-    1, 2, 3, 4, 5, 6, 7, 8,
-    1, 2, 3, 4, 5, 6, 7, 9, 8,
-    1, 2, 3, 4, 5, 6, 7, 10, 9, 8,
-    1, 2, 3, 4, 5, 6, 7, 11, 10, 9, 8,
-    1, 2, 3, 4, 5, 6, 7, 9, 8,
-  ];
-  if (n < ranks.length) {
-    return ranks.slice(0, n);
-  }
-  ranks.push(...RangeRepeat(8, 3));
-  // Keep adding ranks logarithmically.
-  ranks.push(...RangeRepeat(7, 8));
-  ranks.push(...RangeRepeat(6, 16));
-  ranks.push(...RangeRepeat(5, 32));
-  ranks.push(...RangeRepeat(4, 64));
-  ranks.push(...RangeRepeat(3, 128));
-  ranks.push(...RangeRepeat(2, 256));
-  if (n < ranks.length) {
-    return ranks.slice(0, n);
-  }
-  // When we run out of ranks, everyone extra is the lowest rank.
-  while (ranks.length < n) {
-    ranks.push(1);
-  }
-  return ranks;
-}
-
 function GenerateIdealRanksSorted(n) {
-  const ranks = GenerateIdealRanks(n);
-  return ranks.sort(function (a, b) { return a - b; });
+    const ranks = [];
+    let remaining = n;
+    let maxOccupants = 1;
+    for (let r = 13; r > 0; --r) {
+	const equalSlice = Math.floor(remaining / r);
+	const howMany = Math.min(equalSlice, maxOccupants);
+	for (let j = 0; j < howMany; ++j) {
+	    ranks.push(r);
+	}
+	maxOccupants *= 2;
+	remaining -= howMany;
+    }
+    return ranks.reverse();
 }
 
 const metadata = [
@@ -57,11 +28,11 @@ const metadata = [
     {index: 9, title: 'General', insignia: '★★', role: 'General'},
     {index: 10, title: 'General', insignia: '★★★', role: 'General'},
     {index: 11, title: 'General', insignia: '★★★★', role: 'General'},
+    {index: 12, title: 'Marshal', insignia: '★★★★★', role: 'Marshal'},
+    {index: 13, title: 'Mr. President', insignia: '★★★★★★★', role: 'Marshal'},
 ];
 
 module.exports = {
-    GenerateIdealRanks,
     GenerateIdealRanksSorted,
     metadata,
-    RangeRepeat,
 };
