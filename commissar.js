@@ -201,11 +201,16 @@ function UpdateMemberAppearance(member, promotions) {
 	return;
     }
     const rankData = rank.metadata[cu.rank];
-    const nickname = FilterUsername(member.user.username);
-    cu.setNickname(nickname);
-    const nickname_with_insignia = nickname + ' ' + rankData.insignia;
+    if (rankData.nicknameOverride) {
+	// Nickname override for special titles like 'Mr. President'.
+	cu.setNickname(rankData.nicknameOverride);
+    } else {
+	// Normal case: filter the user's own chosen Discord display name.
+	cu.setNickname(FilterUsername(member.user.username));
+    }
+    const nickname_with_insignia = cu.nickname + ' ' + rankData.insignia;
     if (member.nickname != nickname_with_insignia && member.user.id !== member.guild.ownerID) {
-	console.log(`Updating nickname ${nickname_with_insignia}. `);
+	console.log(`Updating nickname ${nickname_with_insignia}.`);
 	member.setNickname(nickname_with_insignia)
 	    .then((member) => {
 		console.log('OK');

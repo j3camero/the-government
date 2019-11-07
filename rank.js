@@ -1,9 +1,12 @@
 
 function GenerateIdealRanksSorted(n) {
-    const ranks = [];
-    let remaining = n;
+    const ranks = [14, 13];
+    if (n <= 2) {
+	return ranks.slice(0, n).reverse();
+    }
+    let remaining = n - 2;
     let maxOccupants = 1;
-    for (let r = 13; r > 0; --r) {
+    for (let r = 12; r > 0; --r) {
 	const equalSlice = Math.floor(remaining / r);
 	const howMany = Math.min(equalSlice, maxOccupants);
 	for (let j = 0; j < howMany; ++j) {
@@ -12,7 +15,8 @@ function GenerateIdealRanksSorted(n) {
 	maxOccupants *= 2;
 	remaining -= howMany;
     }
-    return ranks.reverse();
+    const rev = ranks.reverse();
+    return rev;
 }
 
 const metadata = [
@@ -29,7 +33,8 @@ const metadata = [
     {index: 10, title: 'General', insignia: '★★★', role: 'General'},
     {index: 11, title: 'General', insignia: '★★★★', role: 'General'},
     {index: 12, title: 'Marshal', insignia: '★★★★★', role: 'Marshal'},
-    {index: 13, title: 'Mr. President', insignia: '★★★★★★★', role: 'Marshal'},
+    {index: 13, title: 'Mr. Vice President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. Vice President'},
+    {index: 14, title: 'Mr. President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. President'},
 ];
 
 module.exports = {
