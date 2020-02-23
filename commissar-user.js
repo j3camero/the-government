@@ -1,3 +1,4 @@
+const fs = require('fs');
 const moment = require('moment');
 const rankModule = require('./rank');
 const TimeUtil = require('./time-util');
@@ -256,9 +257,26 @@ function MaybeDecayParticipationPoints() {
     });
 }
 
+function DumpAllDiscordUsersToJsonFile() {
+    const allUsers = {};
+    Object.keys(commissarUserCache).forEach((commissar_id) => {
+	const cu = commissarUserCache[commissar_id];
+	if (cu && cu.discord_id) {
+	    allUsers[cu.discord_id] = cu.nickname;
+	}
+    });
+    try {
+	const filename = 'discord-users.json';
+	fs.writeFileSync(filename, JSON.stringify(allUsers, null, 2));
+    } catch (err) {
+	console.error(err);
+    }
+}
+
 module.exports = {
     CommissarUser,
     CreateNewDatabaseUser,
+    DumpAllDiscordUsersToJsonFile,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     LoadAllUsersFromDatabase,

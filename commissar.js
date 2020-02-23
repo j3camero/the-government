@@ -2,6 +2,7 @@ const config = require('./config');
 const db = require('./database');
 const Discord = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const fs = require('fs');
 const log = require('./log');
 const moment = require('moment');
 const rank = require('./rank');
@@ -238,6 +239,48 @@ function UpdateAllDiscordMemberAppearances(promotions) {
     });
 }
 
+function DumpDiscordGuildMembersToTextFile() {
+    const membersByGuild = {};
+    client.guilds.forEach((guild) => {
+	const members = {};
+	guild.members.forEach((member) => {
+	    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+	    if (!cu) {
+		// User is missing. Probably by design. Don't add the user.
+		// Just ignore in this situation.
+		return;
+	    }
+	    members[member.user.id] = cu.nickname;
+	});
+	membersByGuild[guild.id] = members;
+    });
+    try {
+	const filename = 'guild-members.json';
+	fs.writeFileSync(filename, JSON.stringify(membersByGuild, null, 2));
+    } catch (err) {
+	console.error(err);
+    }
+}
+
+function DumpDiscordGuildsToTextFile() {
+    const guilds = {};
+    client.guilds.forEach((guild) => {
+	guilds[guild.id] = {
+	    memberCount: guild.memberCount,
+	    name: guild.name,
+	    ownerNickname: guild.owner.nickname,
+	    ownerUsername: guild.owner.user.username,
+	    region: guild.region,
+	};
+    });
+    try {
+	const filename = 'guilds.json';
+	fs.writeFileSync(filename, JSON.stringify(guilds, null, 2));
+    } catch (err) {
+	console.error(err);
+    }
+}
+
 function SetupRolesInNewGuild(guild) {
     console.log('Setting up roles in guild', guild.name);
     const gruntPermissions = [
@@ -382,6 +425,10 @@ setInterval(() => {
     const promotions = UserCache.UpdateRanks();
     // Update the nickname, insignia, and roles of the members of the Discord channels.
     UpdateAllDiscordMemberAppearances(promotions);
+    // Periodically dump various info to JSON files. Not used for storage.
+    DumpDiscordGuildMembersToTextFile();
+    DumpDiscordGuildsToTextFile();
+    UserCache.DumpAllDiscordUsersToJsonFile();
 }, oneMinute);
 
 // Set up an hourly heartbeat event. Take care of things that need
