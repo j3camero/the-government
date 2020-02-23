@@ -11,9 +11,18 @@ function GenerateIdealRanksSorted(n) {
     if (n <= ranks.length) {
 	return ranks.slice(0, n).reverse();
     }
-    // Officers and Grunts: same number at each rank.
+    // Officers: max 10 people per rank.
     let remaining = n - ranks.length;
-    for (let r = 7; r > 0; --r) {
+    for (let r = 7; r >= 4; --r) {
+	const equalSlice = Math.floor(remaining / r);
+	const howMany = Math.min(equalSlice, 10);
+	for (let j = 0; j < howMany; ++j) {
+	    ranks.push(r);
+	}
+	remaining -= howMany;
+    }
+    // Grunts: same number of people at each rank.
+    for (let r = 3; r >= 1; --r) {
 	const equalSlice = Math.floor(remaining / r);
 	for (let j = 0; j < equalSlice; ++j) {
 	    ranks.push(r);

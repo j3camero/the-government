@@ -53,8 +53,8 @@ describe('Rank', function() {
 	const ranks = rank.GenerateIdealRanksSorted(3000);
 	assert.equal(1, ranks[0]);
 	assert.equal(1, ranks[1]);
-	assert.equal(1, ranks[425]);
-	assert.equal(2, ranks[426]);
+	assert.equal(1, ranks[980]);
+	assert.equal(2, ranks[981]);
 	assert.equal(10, ranks[2994]);
 	assert.equal(10, ranks[2995]);
 	assert.equal(11, ranks[2996]);
@@ -65,10 +65,10 @@ describe('Rank', function() {
     it('Generate ideal ranks (100 case)', () => {
 	const ranks = rank.GenerateIdealRanksSorted(100);
 	assert.equal(1, ranks[0]);
-	assert.equal(1, ranks[11]);
-	assert.equal(2, ranks[12]);
-	assert.equal(2, ranks[23]);
-	assert.equal(3, ranks[24]);
+	assert.equal(1, ranks[13]);
+	assert.equal(2, ranks[14]);
+	assert.equal(2, ranks[27]);
+	assert.equal(3, ranks[28]);
 	assert.equal(10, ranks[94]);
 	assert.equal(10, ranks[95]);
 	assert.equal(11, ranks[96]);
