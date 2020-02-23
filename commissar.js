@@ -18,9 +18,9 @@ let discordConnected = false;
 // This flag sets to true once the bot is fully booted and ready to handle traffic.
 let botActive = false;
 
-// Daily decay of 0.9962 implies a half-life of 6 months (183 days)
+// Daily decay of 0.9923 implies a half-life of 3 months (90 days)
 // for the participation points.
-const participationDecay = 0.9962;
+const participationDecay = 0.9923;
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
