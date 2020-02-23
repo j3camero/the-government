@@ -1,22 +1,26 @@
 
 function GenerateIdealRanksSorted(n) {
-    const ranks = [14, 13];
-    if (n <= 2) {
+    // President, VP, and Generals.
+    const ranks = [
+	13, 12,
+	11, 11,
+	10, 10, 10,
+	9, 9, 9, 9,
+	8, 8, 8, 8, 8
+    ];
+    if (n <= ranks.length) {
 	return ranks.slice(0, n).reverse();
     }
-    let remaining = n - 2;
-    let maxOccupants = 1;
-    for (let r = 12; r > 0; --r) {
+    // Officers and Grunts: same number at each rank.
+    let remaining = n - ranks.length;
+    for (let r = 7; r > 0; --r) {
 	const equalSlice = Math.floor(remaining / r);
-	const howMany = Math.min(equalSlice, maxOccupants);
-	for (let j = 0; j < howMany; ++j) {
+	for (let j = 0; j < equalSlice; ++j) {
 	    ranks.push(r);
 	}
-	maxOccupants *= 2;
-	remaining -= howMany;
+	remaining -= equalSlice;
     }
-    const rev = ranks.reverse();
-    return rev;
+    return ranks.reverse();
 }
 
 const metadata = [
@@ -32,9 +36,8 @@ const metadata = [
     {index: 9, title: 'General', insignia: '★★', role: 'General'},
     {index: 10, title: 'General', insignia: '★★★', role: 'General'},
     {index: 11, title: 'General', insignia: '★★★★', role: 'General'},
-    {index: 12, title: 'Marshal', insignia: '★★★★★', role: 'Marshal'},
-    {index: 13, title: 'Mr. Vice President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. Vice President'},
-    {index: 14, title: 'Mr. President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. President'},
+    {index: 12, title: 'Mr. Vice President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. Vice President'},
+    {index: 13, title: 'Mr. President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. President'},
 ];
 
 module.exports = {
