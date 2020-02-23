@@ -4,9 +4,9 @@ function GenerateIdealRanksSorted(n) {
     const ranks = [
 	13, 12,
 	11, 11,
-	10, 10, 10,
-	9, 9, 9, 9,
-	8, 8, 8, 8, 8
+	10, 10, 10, 10,
+	9, 9, 9, 9, 9,
+	8, 8, 8, 8, 8, 8
     ];
     if (n <= ranks.length) {
 	return ranks.slice(0, n).reverse();
