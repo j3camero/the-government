@@ -86,7 +86,7 @@ function FilterUsername(username) {
 	    s += c;
 	}
     }
-    const maxNameLength = 16;
+    const maxNameLength = 18;
     s = s.trim().slice(0, maxNameLength).trim();
     if (s.length === 0) {
 	s = '???';
