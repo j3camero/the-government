@@ -260,100 +260,6 @@ function UpdateAllDiscordMemberAppearances(promotions) {
     });
 }
 
-function DumpDiscordGuildMembersToTextFile() {
-    const membersByGuild = {};
-    client.guilds.forEach((guild) => {
-	const members = {};
-	guild.members.forEach((member) => {
-	    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
-	    if (!cu) {
-		// User is missing. Probably by design. Don't add the user.
-		// Just ignore in this situation.
-		return;
-	    }
-	    members[member.user.id] = cu.nickname;
-	});
-	membersByGuild[guild.id] = members;
-    });
-    try {
-	const filename = 'guild-members.json';
-	fs.writeFileSync(filename, JSON.stringify(membersByGuild, null, 2));
-    } catch (err) {
-	console.error(err);
-    }
-}
-
-function DumpDiscordGuildsToTextFile() {
-    const guilds = {};
-    client.guilds.forEach((guild) => {
-	guilds[guild.id] = {
-	    memberCount: guild.memberCount,
-	    name: guild.name,
-	    ownerNickname: guild.owner.nickname,
-	    ownerUsername: guild.owner.user.username,
-	    region: guild.region,
-	};
-    });
-    try {
-	const filename = 'guilds.json';
-	fs.writeFileSync(filename, JSON.stringify(guilds, null, 2));
-    } catch (err) {
-	console.error(err);
-    }
-}
-
-function SetupRolesInNewGuild(guild) {
-    console.log('Setting up roles in guild', guild.name);
-    const gruntPermissions = [
-	'READ_MESSAGES', 'VIEW_CHANNEL', 'SEND_MESSAGES', 'EMBED_LINKS',
-	'ATTACH_FILES', 'READ_MESSAGE_HISTORY', 'ADD_REACTIONS',
-	'CONNECT', 'SPEAK', 'USE_VAD',
-    ];
-    const officerPermissions = gruntPermissions.concat([
-	'USE_EXTERNAL_EMOJIS',
-    ]);
-    const generalPermissions = officerPermissions.concat([
-	'CREATE_INSTANT_INVITE',
-    ]);
-    guild.createRole({
-	color: '#3ccc1a',
-	hoist: true,
-	mentionable: false,
-	name: 'Marshal',
-	permissions: generalPermissions,
-    });
-    guild.createRole({
-	color: 'GOLD',
-	hoist: true,
-	mentionable: false,
-	name: 'General',
-	permissions: generalPermissions,
-    });
-    guild.createRole({
-	color: '#d40000',
-	hoist: true,
-	mentionable: false,
-	name: 'Officer',
-	permissions: officerPermissions,
-    });
-    guild.createRole({
-	color: '#1750e2',
-	hoist: true,
-	mentionable: false,
-	name: 'Grunt',
-	position: 0,
-	permissions: gruntPermissions,
-    });
-    console.log('Created roles.');
-    const msg = ('Commissar is happy to be here. Check `Server Settings > Roles` to see ' +
-		 'your colorful new rank system. You level up by voice chatting with ' +
-		 'your comrades. Set permissions on any chatroom to only allow those with ' +
-		 'high enough rank. Tip: keep the new roles high in your role ordering ' +
-		 'for best effect. The Commissar role must stay above the others.');
-    const channel = DiscordUtil.GetMainChatChannel(guild);
-    channel.send(msg);
-}
-
 // This Discord event fires when the bot successfully connects to Discord.
 client.on('ready', () => {
     console.log('Discord bot connected.');
@@ -362,7 +268,7 @@ client.on('ready', () => {
 
 // This Discord event fires when someone joins a Discord guild that the bot is a member of.
 client.on('guildMemberAdd', (member) => {
-    console.log('Someone joined a guild.');
+    console.log('Someone joined the guild.');
     if (!botActive) {
 	return;
     }
@@ -406,33 +312,6 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
     });
 });
 
-client.on('guildCreate', (guild) => {
-    console.log('Joined a new guild:', guild.name);
-    const requiredPermissions = [
-	'MANAGE_ROLES', 'CHANGE_NICKNAME', 'MANAGE_NICKNAMES', 'SEND_MESSAGES',
-	'ATTACH_FILES', 'ADD_REACTIONS', 'SPEAK', 'READ_MESSAGES',
-	'EMBED_LINKS', 'READ_MESSAGE_HISTORY', 'CONNECT', 'USE_VAD',
-    ];
-    // Wait a few seconds to let the bot's permissions kick in.
-    setTimeout(() => {
-	console.log('Checking for minimum permissions.');
-	const satisfied = guild.me.hasPermission(requiredPermissions);
-	if (satisfied) {
-	    console.log('Minimum permissions satisfied.');
-	    SetupRolesInNewGuild(guild);
-	} else {
-	    console.log('Minimum permissions not satisfied. Leaving guild.');
-	    const msg = 'Commissar needs more permissions to work. Invite me again using http://secretclan.net';
-	    const channel = DiscordUtil.GetMainChatChannel(guild);
-	    channel.send(msg);
-	    setTimeout(() => {
-		// Storm out in a huff.
-		guild.leave();
-	    }, 2000);
-	}
-    }, 10 * 1000);
-});
-
 // Set up a 60-second heartbeat event. Take care of things that need attention each minute.
 const oneMinute = 60 * 1000;
 setInterval(() => {
@@ -444,12 +323,8 @@ setInterval(() => {
     UserCache.WriteDirtyUsersToDatabase(db.getConnection());
     // Sort and rank the clan members all together.
     const promotions = UserCache.UpdateRanks();
-    // Update the nickname, insignia, and roles of the members of the Discord channels.
+    // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances(promotions);
-    // Periodically dump various info to JSON files. Not used for storage.
-    DumpDiscordGuildMembersToTextFile();
-    DumpDiscordGuildsToTextFile();
-    UserCache.DumpAllDiscordUsersToJsonFile();
 }, oneMinute);
 
 // Set up an hourly heartbeat event. Take care of things that need
