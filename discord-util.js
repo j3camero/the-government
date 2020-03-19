@@ -58,6 +58,30 @@ function GetMainChatChannel(guild) {
   return null;
 }
 
+// The the "main" Discord Guild for the Secret Clan.
+function GetMainDiscordGuild(client) {
+    const guildID = '305840605328703500';
+    let exactMatch;
+    let bestMatch;
+    let minTimestamp;
+    client.guilds.forEach((guild) => {
+	if (guild.id === guildID) {
+	    exactMatch = guild;
+	}
+	if (!minTimestamp || guild.joinedTimestamp < minTimestamp) {
+	    bestMatch = guild;
+	    minTimestamp = guild.joinedTimestamp;
+	}
+    });
+    if (exactMatch) {
+	return exactMatch;
+    }
+    if (bestMatch) {
+	return bestMatch;
+    }
+    throw 'Error: Main Discord guild not found!';
+}
+
 // Returns a list of non-muted users active in voice channels right now.
 // Excludes alone users. Each user must be with another active user to count.
 function GetVoiceActiveMembers(guild) {
@@ -81,6 +105,7 @@ function GetVoiceActiveMembers(guild) {
 module.exports = {
   GetAllMatchingTextChannels,
   GetMainChatChannel,
+  GetMainDiscordGuild,
   GetRoleByName,
   GetVoiceActiveMembers,
   GuildMemberHasRole,

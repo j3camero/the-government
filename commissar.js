@@ -253,10 +253,9 @@ function UpdateMemberAppearance(member, promotions) {
 }
 
 function UpdateAllDiscordMemberAppearances(promotions) {
-    client.guilds.forEach((guild) => {
-	guild.members.forEach((member) => {
-	    UpdateMemberAppearance(member, promotions);
-	});
+    const guild = DiscordUtil.GetMainDiscordGuild(client);
+    guild.members.forEach((member) => {
+	UpdateMemberAppearance(member, promotions);
     });
 }
 
