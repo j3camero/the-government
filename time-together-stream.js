@@ -77,15 +77,6 @@ class TimeTogetherStream {
 	}
 	return output;
     }
-
-    popTimeTogetherSql(n) {
-	const items = this.popTimeTogether(n);
-	const sqlParts = [];
-	items.forEach((i) => {
-	    sqlParts.push('(' + i.loUserId + ',' + i.hiUserId + ',' + i.durationSeconds + ',' + i.dilutedSeconds + ')');
-	});
-	return 'INSERT INTO time_together (lo_user_id, hi_user_id, duration_seconds, diluted_seconds) VALUES ' + sqlParts.join(', ');
-    }
 };
 
 module.exports = TimeTogetherStream;

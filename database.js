@@ -53,7 +53,31 @@ setInterval(function () {
     }
 }, 8 * 60 * 1000);
 
+// Write these records to the database immediately without buffering.
+// Each record represents time spent together between a pair of
+// Commissar users.
+function writeTimeTogetherRecords(records) {
+    if (!connected) {
+	throw 'ERROR: tried to write to database while not connected.';
+    }
+    const sqlParts = [];
+    records.forEach((r) => {
+	sqlParts.push(`(${r.loUserId},${r.hiUserId},${r.durationSeconds},${r.dilutedSeconds})`);
+    });
+    const sql = (
+	'INSERT INTO time_together ' +
+	'(lo_user_id, hi_user_id, duration_seconds, diluted_seconds) ' +
+	'VALUES ' + sqlParts.join(', '));
+    connection.query(sql, (err, result) => {
+	if (err) {
+	    throw err;
+	}
+	console.log(`Wrote ${records.length} records to the time matrix.`);
+    });
+}
+
 module.exports = {
     getConnection,
     isConnected,
+    writeTimeTogetherRecords,
 };
