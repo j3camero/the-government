@@ -235,13 +235,7 @@ function UpdateMemberAppearance(member, promotions) {
 	    });
     }
     // Update role (including rank color).
-    let role = rankData.role;
-    if (member.user.id === member.guild.ownerID) {
-	// Guild owners have Marshal rank in their own Discords. They have regular rank
-	// in other Discords that they don't own.
-	role = 'Marshal';
-    }
-    UpdateMemberRankRoles(member, role);
+    UpdateMemberRankRoles(member, rankData.role);
     // If a guild member got promoted, announce it.
     const promoted = promotions.includes(cu.commissar_id);
     if (promoted) {
