@@ -53,6 +53,7 @@ CREATE TABLE time_together
     lo_user_id INT NOT NULL,
     hi_user_id INT NOT NULL,
     duration_seconds FLOAT NOT NULL,
+    diluted_seconds FLOAT NOT NULL,
     FOREIGN KEY (lo_user_id) REFERENCES users(commissar_id),
     FOREIGN KEY (hi_user_id) REFERENCES users(commissar_id),
     INDEX user_index (lo_user_id, hi_user_id)
