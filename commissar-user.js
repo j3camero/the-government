@@ -197,12 +197,17 @@ function CreateNewDatabaseUser(connection, discord_id, steam_id, nickname, rank,
     });
 }
 
-// Sort and rank all clan members together. Return a list of promotions to announce.
-function UpdateRanks() {
+// Sort and rank all members of a Discord guild. Return a list of promotions to announce.
+function UpdateRanks(guild) {
     let candidates = [];
-    Object.keys(commissarUserCache).forEach((commissar_id) => {
-	const user = commissarUserCache[commissar_id];
-	candidates.push(user);
+    guild.members.forEach((member) => {
+	if (member.user.bot) {
+	    return;
+	}
+	const cu = GetCachedUserByDiscordId(member.user.id);
+	if (cu) {
+	    candidates.push(cu);
+	}
     });
     // Sort the clan members for ranking purposes.
     candidates.sort((a, b) => {

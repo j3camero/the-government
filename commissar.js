@@ -320,8 +320,9 @@ setInterval(() => {
     console.log('Minute heartbeat');
     // Routine backup.
     UserCache.WriteDirtyUsersToDatabase(db.getConnection());
-    // Sort and rank the clan members all together.
-    const promotions = UserCache.UpdateRanks();
+    // Sort and rank the clan members.
+    const guild = DiscordUtil.GetMainDiscordGuild(client);
+    const promotions = UserCache.UpdateRanks(guild);
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances(promotions);
 }, oneMinute);
@@ -356,7 +357,6 @@ function waitForEverythingToConnect() {
 	console.log('Commissar is alive.');
 	// Now the bot is booted and open for business!
 	botActive = true;
-	UserCache.UpdateRanks();
     });
 }
 
