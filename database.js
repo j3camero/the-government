@@ -60,8 +60,14 @@ function writeTimeTogetherRecords(records) {
     if (!connected) {
 	throw 'ERROR: tried to write to database while not connected.';
     }
+    if (records.length === 0) {
+	return;
+    }
     const sqlParts = [];
     records.forEach((r) => {
+	if (!r.durationSeconds || r.durationSeconds <= 0 || !r.dilutedSeconds || r.dilutedSeconds <= 0) {
+	    return;
+	}
 	sqlParts.push(`(${r.loUserId},${r.hiUserId},${r.durationSeconds},${r.dilutedSeconds})`);
     });
     const sql = (

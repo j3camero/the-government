@@ -1,3 +1,4 @@
+const Clock = require('./clock');
 const config = require('./config');
 const db = require('./database');
 const Discord = require('discord.js');
@@ -6,6 +7,7 @@ const fs = require('fs');
 const log = require('./log');
 const moment = require('moment');
 const rank = require('./rank');
+const TimeTogetherStream = require('./time-together-stream');
 const TimeUtil = require('./time-util');
 const UserCache = require('./commissar-user');
 
@@ -21,6 +23,9 @@ let botActive = false;
 // Daily decay of 0.9923 implies a half-life of 3 months (90 days)
 // for the participation points.
 const participationDecay = 0.9923;
+
+// Used for streaming time matrix data to the database.
+const timeTogetherStream = new TimeTogetherStream(new Clock());
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
@@ -253,6 +258,32 @@ function UpdateAllDiscordMemberAppearances(promotions) {
     });
 }
 
+// Looks for 2 or more users in voice channels together and credits them.
+function UpdateVoiceActiveMembers() {
+    const guild = DiscordUtil.GetMainDiscordGuild(client);
+    const listOfLists = [];
+    guild.channels.forEach((channel) => {
+	if (channel.type === 'voice') {
+	    const channelActive = [];
+	    channel.members.forEach((member) => {
+		if (member.mute) {
+		    return;
+		}
+		const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+		if (!cu) {
+		    // Shouldn't happen, but ignore and hope for recovery.
+		    return;
+		}
+		channelActive.push(cu.commissar_id);
+	    });
+	    if (channelActive.length >= 2) {
+		listOfLists.push(channelActive);
+	    }
+	}
+    });
+    timeTogetherStream.seenTogether(listOfLists);
+}
+
 // This Discord event fires when the bot successfully connects to Discord.
 client.on('ready', () => {
     console.log('Discord bot connected.');
@@ -292,17 +323,7 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 	return;
     }
     logVoiceStateUpdate(oldMember, newMember);
-    const guild = newMember.guild;
-    // Detect active voice users.
-    const active = DiscordUtil.GetVoiceActiveMembers(guild);
-    if (active.length < 2) {
-	// No points because there are less than 2 people online & active.
-	return;
-    }
-    // Update all the detected active members.
-    active.forEach((member) => {
-	MemberIsActiveInVoiceChat(member);
-    });
+    UpdateVoiceActiveMembers();
 });
 
 // Set up a 60-second heartbeat event. Take care of things that need attention each minute.
@@ -319,6 +340,10 @@ setInterval(() => {
     const promotions = UserCache.UpdateRanks(guild);
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances(promotions);
+    // Update time matrix and sync to database.
+    UpdateVoiceActiveMembers();
+    const recordsToSync = timeTogetherStream.popTimeTogether(9000);
+    db.writeTimeTogetherRecords(recordsToSync);
 }, oneMinute);
 
 // Set up an hourly heartbeat event. Take care of things that need

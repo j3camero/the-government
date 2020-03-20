@@ -82,31 +82,10 @@ function GetMainDiscordGuild(client) {
     throw 'Error: Main Discord guild not found!';
 }
 
-// Returns a list of non-muted users active in voice channels right now.
-// Excludes alone users. Each user must be with another active user to count.
-function GetVoiceActiveMembers(guild) {
-  let guildActive = [];
-  guild.channels.forEach((channel) => {
-    if (channel.type === 'voice') {
-      const channelActive = [];
-      channel.members.forEach((member) => {
-        if (!member.mute) {
-          channelActive.push(member);
-        }
-      });
-      if (channelActive.length >= 2) {
-        guildActive = guildActive.concat(channelActive);
-      }
-    }
-  });
-  return guildActive;
-}
-
 module.exports = {
   GetAllMatchingTextChannels,
   GetMainChatChannel,
   GetMainDiscordGuild,
   GetRoleByName,
-  GetVoiceActiveMembers,
   GuildMemberHasRole,
 };

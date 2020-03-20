@@ -19,7 +19,7 @@ class TimeTogetherStream {
 	const deltaT = currentTime - this.lastTimeMillis;
 	this.lastTimeMillis = currentTime;
 	const maxDelta = 6 * 3600 * 1000;
-	if (deltaT > maxDelta) {
+	if (deltaT > maxDelta || deltaT <= 0) {
 	    // Don't add huge chunks of time at once. It should be added a
 	    // few minutes at a time max. This is a safety measure to
 	    // prevent epic timespans being added suddenly by accident and
@@ -45,7 +45,7 @@ class TimeTogetherStream {
     // n: number of people present, including a and b. Used to calculate
     //    diluted time.
     bufferTimeTogether(a, b, deltaT, n) {
-	if (n < 2) {
+	if (n < 2 || deltaT <= 0) {
 	    return;
 	}
 	const durationSeconds = deltaT / 1000;
