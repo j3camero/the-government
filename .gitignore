@@ -8,3 +8,6 @@ package-lock.json
 
 # Config file.
 config.js
+
+# My TODO list for tasks.
+TODO.txt
