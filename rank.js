@@ -188,22 +188,21 @@ function GetUserWithHighestParticipationScore(candidates) {
     return maxUserRecord;
 }
 
-function FilterFullBosses(bosses, maxDirects) {
-    const newBosses = [];
-    bosses.forEach((boss) => {
-	if (boss.children.length < maxDirects) {
-	    newBosses.push(boss);
-	}
-    });
-    return newBosses;
+// Remove a value from an array by value.
+// Modifies the original array in-place and also returns it.
+function RemoveByValue(arr, valueToRemove) {
+    const index = arr.indexOf(valueToRemove);
+    if (index !== -1) {
+	arr.splice(index, 1);
+    }
+    return arr;
 }
 
 // Calculate chain of command.
 //
 //   - presidentID: the Commissar ID of the chosen President to head
 //                  the chain of command.
-//   - candidates: an object mapping Commissar ID keys to CommissarUser
-//                 objects from the user cache.
+//   - candidates: a list of integer user IDs to include in the ranking.
 //   - relationships: a list of relationship records. Each record
 //                    represents a relationship between a pair of
 //                    people. Fields:
@@ -223,18 +222,54 @@ function FilterFullBosses(bosses, maxDirects) {
 // This function is pure ranking logic, with no connection to database
 // calls or other external dependencies. It is unit-testable offline.
 function CalculateChainOfCommand(presidentID, candidates, relationships) {
-    return {
-	1: {
-	    id: 1,
-	    boss: 2,
-	    rank: 1,
-	},
-	2: {
-	    id: 2,
-	    children: [1],
-	    rank: 0,
-	},
-    };
+    if (!candidates.includes(presidentID)) {
+	throw new Error('Invalid Presidential candidate.');
+    }
+    const chain = {};
+    candidates.forEach((id) => {
+	chain[id] = { id };
+    });
+    // Mr. President is the first boss.
+    const mrPresident = chain[presidentID];
+    mrPresident.rank = 0;
+    RemoveByValue(candidates, presidentID);
+    // Fill the ranks from top to bottom, choosing minions one by one.
+    // When the minion rank fills up, the minions become the new bosses.
+    // Then the selection process continues, filling up the next rank.
+    let bosses = [mrPresident];
+    let bossRank = 0;
+    let bossMeta = rankMetadata[bossRank];
+    let minions = [];
+    let minionRank = 1;
+    let minionMeta = rankMetadata[minionRank];
+    while (candidates.length > 0) {
+	// Choose the next minion to add to the Chain of Command.
+	const minionID = candidates[0];
+	const minion = chain[minionID];
+	const boss = bosses[0];
+	minion.rank = minionRank;
+	minions.push(minion);
+	RemoveByValue(candidates, minionID);
+	// Associate the new minion with their chosen boss.
+	minion.boss = boss.id;
+	if (!boss.children) {
+	    boss.children = [];
+	}
+	boss.children.push(minionID);
+	// If the minion rank has been filled, then the minions become the new bosses.
+	if (minions.length >= minionMeta.count) {
+	    bosses = minions;
+	    bossRank += 1;
+	    minionRank += 1;
+	    if (minionRank >= rankMetadata.length) {
+		throw new Error('Not enough ranks for everyone! ' +
+				'Add more space in the rank structure.');
+	    }
+	    bossMeta = rankMetadata[bossRank];
+	    minionMeta = rankMetadata[minionRank];
+	}
+    }
+    return chain;
 }
 
 module.exports = {

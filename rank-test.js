@@ -76,6 +76,23 @@ describe('Rank', function() {
 	assert.equal(12, ranks[98]);
 	assert.equal(13, ranks[99]);
     });
+    it('Chain of command with zero users', () => {
+	const presidentID = 0;
+	const candidates = [];
+	const relationships = [];
+	assert.throws(() => {
+	    rank.CalculateChainOfCommand(presidentID, candidates, relationships)
+	});
+    });
+    it('1 person chain of command', () => {
+	const presidentID = 7;
+	const candidates = [7];
+	const relationships = [];
+	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	assert.deepEqual(chain, {
+	    7: { id: 7, rank: 0 },  // President.
+	});
+    });
     it('2 person chain of command', () => {
 	const presidentID = 2;
 	const candidates = [1, 2];
@@ -84,8 +101,19 @@ describe('Rank', function() {
 	];
 	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
-	    2: { id: 2, children: [1], rank: 0 },
-	    1: { id: 1, boss: 2, rank: 1, },
+	    2: { id: 2, children: [1], rank: 0 },  // President.
+	    1: { id: 1, boss: 2, rank: 1, },  // Vice President.
+	});
+    });
+    it('3 person chain of command', () => {
+	const presidentID = 2;
+	const candidates = [1, 2, 3];
+	const relationships = [];
+	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	assert.deepEqual(chain, {
+	    2: { id: 2, children: [1], rank: 0 },  // President.
+	    1: { id: 1, boss: 2, children: [3], rank: 1, },  // Vice President.
+	    3: { id: 3, boss: 1, rank: 2, },  // General 4.
 	});
     });
 });
