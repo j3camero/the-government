@@ -75,5 +75,17 @@ describe('Rank', function() {
 	assert.equal(11, ranks[97]);
 	assert.equal(12, ranks[98]);
 	assert.equal(13, ranks[99]);
-  });
+    });
+    it('2 person chain of command', () => {
+	const presidentID = 2;
+	const candidates = [1, 2];
+	const relationships = [
+	    {lo_user_id: 1, hi_user_id: 2, discounted_diluted_seconds: 7},
+	];
+	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	assert.deepEqual(chain, {
+	    2: { id: 2, children: [1], rank: 0 },
+	    1: { id: 1, boss: 2, rank: 1, },
+	});
+    });
 });

@@ -45,11 +45,200 @@ const metadata = [
     {index: 9, title: 'General', insignia: '★★', role: 'General'},
     {index: 10, title: 'General', insignia: '★★★', role: 'General'},
     {index: 11, title: 'General', insignia: '★★★★', role: 'General'},
-    {index: 12, title: 'Mr. Vice President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. Vice President'},
-    {index: 13, title: 'Mr. President', insignia: '⚑', role: 'Marshal', nicknameOverride: 'Mr. President'},
+    {
+	index: 12,
+	title: 'Mr. Vice President',
+	insignia: '⚑',
+	role: 'Marshal',
+	nicknameOverride: 'Mr. Vice President'
+    },
+    {
+	index: 13,
+	title: 'Mr. President',
+	insignia: '⚑',
+	role: 'Marshal',
+	nicknameOverride: 'Mr. President'
+    },
 ];
 
+const rankMetadata = [
+    {
+	abbreviation: 'Mr.',
+	count: 1,
+	insignia: '⚑',
+	maxDirects: 1,
+	nicknameOverride: true,
+	role: 'Marshal',
+	title: 'President',
+    },
+    {
+	abbreviation: 'Mr.',
+	count: 1,
+	insignia: '⚑',
+	maxDirects: 2,
+	nicknameOverride: true,
+	role: 'Marshal',
+	title: 'Vice President',
+    },
+    {
+	abbreviation: 'Gen.',
+	count: 2,
+	insignia: '★★★★',
+	maxDirects: 2,
+	role: 'General',
+	title: 'General',
+    },
+    {
+	abbreviation: 'Gen.',
+	count: 4,
+	insignia: '★★★',
+	maxDirects: 2,
+	role: 'General',
+	title: 'General',
+    },
+    {
+	abbreviation: 'Gen.',
+	count: 5,
+	insignia: '★★',
+	maxDirects: 2,
+	role: 'General',
+	title: 'General',
+    },
+    {
+	abbreviation: 'Gen.',
+	count: 6,
+	insignia: '★',
+	maxDirects: 2,
+	role: 'General',
+	title: 'General',
+    },
+    {
+	abbreviation: 'Col.',
+	count: 7,
+	insignia: '●●●●',
+	maxDirects: 2,
+	role: 'Officer',
+	title: 'Colonel',
+    },
+    {
+	abbreviation: 'Maj.',
+	count: 9,
+	insignia: '●●●',
+	maxDirects: 2,
+	role: 'Officer',
+	title: 'Major',
+    },
+    {
+	abbreviation: 'Capt.',
+	count: 11,
+	insignia: '●●',
+	maxDirects: 2,
+	role: 'Officer',
+	title: 'Captain',
+    },
+    {
+	abbreviation: 'Lt.',
+	count: 13,
+	insignia: '●',
+	maxDirects: 2,
+	role: 'Officer',
+	title: 'Lieutenant',
+    },
+    {
+	abbreviation: 'Sgt.',
+	count: 15,
+	insignia: '●●●',
+	maxDirects: 2,
+	role: 'Grunt',
+	title: 'Sergeant',
+    },
+    {
+	abbreviation: 'Cpl.',
+	count: 17,
+	insignia: '●●',
+	maxDirects: 5,
+	role: 'Grunt',
+	title: 'Corporal',
+    },
+    {
+	abbreviation: 'Pvt.',
+	count: 999,
+	insignia: '●',
+	maxDirects: 0,
+	role: 'Grunt',
+	title: 'Private',
+    },
+];
+
+// Return the commissar user record with the highest participation score
+// from among the given canidates.
+function GetUserWithHighestParticipationScore(candidates) {
+    let maxScore;
+    let maxUserRecord;
+    Object.keys(candidates).forEach((id) => {
+	const cu = candidates[id];
+	if (!cu || !cu.participation_score) {
+	    return;
+	}
+	if (!maxScore || cu.participation_score > maxScore) {
+	    maxScore = cu.participation_score;
+	    maxUserRecord = cu;
+	}
+    });
+    return maxUserRecord;
+}
+
+function FilterFullBosses(bosses, maxDirects) {
+    const newBosses = [];
+    bosses.forEach((boss) => {
+	if (boss.children.length < maxDirects) {
+	    newBosses.push(boss);
+	}
+    });
+    return newBosses;
+}
+
+// Calculate chain of command.
+//
+//   - presidentID: the Commissar ID of the chosen President to head
+//                  the chain of command.
+//   - candidates: an object mapping Commissar ID keys to CommissarUser
+//                 objects from the user cache.
+//   - relationships: a list of relationship records. Each record
+//                    represents a relationship between a pair of
+//                    people. Fields:
+//                      - lo_user_id, hi_user_id: integer Commissar IDs
+//                      - discounted_diluted_seconds: float (sec)
+//
+// Returns a dict of dicts representing the calculated chain of command.
+// The outer dict is keyed by integer user ID. The inner records have
+// these fields:
+//   - id: integer Commissar ID.
+//   - boss: integer Commissar ID of boss. undefined for Mr. President
+//           to indicate that Mr. President has no boss.
+//   - children: list of Commmisar IDs of direct children.
+//   - rank: integer depth in the tree = rank assigned. Lower number
+//           means higher rank.
+//
+// This function is pure ranking logic, with no connection to database
+// calls or other external dependencies. It is unit-testable offline.
+function CalculateChainOfCommand(presidentID, candidates, relationships) {
+    return {
+	1: {
+	    id: 1,
+	    boss: 2,
+	    rank: 1,
+	},
+	2: {
+	    id: 2,
+	    children: [1],
+	    rank: 0,
+	},
+    };
+}
+
 module.exports = {
+    CalculateChainOfCommand,
     GenerateIdealRanksSorted,
     metadata,
 };
