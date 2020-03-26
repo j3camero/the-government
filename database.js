@@ -1,4 +1,5 @@
 const config = require('./config');
+const fs = require('fs');
 const mysql = require('mysql');
 
 let connected = false;
@@ -82,8 +83,26 @@ function writeTimeTogetherRecords(records) {
     });
 }
 
+// Query the database for the latest time matrix.
+// On success, calls the given callback with a list of entries from the time matrix.
+function getTimeMatrix(callback) {
+    const sqlFilename = 'discounted-time-matrix.sql';
+    fs.readFile(sqlFilename, 'utf8', function(err, sqlQuery) {
+	if (err) {
+	    throw err;
+	}
+	connection.query(sqlQuery, (err, results, fields) => {
+	    if (err) {
+		throw err;
+	    }
+	    callback(results);
+	});
+    });
+}
+
 module.exports = {
     getConnection,
+    getTimeMatrix,
     isConnected,
     writeTimeTogetherRecords,
 };
