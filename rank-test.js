@@ -102,18 +102,55 @@ describe('Rank', function() {
 	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
 	    2: { id: 2, children: [1], rank: 0 },  // President.
-	    1: { id: 1, boss: 2, rank: 1, },  // Vice President.
+	    1: { id: 1, boss: 2, rank: 1 },  // Vice President.
 	});
     });
     it('3 person chain of command', () => {
 	const presidentID = 2;
 	const candidates = [1, 2, 3];
-	const relationships = [];
+	const relationships = [
+	    {lo_user_id: 2, hi_user_id: 3, discounted_diluted_seconds: 7},
+	];
 	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
-	    2: { id: 2, children: [1], rank: 0 },  // President.
-	    1: { id: 1, boss: 2, children: [3], rank: 1, },  // Vice President.
-	    3: { id: 3, boss: 1, rank: 2, },  // General 4.
+	    2: { id: 2, children: [3], rank: 0 },  // President.
+	    3: { id: 3, boss: 2, children: [1], rank: 1 },  // Vice President.
+	    1: { id: 1, boss: 3, rank: 2 },  // General 4.
+	});
+    });
+    it('4 person chain of command', () => {
+	const presidentID = 4;
+	const candidates = [1, 2, 3, 4];
+	const relationships = [
+	    {lo_user_id: 3, hi_user_id: 4, discounted_diluted_seconds: 7},
+	];
+	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	assert.deepEqual(chain, {
+	    4: { id: 4, children: [3], rank: 0 },  // President.
+	    3: { id: 3, boss: 4, children: [1, 2], rank: 1 },  // Vice President.
+	    1: { id: 1, boss: 3, rank: 2 },  // General 4.
+	    2: { id: 2, boss: 3, rank: 2 },  // General 4.
+	});
+    });
+    it('9 person chain of command', () => {
+	const presidentID = 3;
+	const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+	const relationships = [
+	    {lo_user_id: 2, hi_user_id: 3, discounted_diluted_seconds: 1},
+	    {lo_user_id: 1, hi_user_id: 2, discounted_diluted_seconds: 1},
+	    {lo_user_id: 2, hi_user_id: 4, discounted_diluted_seconds: 1},
+	];
+	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	assert.deepEqual(chain, {
+	    3: { id: 3, children: [2], rank: 0 },  // President.
+	    2: { id: 2, boss: 3, children: [1, 4], rank: 1 },  // Vice President.
+	    1: { id: 1, boss: 2, children: [5, 6], rank: 2 },  // General 4.
+	    4: { id: 4, boss: 2, children: [7, 8], rank: 2 },  // General 4.
+	    5: { id: 5, boss: 1, children: [9], rank: 3 },  // General 3.
+	    6: { id: 6, boss: 1, rank: 3 },  // General 3.
+	    7: { id: 7, boss: 4, rank: 3 },  // General 3.
+	    8: { id: 8, boss: 4, rank: 3 },  // General 3.
+	    9: { id: 9, boss: 5, rank: 4 },  // General 2.
 	});
     });
     it('Relationships to time matrix', () => {
@@ -121,7 +158,7 @@ describe('Rank', function() {
 	const relationships = [
 	    {lo_user_id: 1, hi_user_id: 2, discounted_diluted_seconds: 7},
 	];
-	const matrix = rank.RelationshipsToTimeMatrix(relationships, candidates);
+	const matrix = rank.ConvertRelationshipsToTimeMatrix(relationships, candidates);
 	// Users 1 and 2 have the same relationships as in the input.
 	assert.equal(matrix[1][2], 7);
 	// The other 2 relationships get tiny subsidies.
@@ -148,5 +185,119 @@ describe('Rank', function() {
 	const arr = [1, 2, 3];
 	rank.RemoveByValue(arr, 2);
 	assert.deepEqual(arr, [1, 3]);
+    });
+    it('Superiors null case', () => {
+	assert.deepEqual(rank.GetSuperiorIDs(null, null), []);
+    });
+    it('Superiors minimal case', () => {
+	const chain = {
+	    4: { id: 4 },
+	};
+	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [4]);
+    });
+    it('Superiors one boss', () => {
+	const chain = {
+	    4: { id: 4 },
+	    7: { id: 7, boss: 4 },
+	};
+	assert.deepEqual(rank.GetSuperiorIDs(7, chain), [4, 7]);
+	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [4]);
+    });
+    it('Superiors two bosses', () => {
+	const chain = {
+	    4: { id: 4, boss: 5 },
+	    5: { id: 5 },
+	    7: { id: 7, boss: 4 },
+	};
+	assert.deepEqual(rank.GetSuperiorIDs(7, chain), [5, 4, 7]);
+	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [5, 4]);
+	assert.deepEqual(rank.GetSuperiorIDs(5, chain), [5]);
+    });
+    it('Superiors branch', () => {
+	const chain = {
+	    4: { id: 4, boss: 7 },
+	    5: { id: 5, boss: 7 },
+	    7: { id: 7 },
+	};
+	assert.deepEqual(rank.GetSuperiorIDs(7, chain), [7]);
+	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [7, 4]);
+	assert.deepEqual(rank.GetSuperiorIDs(5, chain), [7, 5]);
+    });
+    it('Matchmaking choose the only option', () => {
+	const chain = {
+	    4: { id: 4 },
+	};
+	const bosses = [chain[4]];
+	const candidates = [7];
+	const timeMatrix = {
+	    4: {
+		7: 1,
+	    },
+	};
+	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	assert.equal(match.bossID, 4);
+	assert.equal(match.minionID, 7);
+    });
+    it('Matchmaking choose the best boss', () => {
+	const chain = {
+	    4: { id: 4 },
+	    5: { id: 5 },
+	};
+	const bosses = [chain[4], chain[5]];
+	const candidates = [7];
+	const timeMatrix = {
+	    4: {
+		7: 1,
+	    },
+	    5: {
+		7: 2,  // Strongest relationship.
+	    },
+	};
+	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	assert.equal(match.bossID, 5);
+	assert.equal(match.minionID, 7);
+    });
+    it('Matchmaking choose the best minion', () => {
+	const chain = {
+	    5: { id: 5 },
+	};
+	const bosses = [chain[5]];
+	const candidates = [7, 8];
+	const timeMatrix = {
+	    5: {
+		7: 2,
+		8: 3,  // Strongest relationship.
+	    },
+	};
+	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	assert.equal(match.bossID, 5);
+	assert.equal(match.minionID, 8);
+    });
+    it('Matchmaking skip level override', () => {
+	const chain = {
+	    5: { id: 5 },
+	    6: { id: 6, boss: 5 },
+	    7: { id: 7, boss: 5 },
+	    8: { id: 8, boss: 6 },
+	    9: { id: 9, boss: 7 },
+	};
+	const bosses = [chain[8], chain[9]];
+	const candidates = [2];
+	const timeMatrix = {
+	    2: {
+		5: 1,
+		6: 2,
+		7: 4,
+		8: 6,  // Strongest single relationship, but gets overridden by #7 + #9.
+		9: 5,  // Choose this because #7 + #9 > #6 + #8 despite weaker direct bond.
+	    },
+	};
+	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	assert.equal(match.bossID, 9);
+	assert.equal(match.minionID, 2);
+    });
+    it('Matchmaking max directs', () => {
+	// TODO: test that the maxDirects field is enforced.
+	assert.equal(1, 1);
     });
 });

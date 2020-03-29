@@ -207,7 +207,7 @@ function RemoveByValue(arr, valueToRemove) {
 // closeness of their user IDs. This is done for symmetry-breaking
 // and stability reasons. New or inactive users will attach to
 // users who originally joined around the same time they did.
-function RelationshipsToTimeMatrix(relationships, candidates) {
+function ConvertRelationshipsToTimeMatrix(relationships, candidates) {
     const matrix = {};
     // First initialize every element of the matrix with a very small
     // subsidy for stability & symmetry-breaking.
@@ -242,6 +242,66 @@ function RelationshipsToTimeMatrix(relationships, candidates) {
     return matrix;
 }
 
+// Return a list of all this user's superiors' IDs, including their own.
+function GetSuperiorIDs(userID, chain) {
+    if (!userID) {
+	return [];
+    }
+    const bossID = chain[userID].boss;
+    const ids = GetSuperiorIDs(bossID, chain);
+    ids.push(userID);
+    return ids;
+}
+
+// Find the best match between a boss and a candidate.
+//
+// The matchmaker! This algorithm chooses everyone's boss.
+// Chooses the boss and candidate with the maximum total
+// time spent between the candidate and their new boss,
+// the boss' boss, and so on up the chain. Maximizes the
+// time spent between the candidate and the boss' entire
+// "chain of command". Imagine that the whole chain of
+// command gets a vote on who to choose next in line, not
+// just the immediate boss.
+//
+// bosses - a list of objects with details of the bosses.
+// candidates - a flat list of integer IDs.
+// timeMatrix - a matrix of the time spent between each
+//              pair of players.
+// chain - the chain of command so far.
+//
+// Returns the best match as an object like:
+//   { bossID: 6, minionID: 7 }
+function SelectBestMatch(bosses, candidates, timeMatrix, chain, maxDirects) {
+    let hiScore;
+    let bossID;
+    let minionID;
+    bosses.forEach((boss) => {
+	if (boss.children && boss.children.length >= maxDirects) {
+	    // Skip bosses that are already full with enough direct reports.
+	    return;
+	}
+	const chainOfCommandIDs = GetSuperiorIDs(boss.id, chain);
+	candidates.forEach((candID) => {
+	    let score = 0;
+	    chainOfCommandIDs.forEach((b) => {
+		const lo = b < candID ? b : candID;
+		const hi = b < candID ? candID : b;
+		score += timeMatrix[lo][hi];
+	    });
+	    if (!hiScore || score > hiScore) {
+		hiScore = score;
+		bossID = boss.id;
+		minionID = candID;
+	    }
+	});
+    });
+    return {
+	bossID,
+	minionID,
+    };
+}
+
 // Calculate chain of command.
 //
 //   - presidentID: the Commissar ID of the chosen President to head
@@ -269,6 +329,7 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
     if (!candidates.includes(presidentID)) {
 	throw new Error('Invalid Presidential candidate.');
     }
+    const timeMatrix = ConvertRelationshipsToTimeMatrix(relationships, candidates);
     const chain = {};
     candidates.forEach((id) => {
 	chain[id] = { id };
@@ -288,21 +349,22 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
     let minionMeta = rankMetadata[minionRank];
     while (candidates.length > 0) {
 	// Choose the next minion to add to the Chain of Command.
-	const minionID = candidates[0];
-	const minion = chain[minionID];
-	const boss = bosses[0];
+	const pair = SelectBestMatch(bosses, candidates, timeMatrix, chain, bossMeta.maxDirects);
+	const boss = chain[pair.bossID];
+	const minion = chain[pair.minionID];
 	minion.rank = minionRank;
 	minions.push(minion);
-	RemoveByValue(candidates, minionID);
+	RemoveByValue(candidates, minion.id);
 	// Associate the new minion with their chosen boss.
 	minion.boss = boss.id;
 	if (!boss.children) {
 	    boss.children = [];
 	}
-	boss.children.push(minionID);
+	boss.children.push(minion.id);
 	// If the minion rank has been filled, then the minions become the new bosses.
 	if (minions.length >= minionMeta.count) {
 	    bosses = minions;
+	    minions = [];
 	    bossRank += 1;
 	    minionRank += 1;
 	    if (minionRank >= rankMetadata.length) {
@@ -318,8 +380,10 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
 
 module.exports = {
     CalculateChainOfCommand,
+    ConvertRelationshipsToTimeMatrix,
     GenerateIdealRanksSorted,
+    GetSuperiorIDs,
     metadata,
-    RelationshipsToTimeMatrix,
     RemoveByValue,
+    SelectBestMatch,
 };
