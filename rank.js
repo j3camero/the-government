@@ -199,6 +199,49 @@ function RemoveByValue(arr, valueToRemove) {
     return arr;
 }
 
+// Convert a flat list of relationship records into a matrix format
+// keyed for efficient access by user ID.
+//
+// Pairs of candidates that have no recorded relationship are
+// assigned a fraction of a second of credit depending on the
+// closeness of their user IDs. This is done for symmetry-breaking
+// and stability reasons. New or inactive users will attach to
+// users who originally joined around the same time they did.
+function RelationshipsToTimeMatrix(relationships, candidates) {
+    const matrix = {};
+    // First initialize every element of the matrix with a very small
+    // subsidy for stability & symmetry-breaking.
+    for (let i = 0; i < candidates.length; ++i) {
+	const x = candidates[i];
+	const row = {};
+	for (let j = i + 1; j < candidates.length; ++j) {
+	    const y = candidates[j];
+	    // The maximum number of imaginary seconds that could
+	    // theoretically be handed out by this formula. The
+	    // subsidy is tiny, just enough to break the symmetries.
+	    const maxSubsidy = 0.01;
+	    // How close together are the two user IDs. This is a rough
+	    // proxy for finding users that joined around the same date.
+	    const howCloseTogether = 1 / (y - x);
+	    // How senior is the most senior of the two users. This
+	    // breaks the symmetry that would otherwise exist between
+	    // different pairs of users whose IDs are separated by the
+	    // same amount. The system will favor relationships between
+	    // older users to ones between newer users.
+	    const howSenior = Math.exp(-0.7 * x - 0.00011 * y);
+	    row[y] = maxSubsidy * howCloseTogether * howSenior;
+	}
+	if (Object.keys(row).length > 0) {
+	    matrix[x] = row;
+	}
+    }
+    // Overwrite the small subsidies with real data.
+    relationships.forEach((r) => {
+	matrix[r.lo_user_id][r.hi_user_id] = r.discounted_diluted_seconds;
+    });
+    return matrix;
+}
+
 // Calculate chain of command.
 //
 //   - presidentID: the Commissar ID of the chosen President to head
@@ -277,5 +320,6 @@ module.exports = {
     CalculateChainOfCommand,
     GenerateIdealRanksSorted,
     metadata,
+    RelationshipsToTimeMatrix,
     RemoveByValue,
 };

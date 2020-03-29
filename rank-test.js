@@ -116,6 +116,20 @@ describe('Rank', function() {
 	    3: { id: 3, boss: 1, rank: 2, },  // General 4.
 	});
     });
+    it('Relationships to time matrix', () => {
+	const candidates = [1, 2, 3];
+	const relationships = [
+	    {lo_user_id: 1, hi_user_id: 2, discounted_diluted_seconds: 7},
+	];
+	const matrix = rank.RelationshipsToTimeMatrix(relationships, candidates);
+	// Users 1 and 2 have the same relationships as in the input.
+	assert.equal(matrix[1][2], 7);
+	// The other 2 relationships get tiny subsidies.
+	assert(matrix[1][3] > 0);
+	assert(matrix[2][3] > 0);
+	// The subsidies should all be different, to break symmetries.
+	assert(matrix[1][3] !== matrix[2][3]);
+    });
     it('Remove element from array by value', () => {
 	// Zero case.
 	assert.deepEqual(rank.RemoveByValue([], 1), []);
