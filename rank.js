@@ -190,6 +190,7 @@ function GetUserWithHighestParticipationScore(candidates) {
 
 // Remove a value from an array by value.
 // Modifies the original array in-place and also returns it.
+// Only removes the first occurrence of the value.
 function RemoveByValue(arr, valueToRemove) {
     const index = arr.indexOf(valueToRemove);
     if (index !== -1) {
@@ -276,4 +277,5 @@ module.exports = {
     CalculateChainOfCommand,
     GenerateIdealRanksSorted,
     metadata,
+    RemoveByValue,
 };

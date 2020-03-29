@@ -116,4 +116,23 @@ describe('Rank', function() {
 	    3: { id: 3, boss: 1, rank: 2, },  // General 4.
 	});
     });
+    it('Remove element from array by value', () => {
+	// Zero case.
+	assert.deepEqual(rank.RemoveByValue([], 1), []);
+	// Remove one item.
+	assert.deepEqual(rank.RemoveByValue([2], 2), []);
+	// Typical case.
+	assert.deepEqual(rank.RemoveByValue([3, 5, 7, 9], 7), [3, 5, 9]);
+	// Only remove the first occurrence.
+	assert.deepEqual(rank.RemoveByValue([1, 2, 3, 1, 2, 3], 3), [1, 2, 1, 2, 3]);
+	// Don't remove missing items.
+	assert.deepEqual(rank.RemoveByValue([7, 8, 9], 6), [7, 8, 9]);
+	// Different types.
+	assert.deepEqual(rank.RemoveByValue(['abc', 'def', 'xyz'], 'def'), ['abc', 'xyz']);
+	assert.deepEqual(rank.RemoveByValue(['abc', 15, false], false), ['abc', 15]);
+	// Modify the original array in-place.
+	const arr = [1, 2, 3];
+	rank.RemoveByValue(arr, 2);
+	assert.deepEqual(arr, [1, 3]);
+    });
 });
