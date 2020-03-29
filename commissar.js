@@ -83,7 +83,7 @@ function UpdateMemberRankRoles(member, rankName) {
 
 // Removes some characters, replaces others.
 function FilterUsername(username) {
-    const allowedChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_` ()!?\'*+/\\:=~';
+    const allowedChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_` ()!?\'*+/\\:=~èáéíóúüñà';
     const substitutions = {
 	'ғ': 'f',
 	'ｕ': 'U',
