@@ -211,33 +211,37 @@ function ConvertRelationshipsToTimeMatrix(relationships, candidates) {
     const matrix = {};
     // First initialize every element of the matrix with a very small
     // subsidy for stability & symmetry-breaking.
-    for (let i = 0; i < candidates.length; ++i) {
-	const x = candidates[i];
+    candidates.forEach((i) => {
 	const row = {};
-	for (let j = i + 1; j < candidates.length; ++j) {
-	    const y = candidates[j];
+	candidates.forEach((j) => {
+	    // The matrix is symmetric so only process the entries where i < j.
+	    if (i >= j) {
+		return;
+	    }
 	    // The maximum number of imaginary seconds that could
 	    // theoretically be handed out by this formula. The
 	    // subsidy is tiny, just enough to break the symmetries.
 	    const maxSubsidy = 0.01;
 	    // How close together are the two user IDs. This is a rough
 	    // proxy for finding users that joined around the same date.
-	    const howCloseTogether = 1 / (y - x);
+	    const howCloseTogether = 1 / (j - i);
 	    // How senior is the most senior of the two users. This
 	    // breaks the symmetry that would otherwise exist between
 	    // different pairs of users whose IDs are separated by the
 	    // same amount. The system will favor relationships between
 	    // older users to ones between newer users.
-	    const howSenior = Math.exp(-0.7 * x - 0.00011 * y);
-	    row[y] = maxSubsidy * howCloseTogether * howSenior;
-	}
+	    const howSenior = Math.exp(-0.0000007 * i - 0.00000011 * j);
+	    row[j] = maxSubsidy * howCloseTogether * howSenior;
+	});
 	if (Object.keys(row).length > 0) {
-	    matrix[x] = row;
+	    matrix[i] = row;
 	}
-    }
+    });
     // Overwrite the small subsidies with real data.
     relationships.forEach((r) => {
-	matrix[r.lo_user_id][r.hi_user_id] = r.discounted_diluted_seconds;
+	if (candidates.includes(r.lo_user_id) && candidates.includes(r.hi_user_id)) {
+	    matrix[r.lo_user_id][r.hi_user_id] = r.discounted_diluted_seconds;
+	}
     });
     return matrix;
 }
@@ -361,6 +365,7 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
 	    boss.children = [];
 	}
 	boss.children.push(minion.id);
+	boss.children.sort();
 	// If the minion rank has been filled, then the minions become the new bosses.
 	if (minions.length >= minionMeta.count) {
 	    bosses = minions;

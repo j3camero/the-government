@@ -1,5 +1,7 @@
 const assert = require('assert');
+const fs = require('fs');
 const rank = require('./rank');
+const sampleChainOfCommand = require('./sample-chain-of-command');
 
 describe('Rank', function() {
     it('Generate ideal ranks', () => {
@@ -144,14 +146,51 @@ describe('Rank', function() {
 	assert.deepEqual(chain, {
 	    3: { id: 3, children: [2], rank: 0 },  // President.
 	    2: { id: 2, boss: 3, children: [1, 4], rank: 1 },  // Vice President.
-	    1: { id: 1, boss: 2, children: [5, 6], rank: 2 },  // General 4.
-	    4: { id: 4, boss: 2, children: [7, 8], rank: 2 },  // General 4.
-	    5: { id: 5, boss: 1, children: [9], rank: 3 },  // General 3.
-	    6: { id: 6, boss: 1, rank: 3 },  // General 3.
-	    7: { id: 7, boss: 4, rank: 3 },  // General 3.
-	    8: { id: 8, boss: 4, rank: 3 },  // General 3.
-	    9: { id: 9, boss: 5, rank: 4 },  // General 2.
+	    1: { id: 1, boss: 2, children: [7, 8], rank: 2 },  // General 4.
+	    4: { id: 4, boss: 2, children: [5, 6], rank: 2 },  // General 4.
+	    5: { id: 5, boss: 4, rank: 3 },  // General 3.
+	    6: { id: 6, boss: 4, rank: 3 },  // General 3.
+	    7: { id: 7, boss: 1, rank: 3 },  // General 3.
+	    8: { id: 8, boss: 1, children: [9], rank: 3 },  // General 3.
+	    9: { id: 9, boss: 8, rank: 4 },  // General 2.
 	});
+    });
+    it('Chain of command with real data snapshot', () => {
+	// List of users from the dataset, minus a few characters who are now banned.
+	const candidates = [
+	    6, 42, 38, 7, 77, 60, 32, 8, 97, 56, 4, 9, 55, 80, 147, 148, 47, 86,
+	    126, 35, 117, 31, 193, 135, 143, 83, 92, 44, 14, 18, 5, 91, 113, 45, 53,
+	    26, 187, 95, 119, 136, 28, 25, 183, 192, 133, 68, 195, 78, 220, 46, 39, 203,
+	    198, 34, 101, 157, 138, 223, 23, 145, 87, 66, 137, 210, 10, 213, 224, 226,
+	    114, 202, 134, 20, 215, 58, 104, 98, 201, 196, 19, 194, 188, 76, 207, 211,
+	    227, 132, 199, 36, 89, 204, 96, 11, 191, 85, 205, 225, 52, 212, 40, 141, 62,
+	    59, 142, 94, 29, 206,
+	];
+	// Dear Leader #6!
+	const presidentID = 6;
+	// Read 1000+ relationship records from a file. These are a real snapshot of
+	// the time matrix.
+	const relationships = [];
+	const fileText = fs.readFileSync('sample-time-matrix.csv', 'UTF-8');
+	const lines = fileText.split(/\r?\n/);
+	lines.forEach((line) => {
+	    const tokens = line.split(',');
+	    if (tokens.length !== 3) {
+		return;
+	    }
+	    relationships.push({
+		lo_user_id: parseInt(tokens[0]),
+		hi_user_id: parseInt(tokens[1]),
+		discounted_diluted_seconds: parseFloat(tokens[2]),
+	    });
+	});
+	// Make sure we read the expected amount of data.
+	assert.equal(relationships.length, 1181);
+	// Calculate the chain of command.
+	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	// Compare the chain of command to one stored in a file. This tests that
+	// the algorithm is deterministic.
+	assert.deepEqual(chain, sampleChainOfCommand);
     });
     it('Relationships to time matrix', () => {
 	const candidates = [1, 2, 3];
