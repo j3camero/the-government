@@ -11,3 +11,6 @@ config.js
 
 # My TODO list for tasks.
 TODO.txt
+
+# Image files
+*.png

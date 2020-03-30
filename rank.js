@@ -1,3 +1,5 @@
+const fs = require('fs');
+const Canvas = require('canvas');
 
 function GenerateIdealRanksSorted(n) {
     // President, VP, and Generals.
@@ -383,6 +385,34 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
     return chain;
 }
 
+// Determines the number of columns used to display the chain of command.
+function CountColumns(chain) {
+    let count = 0;
+    Object.values(chain).forEach((user) => {
+	const lieutenant = 9;
+	if (user.rank > lieutenant) {
+	    // Ranked below Lieutenant so ignore.
+	    return;
+	}
+	if (!user.children || user.children.length === 0 || user.rank === lieutenant) {
+	    ++count;
+	}
+    });
+    return count;
+}
+
+function RenderChainOfCommand(chain) {
+    const width = 1920;
+    const height = 1080;
+    const numCols = CountColumns(chain);
+    //console.log(numCols);
+    const canvas = new Canvas.createCanvas(width, height, 'png');
+    var context = canvas.getContext('2d');
+    context.fillStyle = 'gray';
+    context.fillRect(0, 0, width, height);
+    return canvas;
+}
+
 module.exports = {
     CalculateChainOfCommand,
     ConvertRelationshipsToTimeMatrix,
@@ -390,5 +420,6 @@ module.exports = {
     GetSuperiorIDs,
     metadata,
     RemoveByValue,
+    RenderChainOfCommand,
     SelectBestMatch,
 };

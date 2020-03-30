@@ -191,6 +191,10 @@ describe('Rank', function() {
 	// Compare the chain of command to one stored in a file. This tests that
 	// the algorithm is deterministic.
 	assert.deepEqual(chain, sampleChainOfCommand);
+	// Render the chain of command as an image.
+	const canvas = rank.RenderChainOfCommand(chain);
+	const buf = canvas.toBuffer();
+	fs.writeFileSync('chain-of-command.png', buf);
     });
     it('Relationships to time matrix', () => {
 	const candidates = [1, 2, 3];
