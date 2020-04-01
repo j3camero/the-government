@@ -68,7 +68,6 @@ const rankMetadata = [
 	abbreviation: 'Mr.',
 	count: 1,
 	insignia: '⚑',
-	maxDirects: 1,
 	nicknameOverride: true,
 	role: 'Marshal',
 	title: 'President',
@@ -77,7 +76,6 @@ const rankMetadata = [
 	abbreviation: 'Mr.',
 	count: 1,
 	insignia: '⚑',
-	maxDirects: 2,
 	nicknameOverride: true,
 	role: 'Marshal',
 	title: 'Vice President',
@@ -86,7 +84,6 @@ const rankMetadata = [
 	abbreviation: 'Gen.',
 	count: 2,
 	insignia: '★★★★',
-	maxDirects: 2,
 	role: 'General',
 	title: 'General',
     },
@@ -94,7 +91,6 @@ const rankMetadata = [
 	abbreviation: 'Gen.',
 	count: 4,
 	insignia: '★★★',
-	maxDirects: 2,
 	role: 'General',
 	title: 'General',
     },
@@ -102,7 +98,6 @@ const rankMetadata = [
 	abbreviation: 'Gen.',
 	count: 5,
 	insignia: '★★',
-	maxDirects: 2,
 	role: 'General',
 	title: 'General',
     },
@@ -110,7 +105,6 @@ const rankMetadata = [
 	abbreviation: 'Gen.',
 	count: 6,
 	insignia: '★',
-	maxDirects: 2,
 	role: 'General',
 	title: 'General',
     },
@@ -118,7 +112,6 @@ const rankMetadata = [
 	abbreviation: 'Col.',
 	count: 7,
 	insignia: '●●●●',
-	maxDirects: 2,
 	role: 'Officer',
 	title: 'Colonel',
     },
@@ -126,7 +119,6 @@ const rankMetadata = [
 	abbreviation: 'Maj.',
 	count: 9,
 	insignia: '●●●',
-	maxDirects: 2,
 	role: 'Officer',
 	title: 'Major',
     },
@@ -134,7 +126,6 @@ const rankMetadata = [
 	abbreviation: 'Capt.',
 	count: 11,
 	insignia: '●●',
-	maxDirects: 2,
 	role: 'Officer',
 	title: 'Captain',
     },
@@ -142,7 +133,6 @@ const rankMetadata = [
 	abbreviation: 'Lt.',
 	count: 13,
 	insignia: '●',
-	maxDirects: 2,
 	role: 'Officer',
 	title: 'Lieutenant',
     },
@@ -150,7 +140,6 @@ const rankMetadata = [
 	abbreviation: 'Sgt.',
 	count: 15,
 	insignia: '●●●',
-	maxDirects: 2,
 	role: 'Grunt',
 	title: 'Sergeant',
     },
@@ -158,7 +147,6 @@ const rankMetadata = [
 	abbreviation: 'Cpl.',
 	count: 17,
 	insignia: '●●',
-	maxDirects: 5,
 	role: 'Grunt',
 	title: 'Corporal',
     },
@@ -166,7 +154,6 @@ const rankMetadata = [
 	abbreviation: 'Pvt.',
 	count: 999,
 	insignia: '●',
-	maxDirects: 0,
 	role: 'Grunt',
 	title: 'Private',
     },
@@ -275,16 +262,16 @@ function GetSuperiorIDs(userID, chain) {
 // timeMatrix - a matrix of the time spent between each
 //              pair of players.
 // chain - the chain of command so far.
+// maxChildren - ignore bosses with too many children.
 //
 // Returns the best match as an object like:
 //   { bossID: 6, minionID: 7 }
-function SelectBestMatch(bosses, candidates, timeMatrix, chain, maxDirects) {
+function SelectBestMatch(bosses, candidates, timeMatrix, chain, maxChildren) {
     let hiScore;
     let bossID;
     let minionID;
     bosses.forEach((boss) => {
-	if (boss.children && boss.children.length >= maxDirects) {
-	    // Skip bosses that are already full with enough direct reports.
+	if (boss.children && boss.children.length >= maxChildren) {
 	    return;
 	}
 	const chainOfCommandIDs = GetSuperiorIDs(boss.id, chain);
@@ -306,6 +293,37 @@ function SelectBestMatch(bosses, candidates, timeMatrix, chain, maxDirects) {
 	bossID,
 	minionID,
     };
+}
+
+// Calculate a maximum children limit for the bosses.
+//
+// This function's job is to stop the highest ranking bosses
+// from filling up on all the minions, leaving none to the
+// lower ranking bosses. It makes sure that the minions start
+// spreading out to more bosses before they run critically
+// short in supply.
+function LimitMaxChildren(numMinionsLeftToChoose, bosses) {
+    if (bosses.length <= 0) {
+	return 0;
+    }
+    // Tally up a histogram of bosses by number of children.
+    const histogram = {};
+    bosses.forEach((boss) => {
+	const numChildren = boss.children ? boss.children.length : 0;
+	histogram[numChildren] = (histogram[numChildren] || 0) + 1;
+    });
+    // Fill the bosses from least children to most, stopping when there
+    // are no minions left to choose. This is not really how the
+    // selection process works - it's just how we calculate the max
+    // number of children that the "fullest" boss should have.
+    let cumulative = 0;
+    let n = 0;
+    while (numMinionsLeftToChoose > 0) {
+	cumulative += histogram[n] || 0;
+	numMinionsLeftToChoose -= cumulative;
+	++n;
+    }
+    return n;
 }
 
 // Calculate chain of command.
@@ -348,14 +366,15 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
     // When the minion rank fills up, the minions become the new bosses.
     // Then the selection process continues, filling up the next rank.
     let bosses = [mrPresident];
-    let bossRank = 0;
-    let bossMeta = rankMetadata[bossRank];
     let minions = [];
     let minionRank = 1;
-    let minionMeta = rankMetadata[minionRank];
     while (candidates.length > 0) {
 	// Choose the next minion to add to the Chain of Command.
-	const pair = SelectBestMatch(bosses, candidates, timeMatrix, chain, bossMeta.maxDirects);
+	const numMinionsLeftToChoose = Math.min(
+	    rankMetadata[minionRank].count - minions.length,
+	    candidates.length);
+	const maxChildren = LimitMaxChildren(numMinionsLeftToChoose, bosses);
+	const pair = SelectBestMatch(bosses, candidates, timeMatrix, chain, maxChildren);
 	const boss = chain[pair.bossID];
 	const minion = chain[pair.minionID];
 	minion.rank = minionRank;
@@ -369,17 +388,14 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
 	boss.children.push(minion.id);
 	boss.children.sort();
 	// If the minion rank has been filled, then the minions become the new bosses.
-	if (minions.length >= minionMeta.count) {
+	if (minions.length >= rankMetadata[minionRank].count) {
 	    bosses = minions;
 	    minions = [];
-	    bossRank += 1;
 	    minionRank += 1;
 	    if (minionRank >= rankMetadata.length) {
 		throw new Error('Not enough ranks for everyone! ' +
 				'Add more space in the rank structure.');
 	    }
-	    bossMeta = rankMetadata[bossRank];
-	    minionMeta = rankMetadata[minionRank];
 	}
     }
     return chain;
@@ -418,6 +434,7 @@ module.exports = {
     ConvertRelationshipsToTimeMatrix,
     GenerateIdealRanksSorted,
     GetSuperiorIDs,
+    LimitMaxChildren,
     metadata,
     RemoveByValue,
     RenderChainOfCommand,

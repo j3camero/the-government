@@ -339,8 +339,130 @@ describe('Rank', function() {
 	assert.equal(match.bossID, 9);
 	assert.equal(match.minionID, 2);
     });
-    it('Matchmaking max directs', () => {
-	// TODO: test that the maxDirects field is enforced.
-	assert.equal(1, 1);
+    it('Matchmaking full boss', () => {
+	const chain = {
+	    1: { id: 1, children: [2] },
+	    2: { id: 2, boss: 1 },
+	    3: { id: 3 },
+	};
+	const bosses = [chain[1], chain[3]];
+	const candidates = [4];
+	const timeMatrix = {
+	    1: {
+		4: 2,  // Strongest relationship, but boss 1 already has too many children.
+	    },
+	    3: {
+		4: 1,  // Weaker relationship, but this is the only available boss.
+	    },
+	};
+	// When constrained, we fall back to the second choice.
+	const a = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 1);
+	assert.equal(a.bossID, 3);
+	assert.equal(a.minionID, 4);
+	// When unconstrained, the first choice is picked.
+	const b = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	assert.equal(b.bossID, 1);
+	assert.equal(b.minionID, 4);
+    });
+    it('Limit max children 1:1', () => {
+	const bosses = [
+	    { children: [] },
+	];
+	const limit = rank.LimitMaxChildren(1, bosses);
+	assert.equal(limit, 1);
+    });
+    it('Limit max children 2:1 with zero children', () => {
+	const bosses = [
+	    { children: [] },
+	];
+	const limit = rank.LimitMaxChildren(2, bosses);
+	assert.equal(limit, 2);
+    });
+    it('Limit max children 2:1 with 1 child', () => {
+	const bosses = [
+	    { children: [1] },
+	];
+	const limit = rank.LimitMaxChildren(2, bosses);
+	assert.equal(limit, 3);
+    });
+    it('Limit max children 2 bosses', () => {
+	const bosses = [
+	    { children: [] },
+	    { children: [] },
+	];
+	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
+	assert.equal(rank.LimitMaxChildren(2, bosses), 1);
+	assert.equal(rank.LimitMaxChildren(3, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(4, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(5, bosses), 3);
+    });
+    it('Limit max children 2 bosses and 1 existing child', () => {
+	const bosses = [
+	    { children: [1] },
+	    { children: [] },
+	];
+	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
+	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(3, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
+	assert.equal(rank.LimitMaxChildren(5, bosses), 3);
+    });
+    it('Limit max children 2 bosses with 2 children', () => {
+	const bosses = [
+	    { children: [1, 2] },
+	    { children: [] },
+	];
+	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
+	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(3, bosses), 3);
+	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
+	assert.equal(rank.LimitMaxChildren(5, bosses), 4);
+    });
+    it('Limit max children 2 bosses with 1 child each', () => {
+	const bosses = [
+	    { children: [1] },
+	    { children: [2] },
+	];
+	assert.equal(rank.LimitMaxChildren(1, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(3, bosses), 3);
+	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
+	assert.equal(rank.LimitMaxChildren(5, bosses), 4);
+    });
+    it('Limit max children 2 bosses 3 children', () => {
+	const bosses30 = [
+	    { children: [1, 2, 3] },
+	    { children: [] },
+	];
+	assert.equal(rank.LimitMaxChildren(1, bosses30), 1);
+	assert.equal(rank.LimitMaxChildren(2, bosses30), 2);
+	assert.equal(rank.LimitMaxChildren(3, bosses30), 3);
+	assert.equal(rank.LimitMaxChildren(4, bosses30), 4);
+	assert.equal(rank.LimitMaxChildren(5, bosses30), 4);
+	const bosses21 = [
+	    { children: [1, 2] },
+	    { children: [3] },
+	];
+	assert.equal(rank.LimitMaxChildren(1, bosses21), 2);
+	assert.equal(rank.LimitMaxChildren(2, bosses21), 3);
+	assert.equal(rank.LimitMaxChildren(3, bosses21), 3);
+	assert.equal(rank.LimitMaxChildren(4, bosses21), 4);
+	assert.equal(rank.LimitMaxChildren(5, bosses21), 4);
+    });
+    it('Limit max children 3 bosses', () => {
+	const bosses = [
+	    { children: [1, 2, 3] },
+	    { children: [4] },
+	    { children: [] },
+	];
+	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
+	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(3, bosses), 2);
+	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
+	assert.equal(rank.LimitMaxChildren(5, bosses), 3);
+	assert.equal(rank.LimitMaxChildren(6, bosses), 4);
+	assert.equal(rank.LimitMaxChildren(7, bosses), 4);
+	assert.equal(rank.LimitMaxChildren(8, bosses), 4);
+	assert.equal(rank.LimitMaxChildren(9, bosses), 5);
     });
 });
