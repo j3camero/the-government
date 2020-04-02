@@ -471,7 +471,7 @@ function RenderChainOfCommand(chain, nicknames) {
     context.fillRect(0, 0, width, height);
 
     // Draws one username at a centered x, y coordinate.
-    function DrawName(user, x, y) {
+    function DrawName(user, x, y, maxWidth) {
 	const colors = {
 	    'General': '#f4b400',
 	    'Grunt': '#4285f4',
@@ -486,8 +486,6 @@ function RenderChainOfCommand(chain, nicknames) {
 	};
 	const rank = rankMetadata[user.rank];
 	context.fillStyle = colors[rank.role] || lightGrey;
-	const fontSize = fontSizes[rank.role];
-	context.font = `${fontSize}px Arial`;
 	let name = user.id;
 	if (user.id in nicknames) {
 	    name = nicknames[user.id];
@@ -496,6 +494,15 @@ function RenderChainOfCommand(chain, nicknames) {
 	    name = `${rank.abbreviation} ${rank.title}`;
 	}
 	const formattedName = `${name} ${rank.insignia}`;
+	// Shrink the font to make the text fit if necessary.
+	let fontSize = fontSizes[rank.role];
+	for ( ; fontSize >= 9; fontSize -= 1) {
+	    context.font = `${fontSize}px Arial`;
+	    const textWidth = context.measureText(formattedName).width;
+	    if (textWidth <= maxWidth) {
+		break;
+	    }
+	}
 	x -= context.measureText(formattedName).width / 2;
 	y += fontSize / 2 - 2;
 	context.fillText(formattedName, Math.floor(x), Math.floor(y));
@@ -514,7 +521,7 @@ function RenderChainOfCommand(chain, nicknames) {
 	const x = ConsumeColumn();
 	let y = edgeMargin + 9 * (lineHeight + linkHeight) + lineHeight / 2;
 	squad.forEach((member) => {
-	    DrawName(member, x, y);
+	    DrawName(member, x, y, colWidth);
 	    y += lineHeight;
 	});
 	return x;
@@ -572,7 +579,7 @@ function RenderChainOfCommand(chain, nicknames) {
 	// Vertical line segment under the user's name.
 	DrawLink(x, linkY, x, linkY - linkHeight / 2);
 	const y = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight / 2;
-	DrawName(user, x, y);
+	DrawName(user, x, y, totalWidth);
 	return { hi, lo, width: totalWidth, x }
     }
 
