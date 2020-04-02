@@ -4,7 +4,6 @@ const db = require('./database');
 const deepEqual = require('deep-equal');
 const Discord = require('discord.js');
 const DiscordUtil = require('./discord-util');
-const fs = require('fs');
 const log = require('./log');
 const moment = require('moment');
 const rank = require('./rank');
@@ -309,8 +308,7 @@ function UpdateChainOfCommand() {
 	    chainOfCommand = newChainOfCommand;
 	    const nicknames = UserCache.GetAllNicknames();
 	    const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
-	    const buf = canvas.toBuffer();
-	    fs.writeFileSync('current-chain-of-command.png', buf);
+	    DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
 	    console.log('Chain of command update.');
 	}
     });

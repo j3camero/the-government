@@ -1,4 +1,6 @@
 // Helper functions not specific to any particular Discord bot.
+const Discord = require('discord.js');
+const fs = require('fs');
 
 // Looks up the ID of a Discord role by name.
 function GetRoleByName(guild, roleName) {
@@ -82,10 +84,71 @@ function GetMainDiscordGuild(client) {
     throw 'Error: Main Discord guild not found!';
 }
 
+// The the "main" Discord Guild for the Secret Clan.
+function GetMainDiscordGuild(client) {
+    const guildID = '305840605328703500';
+    let exactMatch;
+    let bestMatch;
+    let minTimestamp;
+    client.guilds.forEach((guild) => {
+	if (guild.id === guildID) {
+	    exactMatch = guild;
+	}
+	if (!minTimestamp || guild.joinedTimestamp < minTimestamp) {
+	    bestMatch = guild;
+	    minTimestamp = guild.joinedTimestamp;
+	}
+    });
+    if (exactMatch) {
+	return exactMatch;
+    }
+    if (bestMatch) {
+	return bestMatch;
+    }
+    throw 'Error: Main Discord guild not found!';
+}
+
+function UpdateChainOfCommandChatChannel(guild, canvas) {
+    const mainMessage = (
+	'The Chain of Command auto updates based on who you spend time with in Discord. ' +
+	    'Anyone can become Mr. President because of the impartial AI algorithm.');
+    const footerMessage = (
+	'Most clans have some kind of President-for-life or other fixed leadership ' +
+	    'positions. Not us. That is what makes our clan totally unique.');
+    const channels = GetAllMatchingTextChannels(guild, 'chain-of-command');
+    if (channels.length === 0) {
+	throw new Error('Could not find #chain-of-command chat channel.');
+    }
+    const channel = channels[0];
+    // Bulk delete messages
+    channel.bulkDelete(3)
+	.then((messages) => {
+	    console.log(`Bulk deleted ${messages.size} messages`);
+	})
+	.catch(console.error);
+    setTimeout(() => {
+	const buf = canvas.toBuffer();
+	fs.writeFileSync('chain-of-command.png', buf);
+	channel.send(mainMessage, {
+	    files: [{
+		attachment: 'chain-of-command.png',
+		name: 'chain-of-command.png'
+	    }]
+	})
+	    .then((message) => {
+		// Main message successfully sent. Send footer message now.
+		channel.send(footerMessage);
+	    })
+	    .catch(console.error);;
+ 
+    }, 10);
+}
+
 module.exports = {
-  GetAllMatchingTextChannels,
-  GetMainChatChannel,
-  GetMainDiscordGuild,
-  GetRoleByName,
-  GuildMemberHasRole,
+    GetAllMatchingTextChannels,
+    GetMainChatChannel,
+    GetMainDiscordGuild,
+    GetRoleByName,
+    GuildMemberHasRole,
+    UpdateChainOfCommandChatChannel,
 };
