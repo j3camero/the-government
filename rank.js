@@ -417,15 +417,145 @@ function CountColumns(chain) {
     return count;
 }
 
+// Get all subordinates of the user, including the user themselves, as a flat list.
+function GetSubordinates(chain, userID) {
+    const user = chain[userID];
+    let subordinates = [user];
+    const children = user.children || [];
+    children.forEach((childID) => {
+	const childSubordinates = GetSubordinates(chain, childID);
+	subordinates = subordinates.concat(childSubordinates);
+    });
+    return subordinates;
+}
+
+// Calculate the largest size of a squad headed by a Lieutenant.
+function MaxSquadSize(chain) {
+    let biggest = 0;
+    Object.values(chain).forEach((user) => {
+	const lieutenant = 9;
+	if (user.rank === lieutenant) {
+	    const squad = GetSubordinates(chain, user.id);
+	    biggest = Math.max(squad.length, biggest);
+	}
+    });
+    return biggest;
+}
+
+function FindMrPresidentInChainOfCommand(chain) {
+    let mrPresidentID;
+    Object.values(chain).forEach((user) => {
+	if (!user.boss) {
+	    mrPresidentID = user.id;
+	}
+    });
+    return mrPresidentID;
+}
+
 function RenderChainOfCommand(chain) {
     const width = 1920;
     const height = 1080;
+    const lineHeight = 30;
+    const edgeMargin = 16;
     const numCols = CountColumns(chain);
-    //console.log(numCols);
+    const colWidth = (width - 2 * edgeMargin) / numCols;
+    const numRows = MaxSquadSize(chain);
+    const totalTextHeight = lineHeight * (numRows + 9);
+    const totalLinkHeight = height - totalTextHeight - 2 * edgeMargin;
+    const linkHeight = totalLinkHeight / 9;
     const canvas = new Canvas.createCanvas(width, height, 'png');
     var context = canvas.getContext('2d');
     context.fillStyle = 'gray';
     context.fillRect(0, 0, width, height);
+
+    // Draws one username at a centered x, y coordinate.
+    function DrawName(user, x, y) {
+	context.font = '9px Arial';
+	context.fillStyle = '#FFFFFF';
+	context.fillText(user.id.toString(), x, y);
+    }
+
+    let currentColumn = 0;
+
+    function ConsumeColumn() {
+	const x = (currentColumn * colWidth) + (colWidth / 2) + edgeMargin;
+	++currentColumn;
+	return x;
+    }
+
+    // Draws a bunch of names in a column.
+    function DrawSquad(squad) {
+	const x = ConsumeColumn();
+	let y = edgeMargin + 9 * (lineHeight + linkHeight) + lineHeight / 2;
+	squad.forEach((member) => {
+	    DrawName(member, x, y);
+	    y += lineHeight;
+	});
+	return x;
+    }
+
+    // Draw a line connecting bosses to minions.
+    function DrawLink() {
+    }
+    
+    function DrawTree(userID) {
+	const user = chain[userID];
+	if (user.rank < 9) {
+	    // User is high ranking. Draw as part of the tree.
+	    let hi, lo, hix, lox;
+	    const children = user.children || [];
+	    context.strokeStyle = '#FFFFFF';
+	    const linkY = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight + linkHeight / 2;
+	    children.forEach((childID) => {
+		const child = DrawTree(childID);
+		if (!hi || child.hi > hi) {
+		    hi = child.hi;
+		}
+		if (!lo || child.lo < lo) {
+		    lo = child.lo;
+		}
+		if (!hix || child.x > hix) {
+		    hix = child.x;
+		}
+		if (!lox || child.x < lox) {
+		    lox = child.x;
+		}
+		// Vertical line segment above each child's name.
+		context.beginPath();
+		context.moveTo(child.x, linkY);
+		context.lineTo(child.x, linkY + linkHeight / 2);
+		context.stroke();
+	    });
+	    // Horizontal line segment that links all the children.
+	    context.beginPath();
+	    context.moveTo(lox, linkY);
+	    context.lineTo(hix, linkY);
+	    context.stroke();
+	    let x;
+	    if (children.length > 0) {
+		x = (hi + lo) / 2;
+	    } else {
+		x = ConsumeColumn();
+	    }
+	    // Vertical line segment under the user's name.
+	    context.beginPath();
+	    context.moveTo(x, linkY);
+	    context.lineTo(x, linkY - linkHeight / 2);
+	    context.stroke();
+	    const y = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight / 2;
+	    DrawName(user, x, y);
+	    DrawLink();
+	    return { hi, lo, x }
+	} else {
+	    // User is Lieutenant or below. Draw squad as flat list.
+	    const squad = GetSubordinates(chain, user.id);
+	    const x = DrawSquad(squad, currentColumn);
+	    return { hi: x, lo: x, x };
+	}
+    }
+
+    const mrPresidentID = FindMrPresidentInChainOfCommand(chain);
+    DrawTree(mrPresidentID);
     return canvas;
 }
 
@@ -433,6 +563,7 @@ module.exports = {
     CalculateChainOfCommand,
     ConvertRelationshipsToTimeMatrix,
     GenerateIdealRanksSorted,
+    GetSubordinates,
     GetSuperiorIDs,
     LimitMaxChildren,
     metadata,

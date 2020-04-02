@@ -465,4 +465,16 @@ describe('Rank', function() {
 	assert.equal(rank.LimitMaxChildren(8, bosses), 4);
 	assert.equal(rank.LimitMaxChildren(9, bosses), 5);
     });
+    it('Calculate subordinates', () => {
+	const chain = {
+	    1: { id: 1, children: [2] },
+	    2: { id: 2, children: [3, 4] },
+	    3: { id: 3 },
+	    4: { id: 4 },
+	};
+	assert.equal(rank.GetSubordinates(chain, 1).length, 4);
+	assert.equal(rank.GetSubordinates(chain, 2).length, 3);
+	assert.equal(rank.GetSubordinates(chain, 3).length, 1);
+	assert.equal(rank.GetSubordinates(chain, 4).length, 1);
+    });
 });
