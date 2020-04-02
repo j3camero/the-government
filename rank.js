@@ -68,7 +68,7 @@ const rankMetadata = [
 	abbreviation: 'Mr.',
 	count: 1,
 	insignia: '⚑',
-	nicknameOverride: true,
+	titleOverride: true,
 	role: 'Marshal',
 	title: 'President',
     },
@@ -76,7 +76,7 @@ const rankMetadata = [
 	abbreviation: 'Mr.',
 	count: 1,
 	insignia: '⚑',
-	nicknameOverride: true,
+	titleOverride: true,
 	role: 'Marshal',
 	title: 'Vice President',
     },
@@ -457,6 +457,8 @@ function RenderChainOfCommand(chain) {
     const height = 1080;
     const lineHeight = 30;
     const edgeMargin = 16;
+    const darkGrey = '#32353b';
+    const lightGrey = '#42454a';
     const numCols = CountColumns(chain);
     const colWidth = (width - 2 * edgeMargin) / numCols;
     const numRows = MaxSquadSize(chain);
@@ -465,14 +467,26 @@ function RenderChainOfCommand(chain) {
     const linkHeight = totalLinkHeight / 9;
     const canvas = new Canvas.createCanvas(width, height, 'png');
     var context = canvas.getContext('2d');
-    context.fillStyle = 'gray';
+    context.fillStyle = darkGrey;
     context.fillRect(0, 0, width, height);
 
     // Draws one username at a centered x, y coordinate.
     function DrawName(user, x, y) {
 	context.font = '9px Arial';
-	context.fillStyle = '#FFFFFF';
-	context.fillText(user.id.toString(), x, y);
+	const colors = {
+	    'General': '#f4b400',
+	    'Grunt': '#4285f4',
+	    'Marshal': '#189b17',
+	    'Officer': '#db4437',
+	};
+	const rank = rankMetadata[user.rank];
+	context.fillStyle = colors[rank.role] || lightGrey;
+	let name = user.id;
+	if (rank.titleOverride) {
+	    name = rank.title;
+	}
+	const formattedName = `${rank.abbreviation} ${name} ${rank.insignia}`;
+	context.fillText(formattedName, Math.floor(x), Math.floor(y));
     }
 
     let currentColumn = 0;
@@ -494,8 +508,12 @@ function RenderChainOfCommand(chain) {
 	return x;
     }
 
-    // Draw a line connecting bosses to minions.
-    function DrawLink() {
+    function DrawLink(x1, y1, x2, y2) {
+	context.strokeStyle = lightGrey;
+	context.beginPath();
+	context.moveTo(Math.floor(x1) + 0.5, Math.floor(y1) + 0.5);
+	context.lineTo(Math.floor(x2) + 0.5, Math.floor(y2) + 0.5);
+	context.stroke();
     }
     
     function DrawTree(userID) {
@@ -504,7 +522,6 @@ function RenderChainOfCommand(chain) {
 	    // User is high ranking. Draw as part of the tree.
 	    let hi, lo, hix, lox;
 	    const children = user.children || [];
-	    context.strokeStyle = '#FFFFFF';
 	    const linkY = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight + linkHeight / 2;
 	    children.forEach((childID) => {
 		const child = DrawTree(childID);
@@ -521,16 +538,10 @@ function RenderChainOfCommand(chain) {
 		    lox = child.x;
 		}
 		// Vertical line segment above each child's name.
-		context.beginPath();
-		context.moveTo(child.x, linkY);
-		context.lineTo(child.x, linkY + linkHeight / 2);
-		context.stroke();
+		DrawLink(child.x, linkY, child.x, linkY + linkHeight / 2);
 	    });
 	    // Horizontal line segment that links all the children.
-	    context.beginPath();
-	    context.moveTo(lox, linkY);
-	    context.lineTo(hix, linkY);
-	    context.stroke();
+	    DrawLink(lox, linkY, hix, linkY);
 	    let x;
 	    if (children.length > 0) {
 		x = (hi + lo) / 2;
@@ -538,13 +549,9 @@ function RenderChainOfCommand(chain) {
 		x = ConsumeColumn();
 	    }
 	    // Vertical line segment under the user's name.
-	    context.beginPath();
-	    context.moveTo(x, linkY);
-	    context.lineTo(x, linkY - linkHeight / 2);
-	    context.stroke();
+	    DrawLink(x, linkY, x, linkY - linkHeight / 2);
 	    const y = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight / 2;
 	    DrawName(user, x, y);
-	    DrawLink();
 	    return { hi, lo, x }
 	} else {
 	    // User is Lieutenant or below. Draw squad as flat list.
