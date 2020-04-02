@@ -193,7 +193,15 @@ describe('Rank', function() {
 	assert.deepEqual(chain, sampleChainOfCommand);
     });
     it('Render the chain of command as an image', () => {
-	const canvas = rank.RenderChainOfCommand(sampleChainOfCommand);
+	const nicknames = {
+	    6: 'Brobob',
+	    7: 'Jeff',
+	    32: 'Ssulfur',
+	    38: 'watergate',
+	    42: 'Cheatx',
+	    77: 'Zomboscott',
+	};
+	const canvas = rank.RenderChainOfCommand(sampleChainOfCommand, nicknames);
 	const buf = canvas.toBuffer();
 	fs.writeFileSync('chain-of-command.png', buf);
     });

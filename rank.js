@@ -452,13 +452,13 @@ function FindMrPresidentInChainOfCommand(chain) {
     return mrPresidentID;
 }
 
-function RenderChainOfCommand(chain) {
+function RenderChainOfCommand(chain, nicknames) {
     const width = 1920;
     const height = 1080;
-    const lineHeight = 30;
+    const lineHeight = 32;
     const edgeMargin = 16;
     const darkGrey = '#32353b';
-    const lightGrey = '#42454a';
+    const lightGrey = '#a2a5aa';
     const numCols = CountColumns(chain);
     const colWidth = (width - 2 * edgeMargin) / numCols;
     const numRows = MaxSquadSize(chain);
@@ -466,26 +466,38 @@ function RenderChainOfCommand(chain) {
     const totalLinkHeight = height - totalTextHeight - 2 * edgeMargin;
     const linkHeight = totalLinkHeight / 9;
     const canvas = new Canvas.createCanvas(width, height, 'png');
-    var context = canvas.getContext('2d');
+    const context = canvas.getContext('2d');
     context.fillStyle = darkGrey;
     context.fillRect(0, 0, width, height);
 
     // Draws one username at a centered x, y coordinate.
     function DrawName(user, x, y) {
-	context.font = '9px Arial';
 	const colors = {
 	    'General': '#f4b400',
 	    'Grunt': '#4285f4',
 	    'Marshal': '#189b17',
 	    'Officer': '#db4437',
 	};
+	const fontSizes = {
+	    'General': 24,
+	    'Grunt': 12,
+	    'Marshal': 24,
+	    'Officer': 12,
+	};
 	const rank = rankMetadata[user.rank];
 	context.fillStyle = colors[rank.role] || lightGrey;
+	const fontSize = fontSizes[rank.role];
+	context.font = `${fontSize}px Arial`;
 	let name = user.id;
-	if (rank.titleOverride) {
-	    name = rank.title;
+	if (user.id in nicknames) {
+	    name = nicknames[user.id];
 	}
-	const formattedName = `${rank.abbreviation} ${name} ${rank.insignia}`;
+	if (rank.titleOverride) {
+	    name = `${rank.abbreviation} ${rank.title}`;
+	}
+	const formattedName = `${name} ${rank.insignia}`;
+	x -= context.measureText(formattedName).width / 2;
+	y += fontSize / 2 - 2;
 	context.fillText(formattedName, Math.floor(x), Math.floor(y));
     }
 
@@ -508,6 +520,7 @@ function RenderChainOfCommand(chain) {
 	return x;
     }
 
+    // Draw a line.
     function DrawLink(x1, y1, x2, y2) {
 	context.strokeStyle = lightGrey;
 	context.beginPath();
@@ -515,7 +528,8 @@ function RenderChainOfCommand(chain) {
 	context.lineTo(Math.floor(x2) + 0.5, Math.floor(y2) + 0.5);
 	context.stroke();
     }
-    
+
+    // Recursively draw the tree.
     function DrawTree(userID) {
 	const user = chain[userID];
 	if (user.rank < 9) {
