@@ -2,32 +2,6 @@
 CREATE DATABASE commissar;
 USE commissar;
 
--- A list of which ranks there are.
-CREATE TABLE ranks
-(
-    id INT NOT NULL AUTO_INCREMENT,
-    title VARCHAR(16),
-    insignia VARCHAR(8),
-    discord_role VARCHAR(16),
-    max_occupants INT,
-    PRIMARY KEY (id)
-);
-
-INSERT INTO ranks
-    (title, insignia, discord_role, max_occupants)
-VALUES
-    ('Recruit', '●', 'Grunt', 9000),
-    ('Corporal', '●●', 'Grunt', 512),
-    ('Sergeant', '●●●', 'Grunt', 256),
-    ('Lieutenant', '●', 'Officer', 128),
-    ('Captain', '●●', 'Officer', 64),
-    ('Major', '●●●', 'Officer', 32),
-    ('Colonel', '●●●●', 'Officer', 16),
-    ('General', '★', 'General', 8),
-    ('General', '★★', 'General', 4),
-    ('General', '★★★', 'General', 2),
-    ('General', '★★★★', 'General', 1);
-
 -- Store data about each user.
 CREATE TABLE users
 (
@@ -41,7 +15,6 @@ CREATE TABLE users
     rank_limit INT DEFAULT 1,
     rank_limit_cooldown TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (commissar_id),
-    FOREIGN KEY (rank) REFERENCES ranks(id),
     INDEX discord_index (discord_id)
 );
 

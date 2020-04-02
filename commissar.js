@@ -226,17 +226,21 @@ function UpdateMemberAppearance(member, promotions) {
 	return;
     }
     const rankData = rank.metadata[cu.rank];
-    if (rankData.nicknameOverride) {
+    if (!rankData) {
+	console.error('Invalid rank detected. This can indicate serious problems.');
+	return;
+    }
+    if (rankData.titleOverride) {
 	// Nickname override for special titles like 'Mr. President'.
-	cu.setNickname(rankData.nicknameOverride);
+	cu.setNickname(`${rankData.abbreviation} ${rankData.title}`);
     } else {
 	// Normal case: filter the user's own chosen Discord display name.
 	cu.setNickname(FilterUsername(member.user.username));
     }
-    const nickname_with_insignia = cu.nickname + ' ' + rankData.insignia;
-    if (member.nickname != nickname_with_insignia && member.user.id !== member.guild.ownerID) {
-	console.log(`Updating nickname ${nickname_with_insignia}.`);
-	member.setNickname(nickname_with_insignia)
+    const formattedNickname = `${cu.nickname} ${rankData.insignia}`;
+    if (member.nickname != formattedNickname && member.user.id !== member.guild.ownerID) {
+	console.log(`Updating nickname ${formattedNickname}.`);
+	member.setNickname(formattedNickname)
 	    .then((member) => {
 		console.log('OK');
 	    }).catch((err) => {
@@ -245,14 +249,7 @@ function UpdateMemberAppearance(member, promotions) {
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData.role);
-    // If a guild member got promoted, announce it.
-    const promoted = promotions.includes(cu.commissar_id);
-    if (promoted) {
-	const msg = `${nickname_with_insignia} is promoted to ${rankData.title} ${rankData.insignia}`;
-	console.log(msg);
-	const channel = DiscordUtil.GetMainChatChannel(member.guild);
-	channel.send(msg);
-    }
+    // TODO: announce promotions in main chat.
 }
 
 function UpdateAllDiscordMemberAppearances(promotions) {
@@ -295,22 +292,33 @@ function UpdateChainOfCommand() {
 	const guild = DiscordUtil.GetMainDiscordGuild(client);
 	guild.members.forEach((member) => {
 	    const discordID = member.id;
-	    const commissarUser = UserCache.GetCachedUserByDiscordId(discordID);
-	    if (!commissarUser) {
+	    const cu = UserCache.GetCachedUserByDiscordId(discordID);
+	    if (!cu) {
 		// Unknown user. Leave them out of the rankings.
 		return;
 	    }
-	    candidateIds.push(commissarUser.commissar_id);
+	    candidateIds.push(cu.commissar_id);
 	});
 	const mrPresident = UserCache.GetUserWithHighestParticipationPoints();
 	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships);
-	if (!deepEqual(newChainOfCommand, chainOfCommand)) {
-	    chainOfCommand = newChainOfCommand;
-	    const nicknames = UserCache.GetAllNicknames();
-	    const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
-	    DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
-	    console.log('Chain of command update.');
+	if (deepEqual(newChainOfCommand, chainOfCommand)) {
+	    // Bail if there are no changes to the chain of command.
+	    console.log('No updates detected. Bailing.');
+	    return;
 	}
+	console.log('About to update the chain of command');
+	// Pass this point only if there is a change to the chain of command.
+	chainOfCommand = newChainOfCommand;
+	const nicknames = UserCache.GetAllNicknames();
+	// Generate and post an updated image of the chain of command.
+	const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
+	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
+	// Update the people's ranks.
+	Object.values(chainOfCommand).forEach((user) => {
+	    const cu = UserCache.GetCachedUserByCommissarId(user.id);
+	    cu.setRank(user.rank);
+	});
+	console.log('Chain of command updated.');
     });
 }
 
@@ -363,15 +371,12 @@ setInterval(() => {
 	return;
     }
     console.log('Minute heartbeat');
-    // Routine backup.
-    UserCache.WriteDirtyUsersToDatabase(db.getConnection());
     // Update the chain of command.
-    UpdateChainOfCommand();
-    // Sort and rank the clan members.
-    const guild = DiscordUtil.GetMainDiscordGuild(client);
-    const promotions = UserCache.UpdateRanks(guild);
+    const promotions = UpdateChainOfCommand();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances(promotions);
+    // Sync user data to the database.
+    UserCache.WriteDirtyUsersToDatabase(db.getConnection());
     // Update time matrix and sync to database.
     UpdateVoiceActiveMembers();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
