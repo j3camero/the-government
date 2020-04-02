@@ -203,7 +203,7 @@ describe('Rank', function() {
 	};
 	const canvas = rank.RenderChainOfCommand(sampleChainOfCommand, nicknames);
 	const buf = canvas.toBuffer();
-	fs.writeFileSync('chain-of-command.png', buf);
+	fs.writeFileSync('sample-chain-of-command.png', buf);
     });
     it('Relationships to time matrix', () => {
 	const candidates = [1, 2, 3];

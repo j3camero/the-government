@@ -262,11 +262,34 @@ function MaybeDecayParticipationPoints() {
     });
 }
 
+// Returns a dictionary of nicknames, keyed by Commissar ID.
+function GetAllNicknames() {
+    const nicknames = {};
+    Object.values(commissarUserCache).forEach((user) => {
+	nicknames[user.commissar_id] = user.nickname;
+    });
+    return nicknames;
+}
+
+function GetUserWithHighestParticipationPoints() {
+    let maxPoints;
+    let maxUser;
+    Object.values(commissarUserCache).forEach((user) => {
+	if (!maxPoints || user.participation_score > maxPoints) {
+	    maxPoints = user.participation_score;
+	    maxUser = user;
+	}
+    });
+    return maxUser;
+}
+
 module.exports = {
     CommissarUser,
     CreateNewDatabaseUser,
+    GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
+    GetUserWithHighestParticipationPoints,
     LoadAllUsersFromDatabase,
     MaybeDecayParticipationPoints,
     UpdateRanks,

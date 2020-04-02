@@ -1,6 +1,7 @@
 const Clock = require('./clock');
 const config = require('./config');
 const db = require('./database');
+const deepEqual = require('deep-equal');
 const Discord = require('discord.js');
 const DiscordUtil = require('./discord-util');
 const fs = require('fs');
@@ -26,6 +27,10 @@ const participationDecay = 0.9923;
 
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
+
+// The current chain of command. It's a dict of user info keyed by commissar ID.
+// The elements form an implcit tree.
+let chainOfCommand = {};
 
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
@@ -284,6 +289,33 @@ function UpdateVoiceActiveMembers() {
     timeTogetherStream.seenTogether(listOfLists);
 }
 
+// Calculates the chain of command. If there are changes, the update is made.
+function UpdateChainOfCommand() {
+    db.getTimeMatrix((relationships) => {
+	const candidateIds = [];
+	const guild = DiscordUtil.GetMainDiscordGuild(client);
+	guild.members.forEach((member) => {
+	    const discordID = member.id;
+	    const commissarUser = UserCache.GetCachedUserByDiscordId(discordID);
+	    if (!commissarUser) {
+		// Unknown user. Leave them out of the rankings.
+		return;
+	    }
+	    candidateIds.push(commissarUser.commissar_id);
+	});
+	const mrPresident = UserCache.GetUserWithHighestParticipationPoints();
+	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships);
+	if (!deepEqual(newChainOfCommand, chainOfCommand)) {
+	    chainOfCommand = newChainOfCommand;
+	    const nicknames = UserCache.GetAllNicknames();
+	    const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
+	    const buf = canvas.toBuffer();
+	    fs.writeFileSync('current-chain-of-command.png', buf);
+	    console.log('Chain of command update.');
+	}
+    });
+}
+
 // This Discord event fires when the bot successfully connects to Discord.
 client.on('ready', () => {
     console.log('Discord bot connected.');
@@ -335,6 +367,8 @@ setInterval(() => {
     console.log('Minute heartbeat');
     // Routine backup.
     UserCache.WriteDirtyUsersToDatabase(db.getConnection());
+    // Update the chain of command.
+    UpdateChainOfCommand();
     // Sort and rank the clan members.
     const guild = DiscordUtil.GetMainDiscordGuild(client);
     const promotions = UserCache.UpdateRanks(guild);

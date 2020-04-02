@@ -532,47 +532,48 @@ function RenderChainOfCommand(chain, nicknames) {
     // Recursively draw the tree.
     function DrawTree(userID) {
 	const user = chain[userID];
-	if (user.rank < 9) {
-	    // User is high ranking. Draw as part of the tree.
-	    let hi, lo, hix, lox;
-	    const children = user.children || [];
-	    const linkY = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight + linkHeight / 2;
-	    children.forEach((childID) => {
-		const child = DrawTree(childID);
-		if (!hi || child.hi > hi) {
-		    hi = child.hi;
-		}
-		if (!lo || child.lo < lo) {
-		    lo = child.lo;
-		}
-		if (!hix || child.x > hix) {
-		    hix = child.x;
-		}
-		if (!lox || child.x < lox) {
-		    lox = child.x;
-		}
-		// Vertical line segment above each child's name.
-		DrawLink(child.x, linkY, child.x, linkY + linkHeight / 2);
-	    });
-	    // Horizontal line segment that links all the children.
-	    DrawLink(lox, linkY, hix, linkY);
-	    let x;
-	    if (children.length > 0) {
-		x = (hi + lo) / 2;
-	    } else {
-		x = ConsumeColumn();
-	    }
-	    // Vertical line segment under the user's name.
-	    DrawLink(x, linkY, x, linkY - linkHeight / 2);
-	    const y = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight / 2;
-	    DrawName(user, x, y);
-	    return { hi, lo, x }
-	} else {
+	if (user.rank >= 9) {
 	    // User is Lieutenant or below. Draw squad as flat list.
 	    const squad = GetSubordinates(chain, user.id);
 	    const x = DrawSquad(squad, currentColumn);
-	    return { hi: x, lo: x, x };
+	    return { hi: x, lo: x, width: colWidth, x };
 	}
+	// User is high ranking. Draw as part of the tree.
+	let hi, lo, hix, lox;
+	const children = user.children || [];
+	const linkY = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight + linkHeight / 2;
+	let totalWidth = 0;
+	children.forEach((childID) => {
+	    const child = DrawTree(childID);
+	    if (!hi || child.hi > hi) {
+		hi = child.hi;
+	    }
+	    if (!lo || child.lo < lo) {
+		lo = child.lo;
+	    }
+	    if (!hix || child.x > hix) {
+		hix = child.x;
+	    }
+	    if (!lox || child.x < lox) {
+		lox = child.x;
+	    }
+	    totalWidth += child.width;
+	    // Vertical line segment above each child's name.
+	    DrawLink(child.x, linkY, child.x, linkY + linkHeight / 2);
+	});
+	// Horizontal line segment that links all the children.
+	DrawLink(lox, linkY, hix, linkY);
+	let x;
+	if (children.length > 0) {
+	    x = (hi + lo) / 2;
+	} else {
+	    x = ConsumeColumn();
+	}
+	// Vertical line segment under the user's name.
+	DrawLink(x, linkY, x, linkY - linkHeight / 2);
+	const y = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight / 2;
+	DrawName(user, x, y);
+	return { hi, lo, width: totalWidth, x }
     }
 
     const mrPresidentID = FindMrPresidentInChainOfCommand(chain);
