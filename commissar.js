@@ -303,7 +303,6 @@ function UpdateChainOfCommand() {
 	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships);
 	if (deepEqual(newChainOfCommand, chainOfCommand)) {
 	    // Bail if there are no changes to the chain of command.
-	    console.log('No updates detected. Bailing.');
 	    return;
 	}
 	console.log('About to update the chain of command');

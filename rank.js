@@ -396,7 +396,7 @@ function RenderChainOfCommand(chain, nicknames) {
     const lineHeight = 32;
     const edgeMargin = 16;
     const darkGrey = '#32353b';
-    const lightGrey = '#a2a5aa';
+    const lightGrey = '#c2c5ca';
     const numCols = CountColumns(chain);
     const colWidth = (width - 2 * edgeMargin) / numCols;
     const numRows = MaxSquadSize(chain);
