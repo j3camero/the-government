@@ -84,30 +84,6 @@ function GetMainDiscordGuild(client) {
     throw 'Error: Main Discord guild not found!';
 }
 
-// The the "main" Discord Guild for the Secret Clan.
-function GetMainDiscordGuild(client) {
-    const guildID = '305840605328703500';
-    let exactMatch;
-    let bestMatch;
-    let minTimestamp;
-    client.guilds.forEach((guild) => {
-	if (guild.id === guildID) {
-	    exactMatch = guild;
-	}
-	if (!minTimestamp || guild.joinedTimestamp < minTimestamp) {
-	    bestMatch = guild;
-	    minTimestamp = guild.joinedTimestamp;
-	}
-    });
-    if (exactMatch) {
-	return exactMatch;
-    }
-    if (bestMatch) {
-	return bestMatch;
-    }
-    throw 'Error: Main Discord guild not found!';
-}
-
 function UpdateChainOfCommandChatChannel(guild, canvas) {
     const mainMessage = (
 	'The Chain of Command auto updates based on who you spend time with in Discord. ' +

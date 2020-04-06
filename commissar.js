@@ -285,6 +285,35 @@ function UpdateVoiceActiveMembers() {
     timeTogetherStream.seenTogether(listOfLists);
 }
 
+// Announce a promotion in #main chat, if applicable.
+//
+// nickname - a string of the user's filtered nickname, without insignia.
+// oldRank - integer rank index of the user's old rank.
+// newRank - integer rank index of the user's new rank.
+function AnnounceIfPromotion(nickname, oldRank, newRank) {
+    if (oldRank === undefined || oldRank === null ||
+	newRank === undefined || newRank === null ||
+	!Number.isInteger(oldRank) || !Number.isInteger(newRank) ||
+	newRank >= oldRank) {
+	// No promotion detected. Bail.
+	return;
+    }
+    // If we get past here, a promotion has been detected.
+    // Announce it in main chat.
+    const oldMeta = rank.metadata[oldRank];
+    const newMeta = rank.metadata[newRank];
+    const message = `${newMeta.abbreviation} ${nickname} ${newMeta.insignia} has been promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
+    console.log(message);
+    // Delay for a few seconds to spread out the promotion messages and
+    // also achieve a crude non-guaranteed sorting by rank.
+    const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
+    setTimeout(() => {
+	const guild = DiscordUtil.GetMainDiscordGuild(client);
+	const channel = DiscordUtil.GetMainChatChannel(member.guild);
+	channel.send(message);
+    }, delayMillis);
+}
+
 // Calculates the chain of command. If there are changes, the update is made.
 function UpdateChainOfCommand() {
     db.getTimeMatrix((relationships) => {
@@ -315,6 +344,7 @@ function UpdateChainOfCommand() {
 	// Update the people's ranks.
 	Object.values(chainOfCommand).forEach((user) => {
 	    const cu = UserCache.GetCachedUserByCommissarId(user.id);
+	    AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
 	    cu.setRank(user.rank);
 	});
 	console.log('Chain of command updated.');
