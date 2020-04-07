@@ -298,6 +298,11 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
 	// No promotion detected. Bail.
 	return;
     }
+    const lieutenant = 9;
+    if (newRank > lieutenant) {
+	// Don't announce promotions for ranks less than Lieutenant.
+	return;
+    }
     // If we get past here, a promotion has been detected.
     // Announce it in main chat.
     const oldMeta = rank.metadata[oldRank];
