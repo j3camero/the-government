@@ -309,7 +309,7 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
     const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
     setTimeout(() => {
 	const guild = DiscordUtil.GetMainDiscordGuild(client);
-	const channel = DiscordUtil.GetMainChatChannel(member.guild);
+	const channel = DiscordUtil.GetMainChatChannel(guild);
 	channel.send(message);
     }, delayMillis);
 }
