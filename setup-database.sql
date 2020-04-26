@@ -10,6 +10,7 @@ CREATE TABLE users
     steam_id VARCHAR(32),
     nickname VARCHAR(32),
     rank INT NOT NULL DEFAULT 1,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     participation_score FLOAT NOT NULL DEFAULT 0,
     participation_update_date DATE,
     rank_limit INT DEFAULT 1,

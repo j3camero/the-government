@@ -6,12 +6,13 @@ const TimeUtil = require('./time-util');
 // This class represents a member of the clan.
 
 class CommissarUser {
-    constructor(commissar_id, discord_id, steam_id, nickname, rank, participation_score, participation_update_date, rank_limit, rank_limit_cooldown) {
+    constructor(commissar_id, discord_id, steam_id, nickname, rank, last_seen, participation_score, participation_update_date, rank_limit, rank_limit_cooldown) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.steam_id = steam_id;
 	this.nickname = nickname;
 	this.rank = rank;
+	this.last_seen = last_seen;
 	this.participation_score = participation_score;
 	this.participation_update_date = participation_update_date;
 	this.rank_limit = rank_limit;
@@ -35,6 +36,7 @@ class CommissarUser {
     }
 
     setNickname(nickname) {
+	nickname = FilterUsername(nickname);
 	if (nickname !== this.nickname) {
 	    this.dirty = true;
 	}
@@ -46,6 +48,11 @@ class CommissarUser {
 	    this.dirty = true;
 	}
 	this.rank = rank;
+    }
+
+    seenNow() {
+	this.dirty = true;
+	this.last_seen = moment().format();
     }
 
     setParticipationScore(participation_score) {
@@ -78,8 +85,14 @@ class CommissarUser {
 
     writeToDatabase(connection) {
 	this.dirty = false;
-	const sql = 'UPDATE users SET discord_id = ?, steam_id = ?, nickname = ?, rank = ?, participation_score = ?, participation_update_date = ?, rank_limit = ?, rank_limit_cooldown = ? WHERE commissar_id = ?';
-	const values = [this.discord_id, this.steam_id, this.nickname, this.rank, this.participation_score, this.participation_update_date, this.rank_limit, this.rank_limit_cooldown, this.commissar_id];
+	const sql = ('UPDATE users SET discord_id = ?, steam_id = ?, nickname = ?, ' +
+		     'rank = ?, last_seen = ?, participation_score = ?, ' +
+		     'participation_update_date = ?, rank_limit = ?, ' +
+		     'rank_limit_cooldown = ? WHERE commissar_id = ?');
+	const values = [
+	    this.discord_id, this.steam_id, this.nickname, this.rank, this.last_seen,
+	    this.participation_score, this.participation_update_date, this.rank_limit,
+	    this.rank_limit_cooldown, this.commissar_id];
 	connection.query(sql, values, (err, result) => {
 	    if (err) {
 		throw err;
@@ -110,6 +123,7 @@ function LoadAllUsersFromDatabase(connection, callback) {
 		row.steam_id,
 		row.nickname,
 		row.rank,
+		row.last_seen,
 		row.participation_score,
 		row.participation_update_date,
 		row.rank_limit,
@@ -170,10 +184,52 @@ function GetCachedUserByDiscordId(discord_id) {
     return foundUser;
 }
 
+// Removes some characters, replaces others.
+function FilterUsername(username) {
+    const allowedChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_` ()!?\'*+/\\:=~èáéíóúüñà';
+    const substitutions = {
+	'ғ': 'f',
+	'ｕ': 'U',
+	'ᶜ': 'c',
+	'Ќ': 'K',
+	'ץ': 'Y',
+	'๏': 'o',
+	'Ữ': 'u',
+	'Ｍ': 'M',
+	'Ａ': 'A',
+	'ŕ': 'r',
+	'Ｋ': 'K',
+    };
+    let s = '';
+    for (let i = 0; i < username.length; i++) {
+	const c = username.charAt(i);
+	if (allowedChars.indexOf(c) >= 0) {
+	    s += c;
+	} else if (c in substitutions) {
+	    s += substitutions[c];
+	}
+    }
+    const maxNameLength = 18;
+    s = s.trim().slice(0, maxNameLength).trim();
+    if (s.length === 0) {
+	s = '???';
+    }
+    return s;
+}
+
 // Creates a new user in the database. On success, the new user is added to the cache and the callback is called.
-function CreateNewDatabaseUser(connection, discord_id, steam_id, nickname, rank, participation_score, participation_update_date, rank_limit, rank_limit_cooldown, callback) {
+function CreateNewDatabaseUser(connection, discordMember, callback) {
     console.log(`Create a new DB user for ${nickname}`);
-    const fields = {discord_id, steam_id, nickname, rank, participation_score, participation_update_date, rank_limit, rank_limit_cooldown};
+    const discord_id = discordMember.user.id;
+    const nickname = FilterUsername(discordMember.user.username);
+    const rank = rankModule.metadata.length - 1;
+    const last_seen = moment().format();
+    const participation_score = 0;
+    const participation_update_date = TimeUtil.YesterdayDateStamp();
+    const rank_limit = 1;
+    const rank_limit_cooldown = moment().format();
+    const steam_id = null;
+    const fields = {discord_id, steam_id, nickname, rank, last_seen, participation_score, participation_update_date, rank_limit, rank_limit_cooldown};
     connection.query('INSERT INTO users SET ?', fields, (err, result) => {
 	if (err) {
 	    throw err;
@@ -185,6 +241,7 @@ function CreateNewDatabaseUser(connection, discord_id, steam_id, nickname, rank,
 	    steam_id,
 	    nickname,
 	    rank,
+	    last_seen,
 	    participation_score,
 	    participation_update_date,
 	    rank_limit,
@@ -193,71 +250,6 @@ function CreateNewDatabaseUser(connection, discord_id, steam_id, nickname, rank,
 	commissarUserCache[commissar_id] = newUser;
 	if (callback) {
 	    callback();
-	}
-    });
-}
-
-// Sort and rank all members of a Discord guild. Return a list of promotions to announce.
-function UpdateRanks(guild) {
-    let candidates = [];
-    guild.members.forEach((member) => {
-	if (member.user.bot) {
-	    return;
-	}
-	const cu = GetCachedUserByDiscordId(member.user.id);
-	if (cu) {
-	    candidates.push(cu);
-	}
-    });
-    // Sort the clan members for ranking purposes.
-    candidates.sort((a, b) => {
-	// Users tie with themselves.
-	if (a.commissar_id == b.commissar_id) {
-            return 0;
-	}
-	const ap = a.participation_score || 0;
-	const bp = b.participation_score || 0;
-	const threshold = 0.0000000001;
-	if (Math.abs(ap - bp) > threshold) {
-	    // Normal case: rank users by participation score.
-	    return ap - bp;
-	} else {
-	    // If the participation scores are close to equal, revert to seniority.
-	    return b.commissar_id - a.commissar_id;
-	}
-    });
-    const promotions = [];
-    const ranks = rankModule.GenerateIdealRanksSorted(candidates.length);
-    for (let i = 0; i < candidates.length; ++i) {
-	const c = candidates[i];
-	let r = ranks[i];
-	if (c.rank_limit && r > c.rank_limit) {
-	    // Enforce rank limit.
-	    r = c.rank_limit;
-	}
-	if (r > c.rank) {
-	    // Promotion detected.
-	    promotions.push(c.commissar_id);
-	}
-	candidates[i].setRank(r);
-    }
-    return promotions;
-}
-
-function MaybeDecayParticipationPoints() {
-    const participationDecay = 0.9962;
-    const today = TimeUtil.UtcDateStamp();
-    const yesterday = TimeUtil.YesterdayDateStamp();
-    Object.keys(commissarUserCache).forEach((commissar_id) => {
-	const cu = commissarUserCache[commissar_id];
-	if (!moment(cu.participation_update_date).isSame(today, 'day') &&
-	    !moment(cu.participation_update_date).isSame(yesterday, 'day')) {
-	    // The user has a participation score, but it's from before yesterday.
-	    const op = cu.participation_score;
-	    // Decay the score.
-	    cu.setParticipationScore(op * participationDecay);
-	    // The update date is yesterday in case they want to take part today.
-	    cu.setParticipationUpdateDate(yesterday);
 	}
     });
 }
@@ -291,8 +283,6 @@ module.exports = {
     GetCachedUserByDiscordId,
     GetUserWithHighestParticipationPoints,
     LoadAllUsersFromDatabase,
-    MaybeDecayParticipationPoints,
-    UpdateRanks,
     WriteAllUsersToDatabase,
     WriteDirtyUsersToDatabase,
 };

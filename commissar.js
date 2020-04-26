@@ -20,10 +20,6 @@ let discordConnected = false;
 // This flag sets to true once the bot is fully booted and ready to handle traffic.
 let botActive = false;
 
-// Daily decay of 0.9923 implies a half-life of 3 months (90 days)
-// for the participation points.
-const participationDecay = 0.9923;
-
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
 
@@ -85,98 +81,6 @@ function UpdateMemberRankRoles(member, rankName) {
     });
 }
 
-// Removes some characters, replaces others.
-function FilterUsername(username) {
-    const allowedChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_` ()!?\'*+/\\:=~èáéíóúüñà';
-    const substitutions = {
-	'ғ': 'f',
-	'ｕ': 'U',
-	'ᶜ': 'c',
-	'Ќ': 'K',
-	'ץ': 'Y',
-	'๏': 'o',
-	'Ữ': 'u',
-	'Ｍ': 'M',
-	'Ａ': 'A',
-	'ŕ': 'r',
-	'Ｋ': 'K',
-    };
-    let s = '';
-    for (let i = 0; i < username.length; i++) {
-	const c = username.charAt(i);
-	if (allowedChars.indexOf(c) >= 0) {
-	    s += c;
-	} else if (c in substitutions) {
-	    s += substitutions[c];
-	}
-    }
-    const maxNameLength = 18;
-    s = s.trim().slice(0, maxNameLength).trim();
-    if (s.length === 0) {
-	s = '???';
-    }
-    return s;
-}
-
-// Update the daily participation points for a user.
-function MaybeUpdateParticipationPoints(member) {
-    if (member.user.bot) {
-	// Ignore other bots.
-	return;
-    }
-    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
-    if (!cu) {
-	return;
-    }
-    const today = TimeUtil.UtcDateStamp();
-    if (moment(cu.participation_update_date).isSame(today, 'day')) {
-	// No points because this user already got points today.
-	console.log('No points for', member.nickname, '!');
-	return;
-    }
-    const op = cu.participation_score;
-    cu.setParticipationScore(1 - (1 - op) * participationDecay);
-    cu.setParticipationUpdateDate(today);
-    console.log('Gave points to', member.nickname);
-}
-
-// Update a user's rank limit, if applicable.
-function MaybeUpdateRankLimit(member) {
-    if (member.user.bot) {
-	// Ignore other bots.
-	return;
-    }
-    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
-    if (!cu.rank_limit || !cu.rank_limit_cooldown) {
-	// This user doesn't have a rank limit. Do nothing.
-	return;
-    }
-    if (!moment(cu.rank_limit_cooldown).isBefore(moment())) {
-	// This user's rank limit is still on cooldown. Do nothing, for now.
-	return;
-    }
-    // Increase the user's rank limit by 1.
-    cu.setRankLimit(cu.rank_limit + 1);
-    // Set a new cooldown for 12 hours in the future.
-    cu.setRankLimitCooldown(moment().add(12, 'hours').format());
-    // Once the rank limit is high enough, remove it completely.
-    if (cu.rank_limit >= 14) {
-	cu.setRankLimit(null);
-	cu.setRankLimitCooldown(null);
-    }
-    console.log('Updated rank limit for', member.nickname);
-}
-
-// This function triggers periodically for members active in voice chat.
-function MemberIsActiveInVoiceChat(member) {
-    if (member.user.bot) {
-	// Ignore other bots.
-	return;
-    }
-    MaybeUpdateParticipationPoints(member);
-    MaybeUpdateRankLimit(member);
-}
-
 function logVoiceStateUpdate(oldMember, newMember) {
   if (oldMember.user.bot || newMember.user.bot) {
     // Ignore other bots.
@@ -214,9 +118,7 @@ function UpdateMemberAppearance(member, promotions) {
     if (!cu) {
 	// We have no record of this Discord user. Create a new record in the cache.
 	console.log('New Discord user detected.');
-	const yesterday = TimeUtil.YesterdayDateStamp();
-	const bottomRank = rank.metadata.length - 1;
-	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), bottomRank, 0, yesterday, 1, moment().format(), () => {
+	UserCache.CreateNewDatabaseUser(db.getConnection(), member, () => {
 	    // Try updating the member again after the new user record has been created.
 	    UpdateMemberAppearance(member, promotions);
 	});
@@ -236,7 +138,7 @@ function UpdateMemberAppearance(member, promotions) {
 	cu.setNickname(`${rankData.abbreviation} ${rankData.title}`);
     } else {
 	// Normal case: filter the user's own chosen Discord display name.
-	cu.setNickname(FilterUsername(member.user.username));
+	cu.setNickname(member.user.username);
     }
     const formattedNickname = `${cu.nickname} ${rankData.insignia}`;
     if (member.nickname != formattedNickname && member.user.id !== member.guild.ownerID) {
@@ -276,6 +178,8 @@ function UpdateVoiceActiveMembers() {
 		    // Shouldn't happen, but ignore and hope for recovery.
 		    return;
 		}
+		// Update this user's 'last seen' time.
+		cu.seenNow();
 		channelActive.push(cu.commissar_id);
 	    });
 	    if (channelActive.length >= 2) {
@@ -381,8 +285,7 @@ client.on('guildMemberAdd', (member) => {
 	// We have no record of this Discord user. Create a new record in the cache.
 	console.log('New Discord user detected.');
 	const yesterday = TimeUtil.YesterdayDateStamp();
-	const bottomRank = rank.metadata.length - 1;
-	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), bottomRank, 0, yesterday, 1, moment().format(), () => {
+	UserCache.CreateNewDatabaseUser(db.getConnection(), member, () => {
 	    // New user successfully created. Do nothing, for now. They get picked up in the next ranking cycle.
 	});
     }
@@ -426,8 +329,7 @@ setInterval(() => {
 	return;
     }
     console.log('Hourly heartbeat');
-    // Participation points decay slowly over time.
-    UserCache.MaybeDecayParticipationPoints();
+    // Do nothing for the hourly heartbeat for now. But keep it.
 }, oneHour);
 
 // Login the Commissar bot to Discord.
