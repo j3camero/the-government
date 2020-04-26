@@ -215,7 +215,8 @@ function UpdateMemberAppearance(member, promotions) {
 	// We have no record of this Discord user. Create a new record in the cache.
 	console.log('New Discord user detected.');
 	const yesterday = TimeUtil.YesterdayDateStamp();
-	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment().format(), () => {
+	const bottomRank = rank.metadata.length - 1;
+	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), bottomRank, 0, yesterday, 1, moment().format(), () => {
 	    // Try updating the member again after the new user record has been created.
 	    UpdateMemberAppearance(member, promotions);
 	});
@@ -380,9 +381,9 @@ client.on('guildMemberAdd', (member) => {
 	// We have no record of this Discord user. Create a new record in the cache.
 	console.log('New Discord user detected.');
 	const yesterday = TimeUtil.YesterdayDateStamp();
-	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), 1, 0, yesterday, 1, moment().format(), () => {
-	    // Nothing to do for new users at this time.
-	    // They get picked up in the next ranking cycle.
+	const bottomRank = rank.metadata.length - 1;
+	UserCache.CreateNewDatabaseUser(db.getConnection(), member.user.id, null, FilterUsername(member.user.username), bottomRank, 0, yesterday, 1, moment().format(), () => {
+	    // New user successfully created. Do nothing, for now. They get picked up in the next ranking cycle.
 	});
     }
 });
