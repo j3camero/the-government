@@ -109,7 +109,7 @@ function logVoiceStateUpdate(oldMember, newMember) {
 
 // Update the rank insignia, nickname, and roles of a Discord guild
 // member based on the latest info stored in the user cache.
-function UpdateMemberAppearance(member, promotions) {
+function UpdateMemberAppearance(member) {
     if (member.user.bot) {
 	// Ignore other bots.
 	return;
@@ -120,7 +120,7 @@ function UpdateMemberAppearance(member, promotions) {
 	console.log('New Discord user detected.');
 	UserCache.CreateNewDatabaseUser(db.getConnection(), member, () => {
 	    // Try updating the member again after the new user record has been created.
-	    UpdateMemberAppearance(member, promotions);
+	    UpdateMemberAppearance(member);
 	});
 	return;
     }
@@ -152,13 +152,12 @@ function UpdateMemberAppearance(member, promotions) {
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData.role);
-    // TODO: announce promotions in main chat.
 }
 
-function UpdateAllDiscordMemberAppearances(promotions) {
+function UpdateAllDiscordMemberAppearances() {
     const guild = DiscordUtil.GetMainDiscordGuild(client);
     guild.members.forEach((member) => {
-	UpdateMemberAppearance(member, promotions);
+	UpdateMemberAppearance(member);
     });
 }
 
@@ -201,11 +200,6 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
 	!Number.isInteger(oldRank) || !Number.isInteger(newRank) ||
 	newRank >= oldRank) {
 	// No promotion detected. Bail.
-	return;
-    }
-    const lieutenant = 9;
-    if (newRank > lieutenant) {
-	// Don't announce promotions for ranks less than Lieutenant.
 	return;
     }
     // If we get past here, a promotion has been detected.
@@ -254,7 +248,10 @@ function UpdateChainOfCommand() {
 	// Update the people's ranks.
 	Object.values(chainOfCommand).forEach((user) => {
 	    const cu = UserCache.GetCachedUserByCommissarId(user.id);
-	    AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
+	    // Only announce promotions if the user has been active recently.
+	    if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
+		AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
+	    }
 	    cu.setRank(user.rank);
 	});
 	console.log('Chain of command updated.');
@@ -310,9 +307,9 @@ setInterval(() => {
     }
     console.log('Minute heartbeat');
     // Update the chain of command.
-    const promotions = UpdateChainOfCommand();
+    UpdateChainOfCommand();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
-    UpdateAllDiscordMemberAppearances(promotions);
+    UpdateAllDiscordMemberAppearances();
     // Sync user data to the database.
     UserCache.WriteDirtyUsersToDatabase(db.getConnection());
     // Update time matrix and sync to database.
