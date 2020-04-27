@@ -206,7 +206,7 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
     // Announce it in main chat.
     const oldMeta = rank.metadata[oldRank];
     const newMeta = rank.metadata[newRank];
-    const message = `${newMeta.abbreviation} ${nickname} ${newMeta.insignia} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
+    const message = `${nickname} ${newMeta.insignia} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
     console.log(message);
     // Delay for a few seconds to spread out the promotion messages and
     // also achieve a crude non-guaranteed sorting by rank.
