@@ -219,9 +219,9 @@ function FilterUsername(username) {
 
 // Creates a new user in the database. On success, the new user is added to the cache and the callback is called.
 function CreateNewDatabaseUser(connection, discordMember, callback) {
-    console.log(`Create a new DB user for ${nickname}`);
     const discord_id = discordMember.user.id;
     const nickname = FilterUsername(discordMember.user.username);
+    console.log(`Create a new DB user for ${nickname}`);
     const rank = rankModule.metadata.length - 1;
     const last_seen = moment().format();
     const participation_score = 0;
