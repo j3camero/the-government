@@ -6,12 +6,13 @@ const TimeUtil = require('./time-util');
 // This class represents a member of the clan.
 
 class CommissarUser {
-    constructor(commissar_id, discord_id, nickname, rank, last_seen) {
+    constructor(commissar_id, discord_id, nickname, rank, last_seen, office) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
 	this.rank = rank;
 	this.last_seen = last_seen;
+	this.office = office;
 	// Dirty flag indicates that this record has changed and needs to be backed up to the database.
 	this.dirty = false;
     }
@@ -43,13 +44,21 @@ class CommissarUser {
 	this.last_seen = moment().format();
     }
 
+    setOffice(office) {
+	if (office !== this.office) {
+	    this.dirty = true;
+	}
+	this.office = office;
+    }
+
     writeToDatabase(connection) {
 	this.dirty = false;
 	const sql = ('UPDATE users SET discord_id = ?, nickname = ?, ' +
-		     'rank = ?, last_seen = ? WHERE commissar_id = ?');
+		     'rank = ?, last_seen = ?, office = ? ' +
+		     'WHERE commissar_id = ?');
 	const values = [
 	    this.discord_id, this.nickname, this.rank,
-	    this.last_seen, this.commissar_id
+	    this.last_seen, this.office, this.commissar_id
 	];
 	connection.query(sql, values, (err, result) => {
 	    if (err) {
@@ -81,6 +90,7 @@ function LoadAllUsersFromDatabase(connection, callback) {
 		row.nickname,
 		row.rank,
 		row.last_seen,
+		row.office
 	    );
 	    newCache[row.commissar_id] = newUser;
 	});

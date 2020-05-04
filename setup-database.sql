@@ -5,12 +5,12 @@ USE commissar;
 -- Store data about each user.
 CREATE TABLE users
 (
-    commissar_id INT NOT NULL AUTO_INCREMENT,
-    discord_id VARCHAR(32),
-    steam_id VARCHAR(32),
-    nickname VARCHAR(32),
-    rank INT NOT NULL DEFAULT 1,
-    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    commissar_id INT NOT NULL AUTO_INCREMENT,  -- Our clan's own set of IDs so we don't have to rely on Discord IDs.
+    discord_id VARCHAR(32),  -- Discord ID.
+    nickname VARCHAR(32),  -- Last known nickname.
+    rank INT NOT NULL DEFAULT 1,  -- Rank. 0 = President, 1 = VP, 2 = 4-star General, etc.
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Last time active in voice chat.
+    office VARCHAR(32),  -- Which office (executive title) the user occupies, if any.
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );
