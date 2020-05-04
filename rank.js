@@ -97,24 +97,6 @@ const metadata = [
     },
 ];
 
-// Return the commissar user record with the highest participation score
-// from among the given canidates.
-function GetUserWithHighestParticipationScore(candidates) {
-    let maxScore;
-    let maxUserRecord;
-    Object.keys(candidates).forEach((id) => {
-	const cu = candidates[id];
-	if (!cu || !cu.participation_score) {
-	    return;
-	}
-	if (!maxScore || cu.participation_score > maxScore) {
-	    maxScore = cu.participation_score;
-	    maxUserRecord = cu;
-	}
-    });
-    return maxUserRecord;
-}
-
 // Remove a value from an array by value.
 // Modifies the original array in-place and also returns it.
 // Only removes the first occurrence of the value.

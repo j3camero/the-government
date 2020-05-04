@@ -11,10 +11,6 @@ CREATE TABLE users
     nickname VARCHAR(32),
     rank INT NOT NULL DEFAULT 1,
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    participation_score FLOAT NOT NULL DEFAULT 0,
-    participation_update_date DATE,
-    rank_limit INT DEFAULT 1,
-    rank_limit_cooldown TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );

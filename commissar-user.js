@@ -6,17 +6,12 @@ const TimeUtil = require('./time-util');
 // This class represents a member of the clan.
 
 class CommissarUser {
-    constructor(commissar_id, discord_id, steam_id, nickname, rank, last_seen, participation_score, participation_update_date, rank_limit, rank_limit_cooldown) {
+    constructor(commissar_id, discord_id, nickname, rank, last_seen) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
-	this.steam_id = steam_id;
 	this.nickname = nickname;
 	this.rank = rank;
 	this.last_seen = last_seen;
-	this.participation_score = participation_score;
-	this.participation_update_date = participation_update_date;
-	this.rank_limit = rank_limit;
-	this.rank_limit_cooldown = rank_limit_cooldown;
 	// Dirty flag indicates that this record has changed and needs to be backed up to the database.
 	this.dirty = false;
     }
@@ -26,13 +21,6 @@ class CommissarUser {
 	    this.dirty = true;
 	}
 	this.discord_id = discord_id;
-    }
-
-    setSteamId(steam_id) {
-	if (steam_id !== this.steam_id) {
-	    this.dirty = true;
-	}
-	this.steam_id = steam_id;
     }
 
     setNickname(nickname) {
@@ -55,44 +43,14 @@ class CommissarUser {
 	this.last_seen = moment().format();
     }
 
-    setParticipationScore(participation_score) {
-	if (participation_score !== this.participation_score) {
-	    this.dirty = true;
-	}
-	this.participation_score = participation_score;
-    }
-
-    setParticipationUpdateDate(participation_update_date) {
-	if (participation_update_date !== this.participation_update_date) {
-	    this.dirty = true;
-	}
-	this.participation_update_date = participation_update_date;
-    }
-
-    setRankLimit(rank_limit) {
-	if (rank_limit !== this.rank_limit) {
-	    this.dirty = true;
-	}
-	this.rank_limit = rank_limit;
-    }
-
-    setRankLimitCooldown(rank_limit_cooldown) {
-	if (rank_limit_cooldown !== this.rank_limit_cooldown) {
-	    this.dirty = true;
-	}
-	this.rank_limit_cooldown = rank_limit_cooldown;
-    }
-
     writeToDatabase(connection) {
 	this.dirty = false;
-	const sql = ('UPDATE users SET discord_id = ?, steam_id = ?, nickname = ?, ' +
-		     'rank = ?, last_seen = ?, participation_score = ?, ' +
-		     'participation_update_date = ?, rank_limit = ?, ' +
-		     'rank_limit_cooldown = ? WHERE commissar_id = ?');
+	const sql = ('UPDATE users SET discord_id = ?, nickname = ?, ' +
+		     'rank = ?, last_seen = ? WHERE commissar_id = ?');
 	const values = [
-	    this.discord_id, this.steam_id, this.nickname, this.rank, this.last_seen,
-	    this.participation_score, this.participation_update_date, this.rank_limit,
-	    this.rank_limit_cooldown, this.commissar_id];
+	    this.discord_id, this.nickname, this.rank,
+	    this.last_seen, this.commissar_id
+	];
 	connection.query(sql, values, (err, result) => {
 	    if (err) {
 		throw err;
@@ -120,14 +78,9 @@ function LoadAllUsersFromDatabase(connection, callback) {
 	    const newUser = new CommissarUser(
 		row.commissar_id,
 		row.discord_id,
-		row.steam_id,
 		row.nickname,
 		row.rank,
 		row.last_seen,
-		row.participation_score,
-		row.participation_update_date,
-		row.rank_limit,
-		row.rank_limit_cooldown
 	    );
 	    newCache[row.commissar_id] = newUser;
 	});
@@ -224,12 +177,8 @@ function CreateNewDatabaseUser(connection, discordMember, callback) {
     console.log(`Create a new DB user for ${nickname}`);
     const rank = rankModule.metadata.length - 1;
     const last_seen = moment().format();
-    const participation_score = 0;
-    const participation_update_date = TimeUtil.YesterdayDateStamp();
-    const rank_limit = 1;
-    const rank_limit_cooldown = moment().format();
     const steam_id = null;
-    const fields = {discord_id, steam_id, nickname, rank, last_seen, participation_score, participation_update_date, rank_limit, rank_limit_cooldown};
+    const fields = {discord_id, steam_id, nickname, rank, last_seen};
     connection.query('INSERT INTO users SET ?', fields, (err, result) => {
 	if (err) {
 	    throw err;
@@ -242,10 +191,6 @@ function CreateNewDatabaseUser(connection, discordMember, callback) {
 	    nickname,
 	    rank,
 	    last_seen,
-	    participation_score,
-	    participation_update_date,
-	    rank_limit,
-	    rank_limit_cooldown
 	);
 	commissarUserCache[commissar_id] = newUser;
 	if (callback) {
@@ -264,15 +209,8 @@ function GetAllNicknames() {
 }
 
 function GetUserWithHighestParticipationPoints() {
-    let maxPoints;
-    let maxUser;
-    Object.values(commissarUserCache).forEach((user) => {
-	if (!maxPoints || user.participation_score > maxPoints) {
-	    maxPoints = user.participation_score;
-	    maxUser = user;
-	}
-    });
-    return maxUser;
+    // User 6 is Bob.
+    return commissarUserCache[6];
 }
 
 module.exports = {
