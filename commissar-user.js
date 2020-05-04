@@ -223,6 +223,93 @@ function GetUserWithHighestParticipationPoints() {
     return commissarUserCache[6];
 }
 
+// Returns a user with the given target rank, who doesn't already have an office.
+// If all users of the target rank already have an office, returns null.
+//   - targetRank: find a user of this rank exactly.
+//   - userCache (optional): for unit testing a mock user cache can be passed in.
+function FindUnassignedUser(targetRank, userCache) {
+    if (!userCache) {
+	userCache = commissarUserCache;
+    }
+    let foundUser = null;
+    Object.values(userCache).forEach((user) => {
+	if (!user.office) {
+	    foundUser = user;
+	}
+    });
+    return foundUser;
+}
+
+const executiveOffices = {
+    'PRES': {
+	abbreviation: 'Pres.',
+	longTitle: 'President',
+	rank: 0,
+	shortTitle: 'President',
+    },
+    'VP': {
+	abbreviation: 'VP',
+	longTitle: 'Vice President',
+	rank: 1,
+	shortTitle: 'Vice President',
+    },
+    'CJCS': {
+	abbreviation: 'Chmn.',
+	longTitle: 'Chairman of the Joint Chiefs of Staff',
+	rank: 2,
+	shortTitle: 'Chairman',
+    },
+    'MINDEF': {
+	abbreviation: 'Min.',
+	longTitle: 'Minister of Defense',
+	rank: 2,
+	shortTitle: 'Minister',
+    },
+    'ARMY': {
+	abbreviation: 'Chf.',
+	chatroom: 'army-only',
+	longTitle: 'Chief of the Army',
+	rank: 3,
+	role: 'Army',
+	shortTitle: 'Chief',
+    },
+    'MARINES': {
+	abbreviation: 'Cmdt.',
+	chatroom: 'marines-only',
+	longTitle: 'Commandant of the Marines',
+	rank: 3,
+	role: 'Marines',
+	shortTitle: 'Commandant',
+    },
+    'AIR': {
+	abbreviation: 'Sec.',
+	chatroom: 'air-force',
+	longTitle: 'Secretary of the Air Force',
+	rank: 3,
+	role: 'Air Force',
+	shortTitle: 'Secretary',
+    },
+    'INTEL': {
+	abbreviation: 'Dir.',
+	chatroom: 'intel-only',
+	longTitle: 'Director of Intelligence',
+	rank: 3,
+	role: 'Intel',
+	shortTitle: 'Director',
+    },
+};
+
+function UpdateClanExecutives(userCache) {
+    if (!userCache) {
+	userCache = commissarUserCache;
+    }
+    // Dismiss executives who don't match any more.
+    Object.values(userCache).forEach((user) => {
+	
+    });
+    // Attempt to fill all empty executive roles.
+}
+
 module.exports = {
     CommissarUser,
     CreateNewDatabaseUser,
