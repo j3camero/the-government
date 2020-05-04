@@ -233,6 +233,8 @@ function UpdateChainOfCommand() {
 	    candidateIds.push(cu.commissar_id);
 	});
 	const mrPresident = UserCache.GetUserWithHighestParticipationPoints();
+	// User 7 (Jeff) can't be President or VP any more.
+	const termLimited = [7];
 	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships);
 	if (deepEqual(newChainOfCommand, chainOfCommand)) {
 	    // Bail if there are no changes to the chain of command.

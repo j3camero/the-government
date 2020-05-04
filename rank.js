@@ -108,6 +108,16 @@ function RemoveByValue(arr, valueToRemove) {
     return arr;
 }
 
+// Return a copy of an array, with a list of values removed.
+function CopyAndFilter(arr, valuesToRemove) {
+    const c = arr.slice();
+    valuesToRemove = valuesToRemove || [];
+    valuesToRemove.forEach((v) => {
+	RemoveByValue(c, v);
+    });
+    return c;
+}
+
 // Convert a flat list of relationship records into a matrix format
 // keyed for efficient access by user ID.
 //
@@ -256,6 +266,8 @@ function LimitMaxChildren(numMinionsLeftToChoose, bosses) {
 //                    people. Fields:
 //                      - lo_user_id, hi_user_id: integer Commissar IDs
 //                      - discounted_diluted_seconds: float (sec)
+//   - termLimited: a list of Commissar IDs that are not allowed to be
+//                  President or VP.
 //
 // Returns a dict of dicts representing the calculated chain of command.
 // The outer dict is keyed by integer user ID. The inner records have
@@ -269,7 +281,7 @@ function LimitMaxChildren(numMinionsLeftToChoose, bosses) {
 //
 // This function is pure ranking logic, with no connection to database
 // calls or other external dependencies. It is unit-testable offline.
-function CalculateChainOfCommand(presidentID, candidates, relationships) {
+function CalculateChainOfCommand(presidentID, candidates, relationships, termLimited) {
     if (!candidates.includes(presidentID)) {
 	throw new Error('Invalid Presidential candidate.');
     }
@@ -294,9 +306,16 @@ function CalculateChainOfCommand(presidentID, candidates, relationships) {
 	    metadata[minionRank].count - minions.length,
 	    candidates.length);
 	const maxChildren = LimitMaxChildren(numMinionsLeftToChoose, bosses);
-	const pair = SelectBestMatch(bosses, candidates, timeMatrix, chain, maxChildren);
+	let eligibleCandidates = candidates;
+	if (minionRank < 2) {
+	    eligibleCandidates = CopyAndFilter(candidates, termLimited);
+	}
+	const pair = SelectBestMatch(bosses, eligibleCandidates, timeMatrix, chain, maxChildren);
 	const boss = chain[pair.bossID];
 	const minion = chain[pair.minionID];
+	if (!minion) {
+	    console.log('Eligible candidates:', eligibleCandidates, candidates);
+	}
 	minion.rank = minionRank;
 	minions.push(minion);
 	RemoveByValue(candidates, minion.id);
@@ -511,6 +530,7 @@ function RenderChainOfCommand(chain, nicknames) {
 module.exports = {
     CalculateChainOfCommand,
     ConvertRelationshipsToTimeMatrix,
+    CopyAndFilter,
     GetSubordinates,
     GetSuperiorIDs,
     LimitMaxChildren,

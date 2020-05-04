@@ -118,6 +118,20 @@ describe('Rank', function() {
 	// the algorithm is deterministic.
 	assert.deepEqual(chain, sampleChainOfCommand);
     });
+    it('Term limits', () => {
+	const presidentID = 2;
+	const candidates = [1, 2, 3];
+	const relationships = [
+	    {lo_user_id: 2, hi_user_id: 3, discounted_diluted_seconds: 7},
+	];
+	const termLimited = [3];
+	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships, termLimited);
+	assert.deepEqual(chain, {
+	    2: { id: 2, children: [1], rank: 0 },  // President.
+	    1: { id: 1, boss: 2, children: [3], rank: 1 },  // Vice President.
+	    3: { id: 3, boss: 1, rank: 2 },  // General 4.
+	});
+    });
     it('Render the chain of command as an image', () => {
 	const nicknames = {
 	    6: 'Brobob',
@@ -163,6 +177,19 @@ describe('Rank', function() {
 	const arr = [1, 2, 3];
 	rank.RemoveByValue(arr, 2);
 	assert.deepEqual(arr, [1, 3]);
+    });
+    it('Copy and filter', () => {
+	assert.deepEqual(rank.CopyAndFilter([], []), []);
+	assert.deepEqual(rank.CopyAndFilter([], [1]), []);
+	assert.deepEqual(rank.CopyAndFilter([1], []), [1]);
+	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], []), [1, 2, 3]);
+	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], [1]), [2, 3]);
+	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], [2]), [1, 3]);
+	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], [3]), [1, 2]);
+	assert.deepEqual(rank.CopyAndFilter(['a', 'b', 'c'], ['b']), ['a', 'c']);
+	assert.deepEqual(rank.CopyAndFilter([2, 4, 6, 8], [4, 6]), [2, 8]);
+	assert.deepEqual(rank.CopyAndFilter([2, 4, 6, 8], [4, 6, 2, 8, 1, 3]), []);
+	assert.deepEqual(rank.CopyAndFilter([2, 4, 6, 8], [2, 6, 8]), [4]);
     });
     it('Superiors null case', () => {
 	assert.deepEqual(rank.GetSuperiorIDs(null, null), []);
