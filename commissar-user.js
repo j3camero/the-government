@@ -223,23 +223,6 @@ function GetUserWithHighestParticipationPoints() {
     return commissarUserCache[6];
 }
 
-// Returns a user with the given target rank, who doesn't already have an office.
-// If all users of the target rank already have an office, returns null.
-//   - targetRank: find a user of this rank exactly.
-//   - userCache (optional): for unit testing a mock user cache can be passed in.
-function FindUnassignedUser(targetRank, userCache) {
-    if (!userCache) {
-	userCache = commissarUserCache;
-    }
-    let foundUser = null;
-    Object.values(userCache).forEach((user) => {
-	if (!user.office) {
-	    foundUser = user;
-	}
-    });
-    return foundUser;
-}
-
 const executiveOffices = {
     'PRES': {
 	abbreviation: 'Pres.',
@@ -299,25 +282,66 @@ const executiveOffices = {
     },
 };
 
-function UpdateClanExecutives(userCache) {
-    if (!userCache) {
-	userCache = commissarUserCache;
-    }
+// Returns a user with the given target rank, who doesn't already have an office.
+// If all users of the target rank already have an office, returns null.
+//   - targetRank: find a user of this rank exactly.
+//   - userCache: for unit testing a mock user cache can be passed in. In
+//                production the real user cache is passed in.
+//   - chainOfCommand: the most recently computed chain of command.
+function FindUnassignedUser(targetRank, chainOfCommand, userCache) {
+    let foundUser = null;
+    Object.keys(chainOfCommand).forEach((commissar_id) => {
+	const cachedUser = userCache[commissar_id];
+	const comUser = chainOfCommand[commissar_id];
+	if (cachedUser && comUser && comUser.rank === targetRank && !cachedUser.office) {
+	    foundUser = cachedUser;
+	}
+    });
+    return foundUser;
+}
+
+// Updates the clan executives. Fire any users that don't match their jobs any
+// more, then appoint new executives to fill any open spots.
+//   - userCache: for unit testing, pass in a mock of the user cache. In
+//                production, pass the real user cache in.
+//   - chainOfCommand: the most recently computed chain of command.
+function UpdateClanExecutives(chainOfCommand, userCache) {
+    const filledPositions = {};
     // Dismiss executives who don't match any more.
     Object.values(userCache).forEach((user) => {
-	
+	if (!user.office) {
+	    return;
+	}
+	const jobDescription = executiveOffices[user.office];
+	if ((user.office in filledPositions) || (user.rank !== jobDescription.rank)) {
+	    user.setOffice(null);
+	    return;
+	}
+	filledPositions[user.office] = true;
     });
     // Attempt to fill all empty executive roles.
+    Object.keys(executiveOffices).forEach((jobID) => {
+	const jobDescription = executiveOffices[jobID];
+	if (jobID in filledPositions) {
+	    return;
+	}
+	const appointee = FindUnassignedUser(jobDescription.rank, chainOfCommand, userCache);
+	if (appointee) {
+	    appointee.setOffice(jobID);
+	}
+    });
 }
 
 module.exports = {
     CommissarUser,
     CreateNewDatabaseUser,
+    FindUnassignedUser,
     GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     GetUserWithHighestParticipationPoints,
     LoadAllUsersFromDatabase,
+    UpdateClanExecutives,
     WriteAllUsersToDatabase,
     WriteDirtyUsersToDatabase,
 };
