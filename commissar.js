@@ -256,6 +256,7 @@ function UpdateChainOfCommand() {
 	    }
 	    cu.setRank(user.rank);
 	});
+	UserCache.UpdateClanExecutives(chainOfCommand);
 	console.log('Chain of command updated.');
     });
 }

@@ -187,7 +187,7 @@ function CreateNewDatabaseUser(connection, discordMember, callback) {
     console.log(`Create a new DB user for ${nickname}`);
     const rank = rankModule.metadata.length - 1;
     const last_seen = moment().format();
-    const steam_id = null;
+    const office = null;
     const fields = {discord_id, steam_id, nickname, rank, last_seen};
     connection.query('INSERT INTO users SET ?', fields, (err, result) => {
 	if (err) {
@@ -197,10 +197,10 @@ function CreateNewDatabaseUser(connection, discordMember, callback) {
 	const newUser = new CommissarUser(
 	    commissar_id,
 	    discord_id,
-	    steam_id,
 	    nickname,
 	    rank,
 	    last_seen,
+	    office
 	);
 	commissarUserCache[commissar_id] = newUser;
 	if (callback) {
@@ -303,9 +303,12 @@ function FindUnassignedUser(targetRank, chainOfCommand, userCache) {
 // Updates the clan executives. Fire any users that don't match their jobs any
 // more, then appoint new executives to fill any open spots.
 //   - userCache: for unit testing, pass in a mock of the user cache. In
-//                production, pass the real user cache in.
+//                production, leave it out to default to the real user cache.
 //   - chainOfCommand: the most recently computed chain of command.
 function UpdateClanExecutives(chainOfCommand, userCache) {
+    if (!userCache) {
+	userCache = commissarUserCache;
+    }
     const filledPositions = {};
     // Dismiss executives who don't match any more.
     Object.values(userCache).forEach((user) => {
@@ -314,7 +317,7 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 	}
 	const jobDescription = executiveOffices[user.office];
 	const chainUser = chainOfCommand[user.commissar_id];
-	if ((user.office in filledPositions) || (chainUser.rank !== jobDescription.rank)) {
+	if ((user.office in filledPositions) || !chainUser || (chainUser.rank !== jobDescription.rank)) {
 	    user.setOffice(null);
 	    return;
 	}
