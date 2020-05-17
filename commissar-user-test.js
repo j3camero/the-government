@@ -109,4 +109,63 @@ describe('CommissarUser', function() {
 	const user = UserCache.FindUnassignedUser(3, sampleChainOfCommand, mockUserCache);
 	assert(user.commissar_id === 77);
     });
+    it('UpdateClanExecutives all empty', () => {
+	const mockUserCache = {
+	    4: new UserCache.CommissarUser(4),
+	    6: new UserCache.CommissarUser(6),
+	    7: new UserCache.CommissarUser(7),
+	    8: new UserCache.CommissarUser(8),
+	    38: new UserCache.CommissarUser(38),
+	    42: new UserCache.CommissarUser(42),
+	    60: new UserCache.CommissarUser(60),
+	    77: new UserCache.CommissarUser(77),
+	};
+	UserCache.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
+	Object.values(mockUserCache).forEach((user) => {
+	    assert(user.office);
+	});
+    });
+    it('UpdateClanExecutives all full', () => {
+	const mockUserCache = {
+	    4: new UserCache.CommissarUser(4, '', '', 3, null, 'MARINES'),
+	    6: new UserCache.CommissarUser(6, '', '', 0, null, 'PRES'),
+	    7: new UserCache.CommissarUser(7, '', '', 2, null, 'CJCS'),
+	    8: new UserCache.CommissarUser(8, '', '', 3, null, 'ARMY'),
+	    38: new UserCache.CommissarUser(38, '', '', 2, null, 'MINDEF'),
+	    42: new UserCache.CommissarUser(42, '', '', 1, null, 'VP'),
+	    60: new UserCache.CommissarUser(60, '', '', 3, null, 'NAVY'),
+	    77: new UserCache.CommissarUser(77, '', '', 3, null, 'AIR'),
+	};
+	UserCache.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
+	// Spot check one field, but nothing should have changed.
+	assert.equal(mockUserCache[38].office, 'MINDEF');
+    });
+    it('UpdateClanExecutives fire & hire the right people', () => {
+	const chainOfCommand = {
+	    4: { id: 4, rank: 3 },
+	    6: { id: 6, rank: 0 },
+	    7: { id: 7, rank: 2 },
+	    8: { id: 8, rank: 3 },
+	    38: { id: 38, rank: 3 },  // Demoted!
+	    42: { id: 42, rank: 1 },
+	    60: { id: 60, rank: 2 },  // Promoted!
+	    77: { id: 77, rank: 4 },  // Demoted!
+	};
+	const mockUserCache = {
+	    4: new UserCache.CommissarUser(4, '', '', 3, null, 'MARINES'),
+	    6: new UserCache.CommissarUser(6, '', '', 0, null, 'PRES'),
+	    7: new UserCache.CommissarUser(7, '', '', 2, null, 'CJCS'),
+	    8: new UserCache.CommissarUser(8, '', '', 3, null, 'ARMY'),
+	    38: new UserCache.CommissarUser(38, '', '', 2, null, 'MINDEF'),
+	    42: new UserCache.CommissarUser(42, '', '', 1, null, 'VP'),
+	    60: new UserCache.CommissarUser(60, '', '', 3, null, 'NAVY'),
+	    77: new UserCache.CommissarUser(77, '', '', 3, null, 'AIR'),
+	};
+	UserCache.UpdateClanExecutives(chainOfCommand, mockUserCache);
+	assert(mockUserCache[38].office);
+	assert(mockUserCache[38].office != 'MINDEF');
+	assert(mockUserCache[60].office);
+	assert(mockUserCache[60].office, 'MINDEF');
+	assert(!mockUserCache[77].office);
+    });
 });

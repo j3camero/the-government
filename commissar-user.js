@@ -256,6 +256,22 @@ const executiveOffices = {
 	role: 'Army',
 	shortTitle: 'Chief',
     },
+    'NAVY': {
+	abbreviation: 'Sec.',
+	chatroom: 'navy-only',
+	longTitle: 'Secretary of the Navy',
+	rank: 3,
+	role: 'Navy',
+	shortTitle: 'Secretary',
+    },
+    'AIR': {
+	abbreviation: 'Cmdr.',
+	chatroom: 'air-force',
+	longTitle: 'Commander of the Air Force',
+	rank: 3,
+	role: 'Air Force',
+	shortTitle: 'Commander',
+    },
     'MARINES': {
 	abbreviation: 'Cmdt.',
 	chatroom: 'marines-only',
@@ -263,22 +279,6 @@ const executiveOffices = {
 	rank: 3,
 	role: 'Marines',
 	shortTitle: 'Commandant',
-    },
-    'AIR': {
-	abbreviation: 'Sec.',
-	chatroom: 'air-force',
-	longTitle: 'Secretary of the Air Force',
-	rank: 3,
-	role: 'Air Force',
-	shortTitle: 'Secretary',
-    },
-    'INTEL': {
-	abbreviation: 'Dir.',
-	chatroom: 'intel-only',
-	longTitle: 'Director of Intelligence',
-	rank: 3,
-	role: 'Intel',
-	shortTitle: 'Director',
     },
 };
 
@@ -313,7 +313,8 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 	    return;
 	}
 	const jobDescription = executiveOffices[user.office];
-	if ((user.office in filledPositions) || (user.rank !== jobDescription.rank)) {
+	const chainUser = chainOfCommand[user.commissar_id];
+	if ((user.office in filledPositions) || (chainUser.rank !== jobDescription.rank)) {
 	    user.setOffice(null);
 	    return;
 	}
