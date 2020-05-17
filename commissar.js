@@ -27,6 +27,32 @@ const timeTogetherStream = new TimeTogetherStream(new Clock());
 // The elements form an implcit tree.
 let chainOfCommand = {};
 
+function AddRole(member, role) {
+    if (!role || member._roles.indexOf(role) >= 0) {
+	return;
+    }
+    console.log('Adding role', role, 'to', member.nickname);
+    member.addRole(role)
+	.then((member) => {
+	    console.log('OK');
+	}).catch((err) => {
+	    console.log('ERROR!');
+	});
+}
+
+function RemoveRole(member, role) {
+    if (!role || member._roles.indexOf(role) < 0) {
+	return;
+    }
+    console.log('Removing role', role, 'from', member.nickname);
+    member.removeRole(role)
+	.then((member) => {
+	    console.log('OK');
+	}).catch((err) => {
+	    console.log('ERROR!');
+	});
+}
+
 // Updates a guild member's color.
 function UpdateMemberRankRoles(member, rankName) {
     // Look up the IDs of the 4 big categories.
@@ -58,26 +84,10 @@ function UpdateMemberRankRoles(member, rankName) {
 	throw `Invalid rank category name: ${rankName}`;
     };
     // Add role.
-    if (addThisRole && member._roles.indexOf(addThisRole) < 0) {
-	console.log(`Adding role ${addThisRole.name} to ${member.nickname}. `);
-	member.addRole(addThisRole)
-	    .then((member) => {
-		console.log('OK');
-	    }).catch((err) => {
-		console.log('ERROR!');
-	    });
-    }
+    AddRole(member, addThisRole);
     // Remove roles.
     removeTheseRoles.forEach((roleToRemove) => {
-	if (roleToRemove && member._roles.indexOf(roleToRemove) >= 0) {
-	    console.log(`Removing role ${roleToRemove.name} from ${member.nickname}. `);
-	    member.removeRole(roleToRemove)
-		.then((member) => {
-		    console.log('OK');
-		}).catch((err) => {
-		    console.log('ERROR!');
-		});
-	}
+	RemoveRole(member, roleToRemove);
     });
 }
 
@@ -257,7 +267,42 @@ function UpdateChainOfCommand() {
 	    cu.setRank(user.rank);
 	});
 	UserCache.UpdateClanExecutives(chainOfCommand);
+	UpdateMiniClanRoles();
 	console.log('Chain of command updated.');
+    });
+}
+
+function UpdateMiniClanRoles() {
+    const guild = DiscordUtil.GetMainDiscordGuild(client);
+    const allRoleNames = ['Army', 'Navy', 'Air Force', 'Marines'];
+    const rolesByName = {};
+    allRoleNames.forEach((roleName) => {
+	rolesByName[roleName] = DiscordUtil.GetRoleByName(guild, roleName);
+    });
+
+    function UpdateRoles(member, names) {
+	const addRoles = [];
+	const removeRoles = [];
+	Object.keys(rolesByName).forEach((name) => {
+	    const role = rolesByName[name];
+	    if (names.includes(name)) {
+		AddRole(member, role);
+	    } else {
+		RemoveRole(member, role);
+	    }
+	});
+    }
+
+    const rolesById = {};
+    UserCache.ForEachExecutiveWithRole((execID, roleName) => {
+	rolesById[execID] = [roleName];
+    });
+    guild.members.forEach((member) => {
+	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+	if (cu && cu.commissar_id in rolesById) {
+	    const roleNames = rolesById[cu.commissar_id];
+	    UpdateRoles(member, roleNames);
+	}
     });
 }
 
@@ -309,6 +354,10 @@ setInterval(() => {
 	return;
     }
     console.log('Minute heartbeat');
+    // Update clan executive roles.
+    UserCache.UpdateClanExecutives(chainOfCommand);
+    // Update mini-clans.
+    UpdateMiniClanRoles();
     // Update the chain of command.
     UpdateChainOfCommand();
     // Update the nickname, insignia, and roles of the members of the Discord channel.

@@ -188,7 +188,7 @@ function CreateNewDatabaseUser(connection, discordMember, callback) {
     const rank = rankModule.metadata.length - 1;
     const last_seen = moment().format();
     const office = null;
-    const fields = {discord_id, steam_id, nickname, rank, last_seen};
+    const fields = {discord_id, nickname, rank, last_seen};
     connection.query('INSERT INTO users SET ?', fields, (err, result) => {
 	if (err) {
 	    throw err;
@@ -309,6 +309,10 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
     if (!userCache) {
 	userCache = commissarUserCache;
     }
+    if (!chainOfCommand || Object.keys(chainOfCommand).length <= 0) {
+	// Do nothing if the chain of command isn't loaded / calculated yet.
+	return;
+    }
     const filledPositions = {};
     // Dismiss executives who don't match any more.
     Object.values(userCache).forEach((user) => {
@@ -319,9 +323,9 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 	const chainUser = chainOfCommand[user.commissar_id];
 	if ((user.office in filledPositions) || !chainUser || (chainUser.rank !== jobDescription.rank)) {
 	    user.setOffice(null);
-	    return;
+	} else {
+	    filledPositions[user.office] = true;
 	}
-	filledPositions[user.office] = true;
     });
     // Attempt to fill all empty executive roles.
     Object.keys(executiveOffices).forEach((jobID) => {
@@ -336,10 +340,25 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
     });
 }
 
+// Calls an inner function for each executive with role. Typically 3-star Generals
+// with roles Army, Navy, Air Force, and Marines.
+function ForEachExecutiveWithRole(innerFunction) {
+    Object.values(commissarUserCache).forEach((user) => {
+	if (user.office) {
+	    const jobDescription = executiveOffices[user.office];
+	    const roleName = jobDescription.role;
+	    if (roleName) {
+		innerFunction(user.commissar_id, roleName);
+	    }
+	}
+    });
+}
+
 module.exports = {
     CommissarUser,
     CreateNewDatabaseUser,
     FindUnassignedUser,
+    ForEachExecutiveWithRole,
     GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
