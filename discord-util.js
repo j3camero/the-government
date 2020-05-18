@@ -121,6 +121,54 @@ function UpdateChainOfCommandChatChannel(guild, canvas) {
     }, 10);
 }
 
+function UpdateHarmonicCentralityChatChannel(client, centrality) {
+    const guild = GetMainDiscordGuild(client);
+    const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
+    if (channels.length === 0) {
+	throw new Error('Could not find #harmonic-centrality chat channel.');
+    }
+    const channel = channels[0];
+    // Bulk delete messages
+    channel.bulkDelete(3)
+	.then((messages) => {
+	    console.log(`Bulk deleted ${messages.size} messages`);
+	})
+	.catch(console.error);
+    const flat = [];
+    Object.keys(centrality).forEach((i) => {
+	flat.push({
+	    cid: i,
+	    centrality: centrality[i],
+	});
+    });
+    flat.sort((a, b) => {
+	return b.centrality - a.centrality;
+    });
+    const topN = 5;
+    const threeBackticks = '\`\`\`';
+    let message = ('Whoever has the highest Harmonic Centrality score automatically becomes Mr. President. ' +
+		   'Harmonic Centrality is a math formula that calculates \'influence\' in a social network. ' +
+		   'It is impartial and fair. Anyone can become Mr. President. Here are the top candidates ' +
+		   'right now:\n' + threeBackticks);
+    for (let i = 0; i < topN && i < flat.length; ++i) {
+	const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
+	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	const margin = flat[i].centrality / flat[0].centrality - 1;
+	const marginString = Math.round(100 * margin);
+	message += `${i + 1} ${cu.nickname} (${scoreString})`
+	if (i > 0) {
+	    message += ` [${marginString}\%]`
+	}
+	message += '\n';
+    }
+    message += threeBackticks;
+    channel.send(message)
+	.then((message) => {
+	    console.log('Updated #harmonic-centrality');
+	})
+	.catch(console.error);
+}
+
 function GetCommissarIdsOfDiscordMembers(client) {
     const ids = [];
     const guild = GetMainDiscordGuild(client);
@@ -142,4 +190,5 @@ module.exports = {
     GetRoleByName,
     GuildMemberHasRole,
     UpdateChainOfCommandChatChannel,
+    UpdateHarmonicCentralityChatChannel,
 };

@@ -339,21 +339,7 @@ function UpdateMiniClanRoles() {
 function UpdateHarmonicCentrality() {
     const candidates = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
     HarmonicCentrality(candidates, (centrality) => {
-	const flat = [];
-	Object.keys(centrality).forEach((i) => {
-	    flat.push({
-		cid: i,
-		centrality: centrality[i],
-	    });
-	});
-	flat.sort((a, b) => {
-	    return b.centrality - a.centrality;
-	});
-	const topN = 20;
-	console.log('Top', topN, 'by harmonic centrality:');
-	for (let i = 0; i < topN && i < flat.length; ++i) {
-	    console.log(i + 1, flat[i].cid, '(', flat[i].centrality, ')');
-	}
+	DiscordUtil.UpdateHarmonicCentralityChatChannel(client, centrality);
     });
 }
 
@@ -411,7 +397,6 @@ setInterval(() => {
     UpdateMiniClanRoles();
     // Update the chain of command.
     UpdateChainOfCommand();
-    UpdateHarmonicCentrality();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances();
     // Sync user data to the database.
@@ -430,7 +415,7 @@ setInterval(() => {
 	return;
     }
     console.log('Hourly heartbeat');
-    // Do nothing for the hourly heartbeat for now. But keep it.
+    UpdateHarmonicCentrality();
 }, oneHour);
 
 // Login the Commissar bot to Discord.
