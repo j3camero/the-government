@@ -307,7 +307,7 @@ function UpdateMiniClanRoles() {
     // Apply a role to a user and their children in the chain of command, recursively.
     function ApplyRoleDownwards(commissar_id, roleName) {
 	const userRoles = rolesById[commissar_id] || [];
-	userRoles.append(roleName);
+	userRoles.push(roleName);
 	rolesById[commissar_id] = userRoles;
 	const chainUser = chainOfCommand[commissar_id];
 	if (!chainUser || !chainUser.children) {
@@ -321,7 +321,7 @@ function UpdateMiniClanRoles() {
     // Apply a role to a user and their bosses in the chain of command, recursively.
     function ApplyRoleUpwards(commissar_id, roleName) {
 	const userRoles = rolesById[commissar_id] || [];
-	userRoles.append(roleName);
+	userRoles.push(roleName);
 	rolesById[commissar_id] = userRoles;
 	const chainUser = chainOfCommand[commissar_id];
 	if (chainUser && chainUser.boss) {
