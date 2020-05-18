@@ -146,10 +146,9 @@ function UpdateHarmonicCentralityChatChannel(client, centrality) {
     });
     const topN = 5;
     const threeBackticks = '\`\`\`';
-    let message = ('Whoever has the highest Harmonic Centrality score automatically becomes Mr. President. ' +
-		   'Harmonic Centrality is a math formula that calculates \'influence\' in a social network. ' +
-		   'It is impartial and fair. Anyone can become Mr. President. Here are the top candidates ' +
-		   'right now:\n' + threeBackticks);
+    let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
+		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
+		   'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
     for (let i = 0; i < topN && i < flat.length; ++i) {
 	const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
 	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
