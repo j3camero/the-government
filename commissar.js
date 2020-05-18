@@ -273,6 +273,11 @@ function UpdateChainOfCommand() {
 }
 
 function UpdateMiniClanRoles() {
+    if (!chainOfCommand) {
+	// Bail if the chain of command isn't booted up yet.
+	return;
+    }
+    // Get the Discord roles for each mini-clan.
     const guild = DiscordUtil.GetMainDiscordGuild(client);
     const allRoleNames = ['Army', 'Navy', 'Air Force', 'Marines'];
     const rolesByName = {};
@@ -280,6 +285,8 @@ function UpdateMiniClanRoles() {
 	rolesByName[roleName] = DiscordUtil.GetRoleByName(guild, roleName);
     });
 
+    // Custom role updating function for mini-clans. It applies the given
+    // roles and actively removes any others.
     function UpdateRoles(member, names) {
 	const addRoles = [];
 	const removeRoles = [];
@@ -293,10 +300,41 @@ function UpdateMiniClanRoles() {
 	});
     }
 
+    // A list of roles to be applied, keyed by commissar_id. It's this
+    // way to accomodate giving senior leaders several roles.
     const rolesById = {};
+
+    // Apply a role to a user and their children in the chain of command, recursively.
+    function ApplyRoleDownwards(commissar_id, roleName) {
+	const userRoles = rolesById[commissar_id] || [];
+	userRoles.append(roleName);
+	rolesById[commissar_id] = userRoles;
+	const chainUser = chainOfCommand[commissar_id];
+	if (!chainUser || !chainUser.children) {
+	    return;
+	}
+	chainUser.children.forEach((child) => {
+	    ApplyRoleDownwards(child, roleName);
+	});
+    }
+
+    // Apply a role to a user and their bosses in the chain of command, recursively.
+    function ApplyRoleUpwards(commissar_id, roleName) {
+	const userRoles = rolesById[commissar_id] || [];
+	userRoles.append(roleName);
+	rolesById[commissar_id] = userRoles;
+	const chainUser = chainOfCommand[commissar_id];
+	if (chainUser && chainUser.boss) {
+	    ApplyRoleUpwards(chainUser.boss, roleName);
+	}
+    }
+
+    // Kick off the recursive role assignment.
     UserCache.ForEachExecutiveWithRole((execID, roleName) => {
-	rolesById[execID] = [roleName];
+	ApplyRoleDownwards(execID, roleName);
+	ApplyRoleUpwards(execID, roleName);
     });
+    // Apply the calculated mini-clan roles to each user in the Discord guild.
     guild.members.forEach((member) => {
 	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (cu && cu.commissar_id in rolesById) {
