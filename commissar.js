@@ -4,6 +4,7 @@ const db = require('./database');
 const deepEqual = require('deep-equal');
 const Discord = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const HarmonicCentrality = require('./harmonic-centrality');
 const log = require('./log');
 const moment = require('moment');
 const rank = require('./rank');
@@ -231,17 +232,7 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
 // Calculates the chain of command. If there are changes, the update is made.
 function UpdateChainOfCommand() {
     db.getTimeMatrix((relationships) => {
-	const candidateIds = [];
-	const guild = DiscordUtil.GetMainDiscordGuild(client);
-	guild.members.forEach((member) => {
-	    const discordID = member.id;
-	    const cu = UserCache.GetCachedUserByDiscordId(discordID);
-	    if (!cu) {
-		// Unknown user. Leave them out of the rankings.
-		return;
-	    }
-	    candidateIds.push(cu.commissar_id);
-	});
+	const candidateIds = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
 	const mrPresident = UserCache.GetUserWithHighestParticipationPoints();
 	// User 7 (Jeff) can't be President or VP any more.
 	const termLimited = [7];
@@ -256,6 +247,7 @@ function UpdateChainOfCommand() {
 	const nicknames = UserCache.GetAllNicknames();
 	// Generate and post an updated image of the chain of command.
 	const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
+	const guild = DiscordUtil.GetMainDiscordGuild(client);
 	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
 	// Update the people's ranks.
 	Object.values(chainOfCommand).forEach((user) => {
@@ -344,6 +336,27 @@ function UpdateMiniClanRoles() {
     });
 }
 
+function UpdateHarmonicCentrality() {
+    const candidates = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    HarmonicCentrality(candidates, (centrality) => {
+	const flat = [];
+	Object.keys(centrality).forEach((i) => {
+	    flat.push({
+		cid: i,
+		centrality: centrality[i],
+	    });
+	});
+	flat.sort((a, b) => {
+	    return b.centrality - a.centrality;
+	});
+	const topN = 20;
+	console.log('Top', topN, 'by harmonic centrality:');
+	for (let i = 0; i < topN && i < flat.length; ++i) {
+	    console.log(i + 1, flat[i].cid, '(', flat[i].centrality, ')');
+	}
+    });
+}
+
 // This Discord event fires when the bot successfully connects to Discord.
 client.on('ready', () => {
     console.log('Discord bot connected.');
@@ -398,6 +411,7 @@ setInterval(() => {
     UpdateMiniClanRoles();
     // Update the chain of command.
     UpdateChainOfCommand();
+    UpdateHarmonicCentrality();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances();
     // Sync user data to the database.

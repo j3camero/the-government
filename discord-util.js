@@ -1,6 +1,7 @@
 // Helper functions not specific to any particular Discord bot.
 const Discord = require('discord.js');
 const fs = require('fs');
+const UserCache = require('./commissar-user');
 
 // Looks up the ID of a Discord role by name.
 function GetRoleByName(guild, roleName) {
@@ -120,8 +121,22 @@ function UpdateChainOfCommandChatChannel(guild, canvas) {
     }, 10);
 }
 
+function GetCommissarIdsOfDiscordMembers(client) {
+    const ids = [];
+    const guild = GetMainDiscordGuild(client);
+    guild.members.forEach((member) => {
+	const discordID = member.id;
+	const cu = UserCache.GetCachedUserByDiscordId(discordID);
+	if (cu) {
+	    ids.push(cu.commissar_id);
+	}
+    });
+    return ids;
+}
+
 module.exports = {
     GetAllMatchingTextChannels,
+    GetCommissarIdsOfDiscordMembers,
     GetMainChatChannel,
     GetMainDiscordGuild,
     GetRoleByName,
