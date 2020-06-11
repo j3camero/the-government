@@ -154,7 +154,7 @@ function UpdateHarmonicCentralityChatChannel(client, centrality) {
 	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 	const margin = flat[i].centrality / flat[0].centrality - 1;
 	const marginString = Math.round(100 * margin);
-	message += `${i + 1} ${cu.nickname} (${scoreString})`
+	message += `${i + 1} ${cu.nickname} (\$${scoreString})`
 	if (i > 0) {
 	    message += ` [${marginString}\%]`
 	}
