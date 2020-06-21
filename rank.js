@@ -457,6 +457,9 @@ function RenderChainOfCommand(chain, nicknames) {
 
     // Draws a bunch of names in a column.
     function DrawSquad(squad) {
+	squad.sort((a, b) => {
+	    return a.rank - b.rank;
+	});
 	const x = ConsumeColumn();
 	let y = edgeMargin + 9 * (lineHeight + linkHeight) + lineHeight / 2;
 	squad.forEach((member) => {
