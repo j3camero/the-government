@@ -378,7 +378,7 @@ function MaxSquadSize(chain) {
 	    biggest = Math.max(squad.length, biggest);
 	}
     });
-    const biggestAllowed = 18;
+    const biggestAllowed = 15;
     return Math.min(biggest, biggestAllowed);
 }
 
