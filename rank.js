@@ -423,7 +423,7 @@ function RenderChainOfCommand(chain, nicknames) {
 	4 * fontSizes['General'] +
 	2 * fontSizes['Marshal']
     );
-    const textVerticalMarginRatio = 1.5;
+    const textVerticalMarginRatio = 1.25;
     const totalTextMargin = Math.round(totalTextHeight * textVerticalMarginRatio);
     const totalLinkHeight = height - totalTextHeight - totalTextMargin - 2 * edgeMargin;
     const linkHeight = totalLinkHeight / 9;
