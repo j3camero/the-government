@@ -378,7 +378,8 @@ function MaxSquadSize(chain) {
 	    biggest = Math.max(squad.length, biggest);
 	}
     });
-    return biggest;
+    const biggestAllowed = 18;
+    return Math.min(biggest, biggestAllowed);
 }
 
 function FindMrPresidentInChainOfCommand(chain) {
@@ -394,16 +395,40 @@ function FindMrPresidentInChainOfCommand(chain) {
 function RenderChainOfCommand(chain, nicknames) {
     const width = 1920;
     const height = 1080;
-    const lineHeight = 32;
     const edgeMargin = 16;
     const darkGrey = '#36393f';
     const lightGrey = '#d2d5da';
     const numCols = CountColumns(chain);
     const colWidth = (width - 2 * edgeMargin) / numCols;
     const numRows = MaxSquadSize(chain);
-    const totalTextHeight = lineHeight * (numRows + 9);
-    const totalLinkHeight = height - totalTextHeight - 2 * edgeMargin;
+    const colors = {
+	'General': '#f4b400',
+	'Grunt': '#4285f4',
+	'Marshal': '#189b17',
+	'Officer': '#db4437',
+    };
+    const fontSizes = {
+	'General': 24,
+	'Grunt': 12,
+	'Marshal': 24,
+	'Officer': 12,
+    };
+
+    // Calculate how much total vertical height is taken up by text.
+    const totalTextHeight = (
+	numRows * fontSizes['Grunt'] +
+	// Only 3 Officer levels counted here because the Lieutenants
+	// get rendered with their crews, not on their own.
+	3 * fontSizes['Officer'] +
+	4 * fontSizes['General'] +
+	2 * fontSizes['Marshal']
+    );
+    const textVerticalMarginRatio = 1.5;
+    const totalTextMargin = Math.round(totalTextHeight * textVerticalMarginRatio);
+    const totalLinkHeight = height - totalTextHeight - totalTextMargin - 2 * edgeMargin;
     const linkHeight = totalLinkHeight / 9;
+
+    // Initialize the canvas.
     const canvas = new Canvas.createCanvas(width, height, 'png');
     const context = canvas.getContext('2d');
     context.fillStyle = darkGrey;
@@ -411,18 +436,6 @@ function RenderChainOfCommand(chain, nicknames) {
 
     // Draws one username at a centered x, y coordinate.
     function DrawName(user, x, y, maxWidth) {
-	const colors = {
-	    'General': '#f4b400',
-	    'Grunt': '#4285f4',
-	    'Marshal': '#189b17',
-	    'Officer': '#db4437',
-	};
-	const fontSizes = {
-	    'General': 24,
-	    'Grunt': 12,
-	    'Marshal': 24,
-	    'Officer': 12,
-	};
 	const rank = metadata[user.rank];
 	context.fillStyle = colors[rank.role] || lightGrey;
 	let name = user.id;
@@ -433,6 +446,25 @@ function RenderChainOfCommand(chain, nicknames) {
 	    name = `${rank.abbreviation} ${rank.title}`;
 	}
 	const formattedName = `${name} ${rank.insignia}`;
+	// Shrink the font to make the text fit if necessary.
+	let fontSize = fontSizes[rank.role];
+	for ( ; fontSize >= 9; fontSize -= 1) {
+	    context.font = `${fontSize}px Arial`;
+	    const textWidth = context.measureText(formattedName).width;
+	    if (textWidth <= maxWidth) {
+		break;
+	    }
+	}
+	x -= context.measureText(formattedName).width / 2;
+	y += fontSize / 2 - 2;
+	context.fillText(formattedName, Math.floor(x), Math.floor(y));
+    }
+
+    // Draws a standin for a group of people, like "+3 More *".
+    function DrawStandin(groupSize, x, y, maxWidth) {
+	const rank = metadata[12];
+	context.fillStyle = colors[rank.role] || lightGrey;
+	const formattedName = `+${groupSize} More ${rank.insignia}`;
 	// Shrink the font to make the text fit if necessary.
 	let fontSize = fontSizes[rank.role];
 	for ( ; fontSize >= 9; fontSize -= 1) {
@@ -461,9 +493,16 @@ function RenderChainOfCommand(chain, nicknames) {
 	    return a.rank - b.rank;
 	});
 	const x = ConsumeColumn();
-	let y = edgeMargin + 9 * (lineHeight + linkHeight) + lineHeight / 2;
-	squad.forEach((member) => {
-	    DrawName(member, x, y, colWidth);
+	const lineHeight = fontSizes['Grunt'] * (1 + textVerticalMarginRatio);
+	let y = height - edgeMargin - numRows * lineHeight + lineHeight / 2;
+	squad.forEach((member, i) => {
+	    if (squad.length > numRows && i === numRows - 1) {
+		DrawStandin(squad.length - numRows, x, y, colWidth);
+	    } else if (squad.length <= numRows || i < numRows - 1) {
+		DrawName(member, x, y, colWidth);
+	    } else {
+		// Don't draw the rest of the extra usernames beyond the max.
+	    }
 	    y += lineHeight;
 	});
 	return x;
@@ -479,7 +518,7 @@ function RenderChainOfCommand(chain, nicknames) {
     }
 
     // Recursively draw the tree.
-    function DrawTree(userID) {
+    function DrawTree(userID, topY) {
 	const user = chain[userID];
 	if (user.rank >= 9) {
 	    // User is Lieutenant or below. Draw squad as flat list.
@@ -488,12 +527,19 @@ function RenderChainOfCommand(chain, nicknames) {
 	    return { hi: x, lo: x, width: colWidth, x };
 	}
 	// User is high ranking. Draw as part of the tree.
-	let hi, lo, hix, lox;
-	const children = user.children || [];
-	const linkY = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight + linkHeight / 2;
+	const rankMetadata = metadata[user.rank];
+	const textHeight = fontSizes[rankMetadata.role];
+	const bufferHeight = Math.round(textHeight * textVerticalMarginRatio);
+	const textBottomY = topY + textHeight + bufferHeight;
+	const textMiddleY = (topY + textBottomY) / 2;
+	const linkTopY = textBottomY;
+	const linkBottomY = linkTopY + linkHeight;
+	const linkMiddleY = (linkTopY + linkBottomY) / 2;
 	let totalWidth = 0;
+	const children = user.children || [];
+	let hi, lo, hix, lox;
 	children.forEach((childID) => {
-	    const child = DrawTree(childID);
+	    const child = DrawTree(childID, linkBottomY);
 	    if (!hi || child.hi > hi) {
 		hi = child.hi;
 	    }
@@ -508,10 +554,10 @@ function RenderChainOfCommand(chain, nicknames) {
 	    }
 	    totalWidth += child.width;
 	    // Vertical line segment above each child's name.
-	    DrawLink(child.x, linkY, child.x, linkY + linkHeight / 2);
+	    DrawLink(child.x, linkMiddleY, child.x, linkBottomY);
 	});
 	// Horizontal line segment that links all the children.
-	DrawLink(lox, linkY, hix, linkY);
+	DrawLink(lox, linkMiddleY, hix, linkMiddleY);
 	let x;
 	if (children.length > 0) {
 	    x = (hi + lo) / 2;
@@ -519,14 +565,14 @@ function RenderChainOfCommand(chain, nicknames) {
 	    x = ConsumeColumn();
 	}
 	// Vertical line segment under the user's name.
-	DrawLink(x, linkY, x, linkY - linkHeight / 2);
-	const y = edgeMargin + user.rank * (lineHeight + linkHeight) + lineHeight / 2;
-	DrawName(user, x, y, totalWidth);
+	DrawLink(x, linkMiddleY, x, linkTopY);
+	// Last but not least, draw the user's own name, centered nicely.
+	DrawName(user, x, textMiddleY, totalWidth);
 	return { hi, lo, width: totalWidth, x }
     }
 
     const mrPresidentID = FindMrPresidentInChainOfCommand(chain);
-    DrawTree(mrPresidentID);
+    DrawTree(mrPresidentID, edgeMargin);
     return canvas;
 }
 
