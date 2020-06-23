@@ -5,7 +5,6 @@ const deepEqual = require('deep-equal');
 const Discord = require('discord.js');
 const DiscordUtil = require('./discord-util');
 const HarmonicCentrality = require('./harmonic-centrality');
-const log = require('./log');
 const moment = require('moment');
 const rank = require('./rank');
 const TimeTogetherStream = require('./time-together-stream');
@@ -90,32 +89,6 @@ function UpdateMemberRankRoles(member, rankName) {
     removeTheseRoles.forEach((roleToRemove) => {
 	RemoveRole(member, roleToRemove);
     });
-}
-
-function logVoiceStateUpdate(oldMember, newMember) {
-  if (oldMember.user.bot || newMember.user.bot) {
-    // Ignore other bots.
-  }
-  if (oldMember.voiceChannelID == newMember.voiceChannelID) {
-    // The user did not enter or leave a voice chat. Ignore this event.
-    return;
-  }
-  if (oldMember.voiceChannelID) {
-    log.info('left vc', {
-      action: 'left vc',
-      guild: oldMember.guild.id,
-      user: oldMember.user.id,
-      voiceChannelID: oldMember.voiceChannelID,
-    });
-  }
-  if (newMember.voiceChannelID) {
-    log.info('joined vc', {
-      action: 'joined vc',
-      guild: newMember.guild.id,
-      user: newMember.user.id,
-      voiceChannelID: newMember.voiceChannelID,
-    });
-  }
 }
 
 // Update the rank insignia, nickname, and roles of a Discord guild
