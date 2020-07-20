@@ -23,6 +23,9 @@ let botActive = false;
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
 
+// Stores who is Mr. President right now.
+let mrPresident;
+
 // The current chain of command. It's a dict of user info keyed by commissar ID.
 // The elements form an implcit tree.
 let chainOfCommand = {};
@@ -204,10 +207,17 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
 
 // Calculates the chain of command. If there are changes, the update is made.
 function UpdateChainOfCommand() {
+    if (!mrPresident) {
+	// There is no mrPresident yet. We can't calculate the Chain of Command.
+	// Bail, but also kick off a Harmonic Centrality update so there will be
+	// a mrPresident next time we try a chain-of-command update.
+	UpdateHarmonicCentrality();
+	return;
+    }
     db.getTimeMatrix((relationships) => {
 	const candidateIds = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
-	const mrPresident = UserCache.GetUserWithHighestParticipationPoints();
-	// User 7 (Jeff) can't be President or VP any more.
+	// User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
+	// TODO: replace this with a column in the users table of the database to avoid hardcoding.
 	const termLimited = [7];
 	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships);
 	if (deepEqual(newChainOfCommand, chainOfCommand)) {
@@ -309,10 +319,26 @@ function UpdateMiniClanRoles() {
     });
 }
 
+function ElectMrPresident(centrality) {
+    console.log('Electing Mr. President.');
+    let bestId;
+    Object.keys(centrality).forEach((i) => {
+	if (!bestId || centrality[i] > centrality[bestId]) {
+	    bestId = i;
+	}
+    });
+    if (!bestId) {
+	return;
+    }
+    mrPresident = UserCache.GetCachedUserByCommissarId(bestId);
+    console.log(`Elected ID ${bestId} (${mrPresident.nickname})`);
+}
+
 function UpdateHarmonicCentrality() {
     const candidates = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
     HarmonicCentrality(candidates, (centrality) => {
 	DiscordUtil.UpdateHarmonicCentralityChatChannel(client, centrality);
+	ElectMrPresident(centrality);
     });
 }
 
@@ -353,7 +379,6 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
     if (!botActive) {
 	return;
     }
-    logVoiceStateUpdate(oldMember, newMember);
     UpdateVoiceActiveMembers();
 });
 

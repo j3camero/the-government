@@ -218,11 +218,6 @@ function GetAllNicknames() {
     return nicknames;
 }
 
-function GetUserWithHighestParticipationPoints() {
-    // User 6 is Bob.
-    return commissarUserCache[6];
-}
-
 const executiveOffices = {
     'PRES': {
 	abbreviation: 'Pres.',
@@ -362,7 +357,6 @@ module.exports = {
     GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
-    GetUserWithHighestParticipationPoints,
     LoadAllUsersFromDatabase,
     UpdateClanExecutives,
     WriteAllUsersToDatabase,
