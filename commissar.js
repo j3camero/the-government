@@ -353,7 +353,6 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
     if (!botActive) {
 	return;
     }
-    logVoiceStateUpdate(oldMember, newMember);
     UpdateVoiceActiveMembers();
 });
 
