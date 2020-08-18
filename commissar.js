@@ -111,7 +111,7 @@ function UpdateMemberAppearance(member) {
 	});
 	return;
     }
-    if (!cu.rank) {
+    if (!cu.rank && cu.rank !== 0) {
 	// The user has not been assigned a rank yet. Bail.
 	return;
     }
@@ -331,6 +331,7 @@ function ElectMrPresident(centrality) {
 	return;
     }
     mrPresident = UserCache.GetCachedUserByCommissarId(bestId);
+    mrPresident.setRank(0);
     console.log(`Elected ID ${bestId} (${mrPresident.nickname})`);
 }
 
