@@ -7,6 +7,8 @@ CREATE TABLE users
 (
     commissar_id INT NOT NULL AUTO_INCREMENT,  -- Our clan's own set of IDs so we don't have to rely on Discord IDs.
     discord_id VARCHAR(32),  -- Discord ID.
+    steam_id VARCHAR(32),  -- Steam ID.
+    battlemetrics_id VARCHAR(32),  -- User ID on Battlemetrics.com.
     nickname VARCHAR(32),  -- Last known nickname.
     rank INT NOT NULL DEFAULT 1,  -- Rank. 0 = President, 1 = VP, 2 = 4-star General, etc.
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Last time active in voice chat.
