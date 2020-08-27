@@ -35,15 +35,15 @@ CREATE TABLE battlemetrics_sessions
 (
     id INT NOT NULL AUTO_INCREMENT,
     battlemetrics_id VARCHAR(64),
-    start_time DATETIME NOT NULL,
-    stop_time DATETIME NOT NULL,
+    start_time DATETIME,
+    stop_time DATETIME,
     first_time BOOLEAN,
     in_game_name VARCHAR(64),
     server_id BIGINT NOT NULL,
     player_id BIGINT NOT NULL,
     identifier_id BIGINT NOT NULL,
     PRIMARY KEY (id),
-    INDEX bmid_index (battlemetrics_id),
+    UNIQUE bmid_unique (battlemetrics_id),
     INDEX server_index (server_id, start_time, stop_time),
     INDEX player_index (player_id, start_time, stop_time)
 );

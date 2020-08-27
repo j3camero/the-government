@@ -1,4 +1,5 @@
 const bearerToken = require('./bearer-token');
+const db = require('../database');
 const request = require('request');
 
 function FetchUrlAndFollowNextPage(url) {
@@ -11,7 +12,7 @@ function FetchUrlAndFollowNextPage(url) {
 	},
 	url,
     };
-    console.log(`Fetching URL: ${url}`)
+    console.log(`Fetching URL: ${url}`);
     request.get(options, (error, response, body) => {
 	if (error) {
 	    console.error('error:', error);
@@ -21,12 +22,15 @@ function FetchUrlAndFollowNextPage(url) {
 	const parsed = JSON.parse(body);
 	const sessions = parsed.data;
 	console.log(`Parsed sessions: ${sessions.length}`);
+	console.log('Trying to insert the sessions into the database.');
+	db.writeBattlemetricsSessions(sessions);
 	if (parsed.links) {
 	    if (parsed.links.next) {
 		const nextPageUrl = parsed.links.next;
 		console.log(`Next page: ${nextPageUrl}`);
 		setTimeout(() => {
-		    FetchUrlAndFollowNextPage(nextPageUrl);
+		    console.log('Would get next page now, but stopping instead.');
+		    //FetchUrlAndFollowNextPage(nextPageUrl);
 		}, 1100);
 	    }
 	}

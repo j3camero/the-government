@@ -1,6 +1,7 @@
 const config = require('./config');
 const fs = require('fs');
 const mysql = require('mysql');
+var SqlString = require('sqlstring');
 
 let connected = false;
 let connection;
@@ -100,9 +101,62 @@ function getTimeMatrix(callback) {
     });
 }
 
+// Write some Battlemetrics session records to the database.
+//
+// The records are sent out immediately without buffering.
+// If any sessions already exist in the database (according to the
+// Battlemetrics session id) then their fields are updated. Duplicate
+// records are not created in the database.
+function writeBattlemetricsSessions(sessions) {
+    if (!connected) {
+	throw 'ERROR: tried to write to database while not connected.';
+    }
+    if (sessions.length === 0) {
+	return;
+    }
+    const formattedSessions = [];
+    sessions.forEach((s) => {
+	const sessionId = SqlString.escape(s.id);
+	const startTime = SqlString.escape(s.attributes.start);
+	const stopTime = SqlString.escape(s.attributes.stop);
+	const firstTime = s.attributes.firstTime ? 'TRUE' : 'FALSE';
+	const inGameName = SqlString.escape(s.attributes.name);
+	const serverId = parseInt(s.relationships.server.data.id);
+	const playerId = parseInt(s.relationships.player.data.id);
+	const identifierId = parseInt(s.relationships.identifiers.data[0].id);
+	formattedSessions.push(`(${sessionId},${startTime},${stopTime},${firstTime},${inGameName},${serverId},${playerId},${identifierId})`);
+    });
+    const sql = (
+	'INSERT INTO battlemetrics_sessions (' +
+	'    battlemetrics_sessions.battlemetrics_id, ' +
+	'    battlemetrics_sessions.start_time, ' +
+	'    battlemetrics_sessions.stop_time, ' +
+	'    battlemetrics_sessions.first_time, ' +
+	'    battlemetrics_sessions.in_game_name, ' +
+	'    battlemetrics_sessions.server_id, ' +
+	'    battlemetrics_sessions.player_id, ' +
+	'    battlemetrics_sessions.identifier_id ' +
+        ') VALUES ' + formattedSessions.join(', ') +
+	'ON DUPLICATE KEY UPDATE ' +
+	'    battlemetrics_sessions.start_time = VALUES(battlemetrics_sessions.start_time), ' +
+	'    battlemetrics_sessions.stop_time = VALUES(battlemetrics_sessions.stop_time), ' +
+	'    battlemetrics_sessions.first_time = VALUES(battlemetrics_sessions.first_time), ' +
+	'    battlemetrics_sessions.in_game_name = VALUES(battlemetrics_sessions.in_game_name), ' +
+	'    battlemetrics_sessions.server_id = VALUES(battlemetrics_sessions.server_id), ' +
+	'    battlemetrics_sessions.player_id = VALUES(battlemetrics_sessions.player_id), ' +
+	'    battlemetrics_sessions.identifier_id = VALUES(battlemetrics_sessions.identifier_id)');
+    connection.query(sql, (err, result) => {
+	if (err) {
+	    throw err;
+	}
+	console.log(`Wrote ${sessions.length} Battlemetrics sessions.`);
+    });
+}
+
 module.exports = {
     getConnection,
     getTimeMatrix,
     isConnected,
+    writeBattlemetricsSessions,
     writeTimeTogetherRecords,
 };
