@@ -69,4 +69,4 @@ function StartNewCrawl() {
     console.log('Start a new crawl.');
 }
 
-FetchUrl('https://api.battlemetrics.com/sessions?filter%5Bgames%5D=rust&filter%5Bat%5D=2020-08-04T01%3A45%3A00Z&page%5Bsize%5D=100');
+FetchUrl('https://api.battlemetrics.com/sessions?filter[games]=rust&filter[at]=2020-08-04T01:45:00Z&page[size]=100');
