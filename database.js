@@ -111,7 +111,7 @@ function writeBattlemetricsSessions(sessions) {
     if (!connected) {
 	throw 'ERROR: tried to write to database while not connected.';
     }
-    if (sessions.length === 0) {
+    if (!sessions || sessions.length === 0) {
 	return;
     }
     const formattedSessions = [];
