@@ -1,3 +1,8 @@
+-- Calculate the co-playing time by joining the sessions by server ID, start, and stop time.
+
+-- Use the commissar database.
+USE commissar;
+
 SELECT
     a.player_id AS player_a,
     b.player_id AS player_b,
@@ -13,6 +18,3 @@ AND a.start_time <= b.start_time
 AND b.start_time < a.stop_time
 GROUP BY a.player_id, b.player_id
 ;
-
---AND ((a.start_time >= '' AND a.start_time < '') OR (a.stop_time >= '' AND a.stop_time < ''))
---AND ((b.start_time >= '' AND b.start_time < '') OR (b.stop_time >= '' AND b.stop_time < ''))
