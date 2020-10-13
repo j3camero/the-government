@@ -83,7 +83,7 @@ function EnforceRateLimit(rateLimit, remaining, callback) {
 }
 
 // The timestamp to start crawling historical data.
-let crawlingTimestamp = new Date('2020-09-17T00:00:00.000Z');
+let crawlingTimestamp = new Date('2020-10-01T00:00:00.000Z');
 
 // Crawl data in chunks of this size.
 const intervalHours = 4;
