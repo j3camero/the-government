@@ -62,19 +62,6 @@ print('Filtered', dead_server_count, 'dead servers to save memory (', '%.2f' % d
 sessions_by_server_id = active_servers
 print('Servers remaining:', len(sessions_by_server_id))
 
-# Store coplaying time between pairs of players using a dict-of-dicts.
-coplaying_time = {}
-
-# Add some coplaying time between a pair of players to the existing sums.
-def AddCoplayingTime(player_id_a, player_id_b, time_in_seconds):
-    hi = max(player_id_a, player_id_b)
-    lo = min(player_id_a, player_id_b)
-    if lo not in coplaying_time:
-        coplaying_time[lo] = {}
-    if hi not in coplaying_time[lo]:
-        coplaying_time[lo][hi] = 0
-    coplaying_time[lo][hi] += time_in_seconds
-
 # Sort the servers by the number of sessions.
 # Processing them from quietest to busiest should save some memory usage.
 servers_by_activity = []
@@ -88,3 +75,36 @@ for session_count, server_id in servers_by_activity[:10]:
 print('Busiest servers:')
 for session_count, server_id in servers_by_activity[-10:]:
     print(server_id, session_count)
+
+# For each server, go through its sessions and add up the total coplay time
+# for each pair of players.
+total_coplay_time = {}
+for i, (session_count, server_id) in enumerate(servers_by_activity):
+    print('Processing server', i + 1, 'of', len(servers_by_activity), '(', len(servers_by_activity) - i, 'left )')
+    server_sessions = sessions_by_server_id[server_id]
+    server_sessions.sort()
+    server_coplay_time = {}
+    active_sessions = []
+    for a in server_sessions:
+        a_start, a_stop, a_player = a
+        new_active_sessions = [a]
+        for b in active_sessions:
+            b_start, b_stop, b_player = b
+            overlap_start = max(a_start, b_start)
+            overlap_stop = min(a_stop, b_stop)
+            duration = overlap_stop - overlap_start
+            if duration > 0:
+                lo, hi = min(a_player, b_player), max(a_player, b_player)
+                server_coplay_time[lo, hi] = server_coplay_time.get((lo, hi), 0) + duration
+            if a_start < b_stop:
+                new_active_sessions.append(b)
+        active_sessions = new_active_sessions
+    coplay_count = 0
+    long_coplay_count = 0
+    # TODO: calculate max edge per user per server, and make sure it passes the filter.
+    for a, b in server_coplay_time:
+        t = server_coplay_time[a, b]
+        if t > 3 * 3600:
+            total_coplay_time[a, b] = total_coplay_time.get((a, b), 0) + t
+    del sessions_by_server_id[server_id]
+print('DONE')
