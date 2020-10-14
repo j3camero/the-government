@@ -85,6 +85,7 @@ for i, (session_count, server_id) in enumerate(servers_by_activity):
     server_sessions.sort()
     server_coplay_time = {}
     active_sessions = []
+    # Join the sessions from this server to calculate local coplaying time.
     for a in server_sessions:
         a_start, a_stop, a_player = a
         new_active_sessions = [a]
@@ -99,12 +100,28 @@ for i, (session_count, server_id) in enumerate(servers_by_activity):
             if a_start < b_stop:
                 new_active_sessions.append(b)
         active_sessions = new_active_sessions
-    coplay_count = 0
-    long_coplay_count = 0
-    # TODO: calculate max edge per user per server, and make sure it passes the filter.
+    # Find the top relationship per user for this server.
+    top_relationships = {}
     for a, b in server_coplay_time:
         t = server_coplay_time[a, b]
-        if t > 3 * 3600:
+        top_a = top_relationships.get(a, (0, b))
+        top_b = top_relationships.get(b, (0, a))
+        if t > top_a[0]:
+            top_relationships[a] = (t, b)
+        if t > top_b[0]:
+            top_relationships[b] = (t, a)
+    # Make sure each user has at least one relationship that passes the
+    # filter. This will ensure that no one is isolated in the social
+    # graph by the filter.
+    memory_saving_threshold = 5 * 3600
+    for a in top_relationships:
+        t, b = top_relationships[a]
+        if t < memory_saving_threshold:
+            total_coplay_time[a, b] = total_coplay_time.get((a, b), 0) + t
+    # Add all server relationships above the threshold to the rust-wide totals.
+    for a, b in server_coplay_time:
+        t = server_coplay_time[a, b]
+        if t >= memory_saving_threshold:
             total_coplay_time[a, b] = total_coplay_time.get((a, b), 0) + t
     del sessions_by_server_id[server_id]
 print('DONE')
