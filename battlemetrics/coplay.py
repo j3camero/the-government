@@ -1,8 +1,8 @@
 import csv
 import dateutil.parser
 
-input_filename = 'battlemetrics-sessions.tsv'
-#input_filename = 'rust-sessions-small.tsv'
+#input_filename = 'battlemetrics-sessions.tsv'
+input_filename = 'rust-sessions-small.tsv'
 
 # A dictionary of lists of sessions.
 sessions_by_server_id = {}
@@ -42,7 +42,6 @@ with open(input_filename, newline='') as tsvfile:
 print('Done parsing', session_count, 'sessions.')
 print('Distinct servers detected:', len(sessions_by_server_id))
 print('Distinct players detected:', len(player_ids))
-del player_ids
 filtered_percent = 100 * long_session_count / (session_count + long_session_count)
 print('Filtered', long_session_count, 'excessively long sessions (', '%.2f' % filtered_percent, '%)')
 
@@ -124,4 +123,17 @@ for i, (session_count, server_id) in enumerate(servers_by_activity):
         if t >= memory_saving_threshold:
             total_coplay_time[a, b] = total_coplay_time.get((a, b), 0) + t
     del sessions_by_server_id[server_id]
-print('DONE')
+print('Relationships tracked:', len(total_coplay_time))
+print('Average relationships per user:', 1.0 * len(total_coplay_time) / len(player_ids))
+
+print('Inverting dictionary.')
+inverted = []
+total_coplay_threshold = 6 * 3600
+for a, b in total_coplay_time:
+    t = total_coplay_time[a, b]
+    if t >= total_coplay_threshold:
+        inverted.append((t, a, b))
+del total_coplay_time
+print('Sorting relationships.')
+inverted.sort(reverse=True)
+print(len(inverted), 'relationships.')
