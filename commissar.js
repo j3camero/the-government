@@ -337,7 +337,14 @@ function ElectMrPresident(centrality) {
 
 function UpdateHarmonicCentrality() {
     const candidates = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    if (candidates.length === 0) {
+	throw 'ERROR: zero candidates for the #chain-of-command!';
+    }
     HarmonicCentrality(candidates, (centrality) => {
+	// Hack: Jeff can't be President.
+	if (7 in centrality) {
+	    delete centrality[7];
+	}
 	DiscordUtil.UpdateHarmonicCentralityChatChannel(client, centrality);
 	ElectMrPresident(centrality);
     });
@@ -347,6 +354,7 @@ function UpdateHarmonicCentrality() {
 client.on('ready', () => {
     console.log('Discord bot connected.');
     discordConnected = true;
+    DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
 });
 
 // This Discord event fires when someone joins a Discord guild that the bot is a member of.

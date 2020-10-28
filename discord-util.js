@@ -171,9 +171,13 @@ function UpdateHarmonicCentralityChatChannel(client, centrality) {
 function GetCommissarIdsOfDiscordMembers(client) {
     const ids = [];
     const guild = GetMainDiscordGuild(client);
+    //console.log('Guild:', guild);
+    guild.members.fetch().then(console.log).catch(console.error);
+    console.log('Members:', guild.members.length);
     guild.members.forEach((member) => {
 	const discordID = member.id;
 	const cu = UserCache.GetCachedUserByDiscordId(discordID);
+	console.log('discordID:', discordID, 'cu:', cu);
 	if (cu) {
 	    ids.push(cu.commissar_id);
 	}
