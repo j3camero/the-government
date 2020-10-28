@@ -219,7 +219,7 @@ function UpdateChainOfCommand() {
 	// User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
 	// TODO: replace this with a column in the users table of the database to avoid hardcoding.
 	const termLimited = [7];
-	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships);
+	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships, termLimited);
 	if (deepEqual(newChainOfCommand, chainOfCommand)) {
 	    // Bail if there are no changes to the chain of command.
 	    return;
