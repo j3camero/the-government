@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Software for managing a gaming clan.",
   "main": "commissar.js",
+  "engines": {
+    "node": ">=0.14.15"
+  },
   "scripts": {
     "start": "node commissar.js",
     "test": "mocha './{,!(node_modules)/**}/*-test.js'"

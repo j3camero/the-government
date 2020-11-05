@@ -5,18 +5,25 @@ const UserCache = require('./commissar-user');
 
 // Looks up the ID of a Discord role by name.
 function GetRoleByName(guild, roleName) {
-  for (let role of guild.roles.values()) {
-    if (role.name === roleName) {
-        return role.id;
-    }
-  }
-  return null;
+//    return new Promise(resolve => {
+//	guild.roles.fetch().then((roles) => {
+//	    if (role.name === roleName) {
+//		resolve(role.id);
+//	    }
+//	});
+//    });
+    guild.roles.cache.forEach(role => {
+	if (role.name === roleName) {
+	    return role.id;
+	}  
+    });
+    return null;
 }
 
 // Checks if a Discord guild member has a role, by name.
 function GuildMemberHasRole(member, roleName) {
-  let found = false;
-  member.roles.forEach((role) => {
+    let found = false;
+    member.roles.cache.forEach((role) => {
     if (role.name === roleName) {
       found = true;
     }
@@ -27,7 +34,7 @@ function GuildMemberHasRole(member, roleName) {
 // Returns a list of text channels with names that match channelName.
 function GetAllMatchingTextChannels(guild, channelName) {
   const matchingChannels = [];
-  guild.channels.forEach((channel) => {
+  guild.channels.cache.forEach((channel) => {
     if (channel.name === channelName && channel.type === 'text') {
       matchingChannels.push(channel);
     }
@@ -49,7 +56,7 @@ function GetMainChatChannel(guild) {
   }
   // If no #main or #general found, return any text channel at all.
   let matchingChannel;
-  guild.channels.forEach((channel) => {
+  guild.channels.cache.forEach((channel) => {
     if (channel.type === 'text') {
       matchingChannel = channel;
     }
@@ -62,27 +69,15 @@ function GetMainChatChannel(guild) {
 }
 
 // The the "main" Discord Guild for the Secret Clan.
-function GetMainDiscordGuild(client) {
+function GetMainDiscordGuild(client, callback) {
     const guildID = '305840605328703500';
-    let exactMatch;
-    let bestMatch;
-    let minTimestamp;
-    client.guilds.forEach((guild) => {
-	if (guild.id === guildID) {
-	    exactMatch = guild;
-	}
-	if (!minTimestamp || guild.joinedTimestamp < minTimestamp) {
-	    bestMatch = guild;
-	    minTimestamp = guild.joinedTimestamp;
-	}
-    });
-    if (exactMatch) {
-	return exactMatch;
-    }
-    if (bestMatch) {
-	return bestMatch;
-    }
-    throw 'Error: Main Discord guild not found!';
+    client.guilds.fetch(guildID)
+	.then((guild) => {
+	    callback(guild);
+	})
+	.catch((err) => {
+	    throw err;
+	});
 }
 
 function UpdateChainOfCommandChatChannel(guild, canvas) {
@@ -122,67 +117,69 @@ function UpdateChainOfCommandChatChannel(guild, canvas) {
 }
 
 function UpdateHarmonicCentralityChatChannel(client, centrality) {
-    const guild = GetMainDiscordGuild(client);
-    const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
-    if (channels.length === 0) {
-	throw new Error('Could not find #harmonic-centrality chat channel.');
-    }
-    const channel = channels[0];
-    // Bulk delete messages
-    channel.bulkDelete(3)
-	.then((messages) => {
-	    console.log(`Bulk deleted ${messages.size} messages`);
-	})
-	.catch(console.error);
-    const flat = [];
-    Object.keys(centrality).forEach((i) => {
-	flat.push({
-	    cid: i,
-	    centrality: centrality[i],
-	});
-    });
-    flat.sort((a, b) => {
-	return b.centrality - a.centrality;
-    });
-    const topN = 5;
-    const threeBackticks = '\`\`\`';
-    let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
-		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
-		   'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
-    for (let i = 0; i < topN && i < flat.length; ++i) {
-	const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
-	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-	const margin = flat[i].centrality / flat[0].centrality - 1;
-	const marginString = Math.round(100 * margin);
-	message += `${i + 1} ${cu.nickname} (\$${scoreString})`
-	if (i > 0) {
-	    message += ` [${marginString}\%]`
+    GetMainDiscordGuild(client, (guild) => {
+	const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
+	if (channels.length === 0) {
+	    throw new Error('Could not find #harmonic-centrality chat channel.');
 	}
-	message += '\n';
-    }
-    message += threeBackticks;
-    channel.send(message)
-	.then((message) => {
-	    console.log('Updated #harmonic-centrality');
-	})
-	.catch(console.error);
+	const channel = channels[0];
+	// Bulk delete messages
+	channel.bulkDelete(3)
+	    .then((messages) => {
+		console.log(`Bulk deleted ${messages.size} messages`);
+	    })
+	    .catch(console.error);
+	const flat = [];
+	Object.keys(centrality).forEach((i) => {
+	    flat.push({
+		cid: i,
+		centrality: centrality[i],
+	    });
+	});
+	flat.sort((a, b) => {
+	    return b.centrality - a.centrality;
+	});
+	const topN = 5;
+	const threeBackticks = '\`\`\`';
+	let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
+		       'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
+		       'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
+	for (let i = 0; i < topN && i < flat.length; ++i) {
+	    const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
+	    const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	    const margin = flat[i].centrality / flat[0].centrality - 1;
+	    const marginString = Math.round(100 * margin);
+	    message += `${i + 1} ${cu.nickname} (\$${scoreString})`
+	    if (i > 0) {
+		message += ` [${marginString}\%]`
+	    }
+	    message += '\n';
+	}
+	message += threeBackticks;
+	channel.send(message)
+	    .then((message) => {
+		console.log('Updated #harmonic-centrality');
+	    })
+	    .catch(console.error);
+    });
 }
 
-function GetCommissarIdsOfDiscordMembers(client) {
-    const ids = [];
-    const guild = GetMainDiscordGuild(client);
-    //console.log('Guild:', guild);
-    guild.members.fetch().then(console.log).catch(console.error);
-    console.log('Members:', guild.members.length);
-    guild.members.forEach((member) => {
-	const discordID = member.id;
-	const cu = UserCache.GetCachedUserByDiscordId(discordID);
-	console.log('discordID:', discordID, 'cu:', cu);
-	if (cu) {
-	    ids.push(cu.commissar_id);
-	}
+function GetCommissarIdsOfDiscordMembers(client, callback) {
+    GetMainDiscordGuild(client, (guild) => {
+	guild.members.fetch().then((members) => {
+	    const ids = [];
+	    members.forEach((member) => {
+		const discordID = member.id;
+		const cu = UserCache.GetCachedUserByDiscordId(discordID);
+		if (cu) {
+		    ids.push(cu.commissar_id);
+		}
+	    });
+	    callback(ids);
+	}).catch((error) => {
+	    throw error;
+	});
     });
-    return ids;
 }
 
 module.exports = {
