@@ -5,13 +5,6 @@ const UserCache = require('./commissar-user');
 
 // Looks up the ID of a Discord role by name.
 function GetRoleByName(guild, roleName) {
-//    return new Promise(resolve => {
-//	guild.roles.fetch().then((roles) => {
-//	    if (role.name === roleName) {
-//		resolve(role.id);
-//	    }
-//	});
-//    });
     guild.roles.cache.forEach(role => {
 	if (role.name === roleName) {
 	    return role.id;
@@ -69,15 +62,10 @@ function GetMainChatChannel(guild) {
 }
 
 // The the "main" Discord Guild for the Secret Clan.
-function GetMainDiscordGuild(client, callback) {
+async function GetMainDiscordGuild(client) {
     const guildID = '305840605328703500';
-    client.guilds.fetch(guildID)
-	.then((guild) => {
-	    callback(guild);
-	})
-	.catch((err) => {
-	    throw err;
-	});
+    const guild = await client.guilds.fetch(guildID);
+    return guild;
 }
 
 function UpdateChainOfCommandChatChannel(guild, canvas) {
@@ -116,70 +104,57 @@ function UpdateChainOfCommandChatChannel(guild, canvas) {
     }, 10);
 }
 
-function UpdateHarmonicCentralityChatChannel(client, centrality) {
-    GetMainDiscordGuild(client, (guild) => {
-	const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
-	if (channels.length === 0) {
-	    throw new Error('Could not find #harmonic-centrality chat channel.');
-	}
-	const channel = channels[0];
-	// Bulk delete messages
-	channel.bulkDelete(3)
-	    .then((messages) => {
-		console.log(`Bulk deleted ${messages.size} messages`);
-	    })
-	    .catch(console.error);
-	const flat = [];
-	Object.keys(centrality).forEach((i) => {
-	    flat.push({
-		cid: i,
-		centrality: centrality[i],
-	    });
+async function UpdateHarmonicCentralityChatChannel(client, centrality) {
+    const guild = await GetMainDiscordGuild(client);
+    const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
+    if (channels.length === 0) {
+	throw new Error('Could not find #harmonic-centrality chat channel.');
+    }
+    const channel = channels[0];
+    // Bulk delete messages
+    channel.bulkDelete(3);
+    const flat = [];
+    Object.keys(centrality).forEach((i) => {
+	flat.push({
+	    cid: i,
+	    centrality: centrality[i],
 	});
-	flat.sort((a, b) => {
-	    return b.centrality - a.centrality;
-	});
-	const topN = 5;
-	const threeBackticks = '\`\`\`';
-	let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
-		       'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
-		       'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
-	for (let i = 0; i < topN && i < flat.length; ++i) {
-	    const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
-	    const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-	    const margin = flat[i].centrality / flat[0].centrality - 1;
-	    const marginString = Math.round(100 * margin);
-	    message += `${i + 1} ${cu.nickname} (\$${scoreString})`
-	    if (i > 0) {
-		message += ` [${marginString}\%]`
-	    }
-	    message += '\n';
-	}
-	message += threeBackticks;
-	channel.send(message)
-	    .then((message) => {
-		console.log('Updated #harmonic-centrality');
-	    })
-	    .catch(console.error);
     });
+    flat.sort((a, b) => {
+	return b.centrality - a.centrality;
+    });
+    const topN = 5;
+    const threeBackticks = '\`\`\`';
+    let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
+		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
+		   'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
+    for (let i = 0; i < topN && i < flat.length; ++i) {
+	const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
+	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	const margin = flat[i].centrality / flat[0].centrality - 1;
+	const marginString = Math.round(100 * margin);
+	message += `${i + 1} ${cu.nickname} (\$${scoreString})`
+	if (i > 0) {
+	    message += ` [${marginString}\%]`
+	}
+	message += '\n';
+    }
+    message += threeBackticks;
+    channel.send(message);
 }
 
-function GetCommissarIdsOfDiscordMembers(client, callback) {
-    GetMainDiscordGuild(client, (guild) => {
-	guild.members.fetch().then((members) => {
-	    const ids = [];
-	    members.forEach((member) => {
-		const discordID = member.id;
-		const cu = UserCache.GetCachedUserByDiscordId(discordID);
-		if (cu) {
-		    ids.push(cu.commissar_id);
-		}
-	    });
-	    callback(ids);
-	}).catch((error) => {
-	    throw error;
-	});
+async function GetCommissarIdsOfDiscordMembers(client) {
+    const guild = await GetMainDiscordGuild(client);
+    const members = await guild.members.fetch();
+    const ids = [];
+    members.forEach((member) => {
+	const discordID = member.id;
+	const cu = UserCache.GetCachedUserByDiscordId(discordID);
+	if (cu) {
+	    ids.push(cu.commissar_id);
+	}
     });
+    return ids;
 }
 
 module.exports = {

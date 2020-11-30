@@ -144,23 +144,21 @@ function UpdateMemberAppearance(member) {
 }
 
 // Updates people's rank and nickname-based insignia (dots, stars) in Discord.
-function UpdateAllDiscordMemberAppearances() {
-    DiscordUtil.GetMainDiscordGuild(client, async (guild) => {
-	console.log('Fetching members to update appearances.');
-	const members = await guild.members.fetch();
-	console.log('Got members. Updating appearances.');
-	members.forEach((member) => {
-	    UpdateMemberAppearance(member);
-	});
+async function UpdateAllDiscordMemberAppearances() {
+    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    console.log('Fetching members to update appearances.');
+    const members = await guild.members.fetch();
+    console.log('Got members. Updating appearances.');
+    members.forEach((member) => {
+	UpdateMemberAppearance(member);
     });
 }
 
 // Looks for 2 or more users in voice channels together and credits them.
 // Looks in the main Discord Guild only.
-function UpdateVoiceActiveMembersForMainDiscordGuild() {
-    DiscordUtil.GetMainDiscordGuild(client, (guild) => {
-	UpdateVoiceActiveMembersForOneGuild(guild);
-    });
+async function UpdateVoiceActiveMembersForMainDiscordGuild() {
+    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    UpdateVoiceActiveMembersForOneGuild(guild);
 }
 
 // Looks for 2 or more users in voice channels together and credits them.
@@ -214,21 +212,19 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
     // Delay for a few seconds to spread out the promotion messages and
     // also achieve a crude non-guaranteed sorting by rank.
     const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
-    setTimeout(() => {
-	DiscordUtil.GetMainDiscordGuild(client, (guild) => {
-	    const channel = DiscordUtil.GetMainChatChannel(guild);
-	    channel.send(message);
-	});
+    setTimeout(async () => {
+	const guild = await DiscordUtil.GetMainDiscordGuild(client);
+	const channel = DiscordUtil.GetMainChatChannel(guild);
+	channel.send(message);
     }, delayMillis);
 }
 
 
 // Calculates the chain of command. If there are changes, the update is made.
 // Only affects the main Discord guild.
-function UpdateChainOfCommandForMainDiscordGuild() {
-    DiscordUtil.GetCommissarIdsOfDiscordMembers(client, (candidateIds) => {
-	UpdateChainOfCommandForCandidates(candidateIds);
-    });
+async function UpdateChainOfCommandForMainDiscordGuild() {
+    const candidateIds = await DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    UpdateChainOfCommandForCandidates(candidateIds);
 }
 
 // Calculates the chain of command. If there are changes, the update is made.
@@ -243,7 +239,7 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	UpdateHarmonicCentrality();
 	return;
     }
-    db.getTimeMatrix((relationships) => {
+    db.getTimeMatrix(async (relationships) => {
 	// User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
 	// TODO: replace this with a column in the users table of the database to avoid hardcoding.
 	const termLimited = [7];
@@ -258,21 +254,20 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	const nicknames = UserCache.GetAllNicknames();
 	// Generate and post an updated image of the chain of command.
 	const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
-	DiscordUtil.GetMainDiscordGuild(client, (guild) => {
-	    DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
-	    // Update the people's ranks.
-	    Object.values(chainOfCommand).forEach((user) => {
-		const cu = UserCache.GetCachedUserByCommissarId(user.id);
-		// Only announce promotions if the user has been active recently.
-		if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
-		    AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
-		}
-		cu.setRank(user.rank);
-	    });
-	    UserCache.UpdateClanExecutives(chainOfCommand);
-	    UpdateMiniClanRolesForMainDiscordGuild();
-	    console.log('Chain of command updated.');
+	const guild = await DiscordUtil.GetMainDiscordGuild(client);
+	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
+	// Update the people's ranks.
+	Object.values(chainOfCommand).forEach((user) => {
+	    const cu = UserCache.GetCachedUserByCommissarId(user.id);
+	    // Only announce promotions if the user has been active recently.
+	    if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
+		AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
+	    }
+	    cu.setRank(user.rank);
 	});
+	UserCache.UpdateClanExecutives(chainOfCommand);
+	UpdateMiniClanRolesForMainDiscordGuild();
+	console.log('Chain of command updated.');
     });
 }
 
@@ -282,10 +277,9 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 // one of the four 3-star Generals.
 //
 // Updates the mini-clans for the main Discord guild only.
-function UpdateMiniClanRolesForMainDiscordGuild() {
-    DiscordUtil.GetMainDiscordGuild(client, (guild) => {
-	UpdateMiniClanRolesForOneGuild(guild);
-    });
+async function UpdateMiniClanRolesForMainDiscordGuild() {
+    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    UpdateMiniClanRolesForOneGuild(guild);
 }
 
 // Updates the mini-clans for one Discord guild only.
@@ -378,19 +372,18 @@ function ElectMrPresident(centrality) {
     console.log(`Elected ID ${bestId} (${mrPresident.nickname})`);
 }
 
-function UpdateHarmonicCentrality() {
-    DiscordUtil.GetCommissarIdsOfDiscordMembers(client, (candidates) => {
-	if (candidates.length === 0) {
-	    throw 'ERROR: zero candidates for the #chain-of-command!';
+async function UpdateHarmonicCentrality() {
+    const candidates = await DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    if (candidates.length === 0) {
+	throw 'ERROR: zero candidates for the #chain-of-command!';
+    }
+    HarmonicCentrality(candidates, (centrality) => {
+	// Hack: Jeff can't be President.
+	if (7 in centrality) {
+	    delete centrality[7];
 	}
-	HarmonicCentrality(candidates, (centrality) => {
-	    // Hack: Jeff can't be President.
-	    if (7 in centrality) {
-		delete centrality[7];
-	    }
-	    DiscordUtil.UpdateHarmonicCentralityChatChannel(client, centrality);
-	    ElectMrPresident(centrality);
-	});
+	DiscordUtil.UpdateHarmonicCentralityChatChannel(client, centrality);
+	ElectMrPresident(centrality);
     });
 }
 
