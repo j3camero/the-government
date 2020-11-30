@@ -283,7 +283,7 @@ async function UpdateMiniClanRolesForMainDiscordGuild() {
 }
 
 // Updates the mini-clans for one Discord guild only.
-function UpdateMiniClanRolesForOneGuild(guild) {
+async function UpdateMiniClanRolesForOneGuild(guild) {
     if (!chainOfCommand) {
 	// Bail if the chain of command isn't booted up yet.
 	return;
@@ -345,14 +345,13 @@ function UpdateMiniClanRolesForOneGuild(guild) {
 	ApplyRoleUpwards(execID, roleName);
     });
     // Apply the calculated mini-clan roles to each user in the Discord guild.
-    guild.members.fetch().then(members => {
-	members.forEach((member) => {
-	    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
-	    if (cu && cu.commissar_id in rolesById) {
-		const roleNames = rolesById[cu.commissar_id];
-		UpdateRoles(member, roleNames);
-	    }
-	});
+    const members = await guild.members.fetch();
+    members.forEach((member) => {
+	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+	if (cu && cu.commissar_id in rolesById) {
+	    const roleNames = rolesById[cu.commissar_id];
+	    UpdateRoles(member, roleNames);
+	}
     });
 }
 

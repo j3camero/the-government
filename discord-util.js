@@ -68,7 +68,7 @@ async function GetMainDiscordGuild(client) {
     return guild;
 }
 
-function UpdateChainOfCommandChatChannel(guild, canvas) {
+async function UpdateChainOfCommandChatChannel(guild, canvas) {
     const mainMessage = (
 	'The Chain of Command auto updates based on who you spend time with in Discord. ' +
 	    'Anyone can become Mr. President because of the impartial AI algorithm.');
@@ -81,27 +81,16 @@ function UpdateChainOfCommandChatChannel(guild, canvas) {
     }
     const channel = channels[0];
     // Bulk delete messages
-    channel.bulkDelete(3)
-	.then((messages) => {
-	    console.log(`Bulk deleted ${messages.size} messages`);
-	})
-	.catch(console.error);
-    setTimeout(() => {
-	const buf = canvas.toBuffer();
-	fs.writeFileSync('chain-of-command.png', buf);
-	channel.send(mainMessage, {
-	    files: [{
-		attachment: 'chain-of-command.png',
-		name: 'chain-of-command.png'
-	    }]
-	})
-	    .then((message) => {
-		// Main message successfully sent. Send footer message now.
-		channel.send(footerMessage);
-	    })
-	    .catch(console.error);;
- 
-    }, 10);
+    await channel.bulkDelete(3);
+    const buf = canvas.toBuffer();
+    fs.writeFileSync('chain-of-command.png', buf);
+    await channel.send(mainMessage, {
+	files: [{
+	    attachment: 'chain-of-command.png',
+	    name: 'chain-of-command.png'
+	}]
+    });
+    channel.send(footerMessage);
 }
 
 async function UpdateHarmonicCentralityChatChannel(client, centrality) {
