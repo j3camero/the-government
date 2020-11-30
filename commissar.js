@@ -145,13 +145,12 @@ function UpdateMemberAppearance(member) {
 
 // Updates people's rank and nickname-based insignia (dots, stars) in Discord.
 function UpdateAllDiscordMemberAppearances() {
-    DiscordUtil.GetMainDiscordGuild(client, (guild) => {
+    DiscordUtil.GetMainDiscordGuild(client, async (guild) => {
 	console.log('Fetching members to update appearances.');
-	guild.members.fetch().then(members => {
-	    console.log('Got members. Updating appearances.');
-	    members.forEach((member) => {
-		UpdateMemberAppearance(member);
-	    });
+	const members = await guild.members.fetch();
+	console.log('Got members. Updating appearances.');
+	members.forEach((member) => {
+	    UpdateMemberAppearance(member);
 	});
     });
 }
