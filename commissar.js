@@ -32,12 +32,12 @@ let mrPresident;
 // The elements form an implcit tree.
 let chainOfCommand = {};
 
-function AddRole(member, role) {
-    if (!role || member._roles.indexOf(role) >= 0) {
+function AddRole(member, roleID) {
+    if (!roleID || DiscordUtil.GuildMemberHasRoleByID(member, roleID)) {
 	return;
     }
-    console.log('Adding role', role, 'to', member.nickname);
-    member.addRole(role)
+    console.log('Adding role', roleID, 'to', member.nickname);
+    member.roles.add(roleID)
 	.then((member) => {
 	    console.log('OK');
 	}).catch((err) => {
@@ -45,12 +45,12 @@ function AddRole(member, role) {
 	});
 }
 
-function RemoveRole(member, role) {
-    if (!role || member._roles.indexOf(role) < 0) {
+function RemoveRole(member, roleID) {
+    if (!roleID || !DiscordUtil.GuildMemberHasRoleByID(member, roleID)) {
 	return;
     }
-    console.log('Removing role', role, 'from', member.nickname);
-    member.removeRole(role)
+    console.log('Removing role', roleID, 'from', member.nickname);
+    member.roles.remove(roleID)
 	.then((member) => {
 	    console.log('OK');
 	}).catch((err) => {

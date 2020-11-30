@@ -5,23 +5,18 @@ const UserCache = require('./commissar-user');
 
 // Looks up the ID of a Discord role by name.
 function GetRoleByName(guild, roleName) {
-    guild.roles.cache.forEach(role => {
-	if (role.name === roleName) {
-	    return role.id;
-	}  
-    });
-    return null;
+    const role = guild.roles.cache.find(role => role.name === roleName);
+    if (role) {
+	return role.id;
+    } else {
+	return null;
+    }
 }
 
-// Checks if a Discord guild member has a role, by name.
-function GuildMemberHasRole(member, roleName) {
-    let found = false;
-    member.roles.cache.forEach((role) => {
-    if (role.name === roleName) {
-      found = true;
-    }
-  });
-  return found;
+// Checks if a Discord guild member has a role, by ID.
+function GuildMemberHasRoleByID(member, roleID) {
+    const role = member.roles.cache.find(role => role.name === roleID);
+    return role ? true : false;
 }
 
 // Returns a list of text channels with names that match channelName.
@@ -152,7 +147,7 @@ module.exports = {
     GetMainChatChannel,
     GetMainDiscordGuild,
     GetRoleByName,
-    GuildMemberHasRole,
+    GuildMemberHasRoleByID,
     UpdateChainOfCommandChatChannel,
     UpdateHarmonicCentralityChatChannel,
 };
