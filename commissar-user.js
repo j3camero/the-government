@@ -234,12 +234,14 @@ const executiveOffices = {
     'CJCS': {
 	abbreviation: 'Chmn.',
 	longTitle: 'Chairman of the Joint Chiefs of Staff',
+	personalRole: 'Chairman of the Joint Chiefs of Staff',
 	rank: 2,
 	shortTitle: 'Chairman',
     },
     'MINDEF': {
 	abbreviation: 'Min.',
 	longTitle: 'Minister of Defense',
+	personalRole: 'Minister of Defense',
 	rank: 2,
 	shortTitle: 'Minister',
     },
@@ -248,7 +250,7 @@ const executiveOffices = {
 	chatroom: 'army-only',
 	longTitle: 'Chief of the Army',
 	rank: 3,
-	role: 'Army',
+	recursiveRole: 'Army',
 	shortTitle: 'Chief',
     },
     'NAVY': {
@@ -256,7 +258,7 @@ const executiveOffices = {
 	chatroom: 'navy-only',
 	longTitle: 'Secretary of the Navy',
 	rank: 3,
-	role: 'Navy',
+	recursiveRole: 'Navy',
 	shortTitle: 'Secretary',
     },
     'AIR': {
@@ -264,7 +266,7 @@ const executiveOffices = {
 	chatroom: 'air-force',
 	longTitle: 'Commander of the Air Force',
 	rank: 3,
-	role: 'Air Force',
+	recursiveRole: 'Air Force',
 	shortTitle: 'Commander',
     },
     'MARINES': {
@@ -272,7 +274,7 @@ const executiveOffices = {
 	chatroom: 'marines-only',
 	longTitle: 'Commandant of the Marines',
 	rank: 3,
-	role: 'Marines',
+	recursiveRole: 'Marines',
 	shortTitle: 'Commandant',
     },
 };
@@ -337,14 +339,13 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 
 // Calls an inner function for each executive with role. Typically 3-star Generals
 // with roles Army, Navy, Air Force, and Marines.
-function ForEachExecutiveWithRole(innerFunction) {
+function ForEachExecutiveWithRoles(innerFunction) {
     Object.values(commissarUserCache).forEach((user) => {
 	if (user.office) {
 	    const jobDescription = executiveOffices[user.office];
-	    const roleName = jobDescription.role;
-	    if (roleName) {
-		innerFunction(user.commissar_id, roleName);
-	    }
+	    const recursiveRole = jobDescription.recursiveRole;
+	    const personalRole = jobDescription.personalRole;
+	    innerFunction(user.commissar_id, recursiveRole, personalRole);
 	}
     });
 }
@@ -353,7 +354,7 @@ module.exports = {
     CommissarUser,
     CreateNewDatabaseUser,
     FindUnassignedUser,
-    ForEachExecutiveWithRole,
+    ForEachExecutiveWithRoles,
     GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
