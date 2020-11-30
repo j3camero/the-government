@@ -76,14 +76,14 @@ const metadata = [
     },
     {
 	abbreviation: 'Sgt.',
-	count: 15,
+	count: 26,
 	insignia: '●●●',
 	role: 'Grunt',
 	title: 'Sergeant',
     },
     {
 	abbreviation: 'Cpl.',
-	count: 17,
+	count: 52,
 	insignia: '●●',
 	role: 'Grunt',
 	title: 'Corporal',

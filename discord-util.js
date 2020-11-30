@@ -3,31 +3,32 @@ const Discord = require('discord.js');
 const fs = require('fs');
 const UserCache = require('./commissar-user');
 
-// Looks up the ID of a Discord role by name.
-function GetRoleByName(guild, roleName) {
-  for (let role of guild.roles.values()) {
-    if (role.name === roleName) {
-        return role.id;
+let guildRolesCached = false;
+
+// Looks up a Discord role by name. Returns the entire structured Discord Role object.
+async function GetRoleByName(guild, roleName) {
+    if (!guildRolesCached) {
+	await guild.roles.fetch();
+	guildRolesCached = true;
     }
-  }
-  return null;
+    const role = guild.roles.cache.find(role => role.name === roleName);
+    if (role) {
+	return role;
+    } else {
+	return null;
+    }
 }
 
-// Checks if a Discord guild member has a role, by name.
-function GuildMemberHasRole(member, roleName) {
-  let found = false;
-  member.roles.forEach((role) => {
-    if (role.name === roleName) {
-      found = true;
-    }
-  });
-  return found;
+// Checks if a Discord guild member has a role. The targetRole is a structured Discord Role object.
+function GuildMemberHasRole(member, targetRole) {
+    const foundRole = member.roles.cache.find(role => role.id === targetRole.id);
+    return foundRole ? true : false;
 }
 
 // Returns a list of text channels with names that match channelName.
 function GetAllMatchingTextChannels(guild, channelName) {
   const matchingChannels = [];
-  guild.channels.forEach((channel) => {
+  guild.channels.cache.forEach((channel) => {
     if (channel.name === channelName && channel.type === 'text') {
       matchingChannels.push(channel);
     }
@@ -49,7 +50,7 @@ function GetMainChatChannel(guild) {
   }
   // If no #main or #general found, return any text channel at all.
   let matchingChannel;
-  guild.channels.forEach((channel) => {
+  guild.channels.cache.forEach((channel) => {
     if (channel.type === 'text') {
       matchingChannel = channel;
     }
@@ -62,30 +63,13 @@ function GetMainChatChannel(guild) {
 }
 
 // The the "main" Discord Guild for the Secret Clan.
-function GetMainDiscordGuild(client) {
+async function GetMainDiscordGuild(client) {
     const guildID = '305840605328703500';
-    let exactMatch;
-    let bestMatch;
-    let minTimestamp;
-    client.guilds.forEach((guild) => {
-	if (guild.id === guildID) {
-	    exactMatch = guild;
-	}
-	if (!minTimestamp || guild.joinedTimestamp < minTimestamp) {
-	    bestMatch = guild;
-	    minTimestamp = guild.joinedTimestamp;
-	}
-    });
-    if (exactMatch) {
-	return exactMatch;
-    }
-    if (bestMatch) {
-	return bestMatch;
-    }
-    throw 'Error: Main Discord guild not found!';
+    const guild = await client.guilds.fetch(guildID);
+    return guild;
 }
 
-function UpdateChainOfCommandChatChannel(guild, canvas) {
+async function UpdateChainOfCommandChatChannel(guild, canvas) {
     const mainMessage = (
 	'The Chain of Command auto updates based on who you spend time with in Discord. ' +
 	    'Anyone can become Mr. President because of the impartial AI algorithm.');
@@ -98,42 +82,27 @@ function UpdateChainOfCommandChatChannel(guild, canvas) {
     }
     const channel = channels[0];
     // Bulk delete messages
-    channel.bulkDelete(3)
-	.then((messages) => {
-	    console.log(`Bulk deleted ${messages.size} messages`);
-	})
-	.catch(console.error);
-    setTimeout(() => {
-	const buf = canvas.toBuffer();
-	fs.writeFileSync('chain-of-command.png', buf);
-	channel.send(mainMessage, {
-	    files: [{
-		attachment: 'chain-of-command.png',
-		name: 'chain-of-command.png'
-	    }]
-	})
-	    .then((message) => {
-		// Main message successfully sent. Send footer message now.
-		channel.send(footerMessage);
-	    })
-	    .catch(console.error);;
- 
-    }, 10);
+    await channel.bulkDelete(3);
+    const buf = canvas.toBuffer();
+    fs.writeFileSync('chain-of-command.png', buf);
+    await channel.send(mainMessage, {
+	files: [{
+	    attachment: 'chain-of-command.png',
+	    name: 'chain-of-command.png'
+	}]
+    });
+    channel.send(footerMessage);
 }
 
-function UpdateHarmonicCentralityChatChannel(client, centrality) {
-    const guild = GetMainDiscordGuild(client);
+async function UpdateHarmonicCentralityChatChannel(client, centrality) {
+    const guild = await GetMainDiscordGuild(client);
     const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
     if (channels.length === 0) {
 	throw new Error('Could not find #harmonic-centrality chat channel.');
     }
     const channel = channels[0];
     // Bulk delete messages
-    channel.bulkDelete(3)
-	.then((messages) => {
-	    console.log(`Bulk deleted ${messages.size} messages`);
-	})
-	.catch(console.error);
+    channel.bulkDelete(3);
     const flat = [];
     Object.keys(centrality).forEach((i) => {
 	flat.push({
@@ -161,17 +130,14 @@ function UpdateHarmonicCentralityChatChannel(client, centrality) {
 	message += '\n';
     }
     message += threeBackticks;
-    channel.send(message)
-	.then((message) => {
-	    console.log('Updated #harmonic-centrality');
-	})
-	.catch(console.error);
+    channel.send(message);
 }
 
-function GetCommissarIdsOfDiscordMembers(client) {
+async function GetCommissarIdsOfDiscordMembers(client) {
+    const guild = await GetMainDiscordGuild(client);
+    const members = await guild.members.fetch();
     const ids = [];
-    const guild = GetMainDiscordGuild(client);
-    guild.members.forEach((member) => {
+    members.forEach((member) => {
 	const discordID = member.id;
 	const cu = UserCache.GetCachedUserByDiscordId(discordID);
 	if (cu) {

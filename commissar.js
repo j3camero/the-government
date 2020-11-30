@@ -12,7 +12,9 @@ const TimeUtil = require('./time-util');
 const UserCache = require('./commissar-user');
 
 // Create the Discord client. Does not connect yet.
-const client = new Discord.Client();
+const client = new Discord.Client({
+    fetchAllMembers: true,
+});
 
 // This flag sets to true once the bot is connected to Discord (but not yet booted).
 let discordConnected = false;
@@ -30,39 +32,53 @@ let mrPresident;
 // The elements form an implcit tree.
 let chainOfCommand = {};
 
+// Callbacks can be queued in here for later execution.
+const rateLimitQueue = [];
+
+setInterval(() => {
+    if (rateLimitQueue.length > 0) {
+	const nextTask = rateLimitQueue.shift();
+	nextTask();
+    }
+}, 750);
+
 function AddRole(member, role) {
-    if (!role || member._roles.indexOf(role) >= 0) {
+    if (!role || DiscordUtil.GuildMemberHasRole(member, role)) {
 	return;
     }
-    console.log('Adding role', role, 'to', member.nickname);
-    member.addRole(role)
-	.then((member) => {
-	    console.log('OK');
-	}).catch((err) => {
-	    console.log('ERROR!');
-	});
+    rateLimitQueue.push(() => {
+	console.log('Adding role', role.name, 'to', member.nickname);
+	member.roles.add(role)
+	    .then((member) => {
+		console.log('OK');
+	    }).catch((err) => {
+		console.log('ERROR!');
+	    });
+    });
 }
 
 function RemoveRole(member, role) {
-    if (!role || member._roles.indexOf(role) < 0) {
+    if (!role || !DiscordUtil.GuildMemberHasRole(member, role)) {
 	return;
     }
-    console.log('Removing role', role, 'from', member.nickname);
-    member.removeRole(role)
-	.then((member) => {
-	    console.log('OK');
-	}).catch((err) => {
-	    console.log('ERROR!');
-	});
+    rateLimitQueue.push(() => {
+	console.log('Removing role', role.name, 'from', member.nickname);
+	member.roles.remove(role)
+	    .then((member) => {
+		console.log('OK');
+	    }).catch((err) => {
+		console.log('ERROR!');
+	    });
+    });
 }
 
 // Updates a guild member's color.
-function UpdateMemberRankRoles(member, rankName) {
+async function UpdateMemberRankRoles(member, rankName) {
     // Look up the IDs of the 4 big categories.
-    const grunts = DiscordUtil.GetRoleByName(member.guild, 'Grunt');
-    const officers = DiscordUtil.GetRoleByName(member.guild, 'Officer');
-    const generals = DiscordUtil.GetRoleByName(member.guild, 'General');
-    const marshals = DiscordUtil.GetRoleByName(member.guild, 'Marshal');
+    const grunts = await DiscordUtil.GetRoleByName(member.guild, 'Grunt');
+    const officers = await DiscordUtil.GetRoleByName(member.guild, 'Officer');
+    const generals = await DiscordUtil.GetRoleByName(member.guild, 'General');
+    const marshals = await DiscordUtil.GetRoleByName(member.guild, 'Marshal');
     // Work out which roles are being added and which removed.
     let addThisRole;
     let removeTheseRoles;
@@ -141,18 +157,30 @@ function UpdateMemberAppearance(member) {
     UpdateMemberRankRoles(member, rankData.role);
 }
 
-function UpdateAllDiscordMemberAppearances() {
-    const guild = DiscordUtil.GetMainDiscordGuild(client);
-    guild.members.forEach((member) => {
+// Updates people's rank and nickname-based insignia (dots, stars) in Discord.
+async function UpdateAllDiscordMemberAppearances() {
+    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    console.log('Fetching members to update appearances.');
+    const members = await guild.members.fetch();
+    console.log('Got members. Updating appearances.');
+    members.forEach((member) => {
 	UpdateMemberAppearance(member);
     });
 }
 
 // Looks for 2 or more users in voice channels together and credits them.
-function UpdateVoiceActiveMembers() {
-    const guild = DiscordUtil.GetMainDiscordGuild(client);
+// Looks in the main Discord Guild only.
+async function UpdateVoiceActiveMembersForMainDiscordGuild() {
+    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    UpdateVoiceActiveMembersForOneGuild(guild);
+}
+
+// Looks for 2 or more users in voice channels together and credits them.
+//
+// guild - Looks for voice channels in this guild only.
+function UpdateVoiceActiveMembersForOneGuild(guild) {
     const listOfLists = [];
-    guild.channels.forEach((channel) => {
+    guild.channels.cache.forEach((channel) => {
 	if (channel.type === 'voice') {
 	    const channelActive = [];
 	    channel.members.forEach((member) => {
@@ -198,15 +226,26 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
     // Delay for a few seconds to spread out the promotion messages and
     // also achieve a crude non-guaranteed sorting by rank.
     const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
-    setTimeout(() => {
-	const guild = DiscordUtil.GetMainDiscordGuild(client);
+    setTimeout(async () => {
+	const guild = await DiscordUtil.GetMainDiscordGuild(client);
 	const channel = DiscordUtil.GetMainChatChannel(guild);
 	channel.send(message);
     }, delayMillis);
 }
 
+
 // Calculates the chain of command. If there are changes, the update is made.
-function UpdateChainOfCommand() {
+// Only affects the main Discord guild.
+async function UpdateChainOfCommandForMainDiscordGuild() {
+    const candidateIds = await DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    UpdateChainOfCommandForCandidates(candidateIds);
+}
+
+// Calculates the chain of command. If there are changes, the update is made.
+//
+// candidateIds - Only these Commissar IDs are eligible to be in the chain-of-command.
+//                Removes bots and the like.
+function UpdateChainOfCommandForCandidates(candidateIds) {
     if (!mrPresident) {
 	// There is no mrPresident yet. We can't calculate the Chain of Command.
 	// Bail, but also kick off a Harmonic Centrality update so there will be
@@ -214,12 +253,11 @@ function UpdateChainOfCommand() {
 	UpdateHarmonicCentrality();
 	return;
     }
-    db.getTimeMatrix((relationships) => {
-	const candidateIds = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    db.getTimeMatrix(async (relationships) => {
 	// User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
 	// TODO: replace this with a column in the users table of the database to avoid hardcoding.
 	const termLimited = [7];
-	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships);
+	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships, termLimited);
 	if (deepEqual(newChainOfCommand, chainOfCommand)) {
 	    // Bail if there are no changes to the chain of command.
 	    return;
@@ -230,7 +268,7 @@ function UpdateChainOfCommand() {
 	const nicknames = UserCache.GetAllNicknames();
 	// Generate and post an updated image of the chain of command.
 	const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
-	const guild = DiscordUtil.GetMainDiscordGuild(client);
+	const guild = await DiscordUtil.GetMainDiscordGuild(client);
 	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
 	// Update the people's ranks.
 	Object.values(chainOfCommand).forEach((user) => {
@@ -242,22 +280,33 @@ function UpdateChainOfCommand() {
 	    cu.setRank(user.rank);
 	});
 	UserCache.UpdateClanExecutives(chainOfCommand);
-	UpdateMiniClanRoles();
+	UpdateMiniClanRolesForMainDiscordGuild();
 	console.log('Chain of command updated.');
     });
 }
 
-function UpdateMiniClanRoles() {
+// Updates the Army, Navy, Air Force, and Marines.
+//
+// The four mini-clans are based on chain-of-command. Each 'branch' is headed by
+// one of the four 3-star Generals.
+//
+// Updates the mini-clans for the main Discord guild only.
+async function UpdateMiniClanRolesForMainDiscordGuild() {
+    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    UpdateMiniClanRolesForOneGuild(guild);
+}
+
+// Updates the mini-clans for one Discord guild only.
+async function UpdateMiniClanRolesForOneGuild(guild) {
     if (!chainOfCommand) {
 	// Bail if the chain of command isn't booted up yet.
 	return;
     }
     // Get the Discord roles for each mini-clan.
-    const guild = DiscordUtil.GetMainDiscordGuild(client);
     const allRoleNames = ['Army', 'Navy', 'Air Force', 'Marines'];
     const rolesByName = {};
-    allRoleNames.forEach((roleName) => {
-	rolesByName[roleName] = DiscordUtil.GetRoleByName(guild, roleName);
+    allRoleNames.forEach(async (roleName) => {
+	rolesByName[roleName] = await DiscordUtil.GetRoleByName(guild, roleName);
     });
 
     // Custom role updating function for mini-clans. It applies the given
@@ -310,7 +359,8 @@ function UpdateMiniClanRoles() {
 	ApplyRoleUpwards(execID, roleName);
     });
     // Apply the calculated mini-clan roles to each user in the Discord guild.
-    guild.members.forEach((member) => {
+    const members = await guild.members.fetch();
+    members.forEach((member) => {
 	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (cu && cu.commissar_id in rolesById) {
 	    const roleNames = rolesById[cu.commissar_id];
@@ -335,9 +385,16 @@ function ElectMrPresident(centrality) {
     console.log(`Elected ID ${bestId} (${mrPresident.nickname})`);
 }
 
-function UpdateHarmonicCentrality() {
-    const candidates = DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+async function UpdateHarmonicCentrality() {
+    const candidates = await DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    if (candidates.length === 0) {
+	throw 'ERROR: zero candidates for the #chain-of-command!';
+    }
     HarmonicCentrality(candidates, (centrality) => {
+	// Hack: Jeff can't be President.
+	if (7 in centrality) {
+	    delete centrality[7];
+	}
 	DiscordUtil.UpdateHarmonicCentralityChatChannel(client, centrality);
 	ElectMrPresident(centrality);
     });
@@ -375,12 +432,12 @@ client.on('guildMemberAdd', (member) => {
 
 // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
 // unmutes, deafens, undefeans, and possibly other circumstances as well.
-client.on('voiceStateUpdate', (oldMember, newMember) => {
-    console.log('voiceStateUpdate', newMember.nickname);
+client.on('voiceStateUpdate', (oldVoiceState, newVoiceState) => {
+    console.log('voiceStateUpdate', newVoiceState.member.nickname);
     if (!botActive) {
 	return;
     }
-    UpdateVoiceActiveMembers();
+    UpdateVoiceActiveMembersForMainDiscordGuild();
 });
 
 // Set up a 60-second heartbeat event. Take care of things that need attention each minute.
@@ -389,19 +446,22 @@ setInterval(() => {
     if (!botActive) {
 	return;
     }
+    if (rateLimitQueue.length > 0) {
+	return;
+    }
     console.log('Minute heartbeat');
     // Update clan executive roles.
     UserCache.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
-    UpdateMiniClanRoles();
+    UpdateMiniClanRolesForMainDiscordGuild();
     // Update the chain of command.
-    UpdateChainOfCommand();
+    UpdateChainOfCommandForMainDiscordGuild();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances();
     // Sync user data to the database.
     UserCache.WriteDirtyUsersToDatabase(db.getConnection());
     // Update time matrix and sync to database.
-    UpdateVoiceActiveMembers();
+    UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     db.writeTimeTogetherRecords(recordsToSync);
 }, oneMinute);
@@ -411,6 +471,9 @@ setInterval(() => {
 const oneHour = 60 * oneMinute;
 setInterval(() => {
     if (!botActive) {
+	return;
+    }
+    if (rateLimitQueue.length > 0) {
 	return;
     }
     console.log('Hourly heartbeat');

@@ -111,7 +111,7 @@ function writeBattlemetricsSessions(sessions) {
     if (!connected) {
 	throw 'ERROR: tried to write to database while not connected.';
     }
-    if (sessions.length === 0) {
+    if (!sessions || sessions.length === 0) {
 	return;
     }
     const formattedSessions = [];
@@ -144,12 +144,15 @@ function writeBattlemetricsSessions(sessions) {
 	'    battlemetrics_sessions.in_game_name = VALUES(battlemetrics_sessions.in_game_name), ' +
 	'    battlemetrics_sessions.server_id = VALUES(battlemetrics_sessions.server_id), ' +
 	'    battlemetrics_sessions.player_id = VALUES(battlemetrics_sessions.player_id), ' +
-	'    battlemetrics_sessions.identifier_id = VALUES(battlemetrics_sessions.identifier_id)');
+	    '    battlemetrics_sessions.identifier_id = VALUES(battlemetrics_sessions.identifier_id)');
+    // Time the database operation.
+    const startTime = Date.now();
     connection.query(sql, (err, result) => {
 	if (err) {
 	    throw err;
 	}
-	console.log(`Wrote ${sessions.length} Battlemetrics sessions.`);
+	const elapsed = Date.now() - startTime;
+	console.log(`Wrote ${sessions.length} Battlemetrics sessions to the DB. [${elapsed} ms]`);
     });
 }
 
