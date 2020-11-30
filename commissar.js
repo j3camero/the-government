@@ -42,13 +42,13 @@ setInterval(() => {
     }
 }, 750);
 
-function AddRole(member, roleID) {
-    if (!roleID || DiscordUtil.GuildMemberHasRoleByID(member, roleID)) {
+function AddRole(member, role) {
+    if (!role || DiscordUtil.GuildMemberHasRole(member, role)) {
 	return;
     }
     rateLimitQueue.push(() => {
-	console.log('Adding role', roleID, 'to', member.nickname);
-	member.roles.add(roleID)
+	console.log('Adding role', role.name, 'to', member.nickname);
+	member.roles.add(role)
 	    .then((member) => {
 		console.log('OK');
 	    }).catch((err) => {
@@ -57,13 +57,13 @@ function AddRole(member, roleID) {
     });
 }
 
-function RemoveRole(member, roleID) {
-    if (!roleID || !DiscordUtil.GuildMemberHasRoleByID(member, roleID)) {
+function RemoveRole(member, role) {
+    if (!role || !DiscordUtil.GuildMemberHasRole(member, role)) {
 	return;
     }
     rateLimitQueue.push(() => {
-	console.log('Removing role', roleID, 'from', member.nickname);
-	member.roles.remove(roleID)
+	console.log('Removing role', role.name, 'from', member.nickname);
+	member.roles.remove(role)
 	    .then((member) => {
 		console.log('OK');
 	    }).catch((err) => {
@@ -432,8 +432,8 @@ client.on('guildMemberAdd', (member) => {
 
 // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
 // unmutes, deafens, undefeans, and possibly other circumstances as well.
-client.on('voiceStateUpdate', (oldMember, newMember) => {
-    console.log('voiceStateUpdate', newMember.nickname);
+client.on('voiceStateUpdate', (oldVoiceState, newVoiceState) => {
+    console.log('voiceStateUpdate', newVoiceState.member.nickname);
     if (!botActive) {
 	return;
     }
