@@ -32,39 +32,53 @@ let mrPresident;
 // The elements form an implcit tree.
 let chainOfCommand = {};
 
+// Callbacks can be queued in here for later execution.
+const rateLimitQueue = [];
+
+setInterval(() => {
+    if (rateLimitQueue.length > 0) {
+	const nextTask = rateLimitQueue.shift();
+	nextTask();
+    }
+}, 750);
+
 function AddRole(member, roleID) {
     if (!roleID || DiscordUtil.GuildMemberHasRoleByID(member, roleID)) {
 	return;
     }
-    console.log('Adding role', roleID, 'to', member.nickname);
-    member.roles.add(roleID)
-	.then((member) => {
-	    console.log('OK');
-	}).catch((err) => {
-	    console.log('ERROR!');
-	});
+    rateLimitQueue.push(() => {
+	console.log('Adding role', roleID, 'to', member.nickname);
+	member.roles.add(roleID)
+	    .then((member) => {
+		console.log('OK');
+	    }).catch((err) => {
+		console.log('ERROR!');
+	    });
+    });
 }
 
 function RemoveRole(member, roleID) {
     if (!roleID || !DiscordUtil.GuildMemberHasRoleByID(member, roleID)) {
 	return;
     }
-    console.log('Removing role', roleID, 'from', member.nickname);
-    member.roles.remove(roleID)
-	.then((member) => {
-	    console.log('OK');
-	}).catch((err) => {
-	    console.log('ERROR!');
-	});
+    rateLimitQueue.push(() => {
+	console.log('Removing role', roleID, 'from', member.nickname);
+	member.roles.remove(roleID)
+	    .then((member) => {
+		console.log('OK');
+	    }).catch((err) => {
+		console.log('ERROR!');
+	    });
+    });
 }
 
 // Updates a guild member's color.
-function UpdateMemberRankRoles(member, rankName) {
+async function UpdateMemberRankRoles(member, rankName) {
     // Look up the IDs of the 4 big categories.
-    const grunts = DiscordUtil.GetRoleByName(member.guild, 'Grunt');
-    const officers = DiscordUtil.GetRoleByName(member.guild, 'Officer');
-    const generals = DiscordUtil.GetRoleByName(member.guild, 'General');
-    const marshals = DiscordUtil.GetRoleByName(member.guild, 'Marshal');
+    const grunts = await DiscordUtil.GetRoleByName(member.guild, 'Grunt');
+    const officers = await DiscordUtil.GetRoleByName(member.guild, 'Officer');
+    const generals = await DiscordUtil.GetRoleByName(member.guild, 'General');
+    const marshals = await DiscordUtil.GetRoleByName(member.guild, 'Marshal');
     // Work out which roles are being added and which removed.
     let addThisRole;
     let removeTheseRoles;
@@ -291,8 +305,8 @@ async function UpdateMiniClanRolesForOneGuild(guild) {
     // Get the Discord roles for each mini-clan.
     const allRoleNames = ['Army', 'Navy', 'Air Force', 'Marines'];
     const rolesByName = {};
-    allRoleNames.forEach((roleName) => {
-	rolesByName[roleName] = DiscordUtil.GetRoleByName(guild, roleName);
+    allRoleNames.forEach(async (roleName) => {
+	rolesByName[roleName] = await DiscordUtil.GetRoleByName(guild, roleName);
     });
 
     // Custom role updating function for mini-clans. It applies the given
@@ -432,6 +446,9 @@ setInterval(() => {
     if (!botActive) {
 	return;
     }
+    if (rateLimitQueue.length > 0) {
+	return;
+    }
     console.log('Minute heartbeat');
     // Update clan executive roles.
     UserCache.UpdateClanExecutives(chainOfCommand);
@@ -454,6 +471,9 @@ setInterval(() => {
 const oneHour = 60 * oneMinute;
 setInterval(() => {
     if (!botActive) {
+	return;
+    }
+    if (rateLimitQueue.length > 0) {
 	return;
     }
     console.log('Hourly heartbeat');

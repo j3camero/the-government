@@ -3,8 +3,14 @@ const Discord = require('discord.js');
 const fs = require('fs');
 const UserCache = require('./commissar-user');
 
+let guildRolesCached = false;
+
 // Looks up the ID of a Discord role by name.
-function GetRoleByName(guild, roleName) {
+async function GetRoleByName(guild, roleName) {
+    if (!guildRolesCached) {
+	await guild.roles.fetch();
+	guildRolesCached = true;
+    }
     const role = guild.roles.cache.find(role => role.name === roleName);
     if (role) {
 	return role.id;
@@ -15,7 +21,7 @@ function GetRoleByName(guild, roleName) {
 
 // Checks if a Discord guild member has a role, by ID.
 function GuildMemberHasRoleByID(member, roleID) {
-    const role = member.roles.cache.find(role => role.name === roleID);
+    const role = member.roles.cache.find(role => role.id === roleID);
     return role ? true : false;
 }
 
