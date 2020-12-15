@@ -1,7 +1,7 @@
 const config = require('./config');
 const fs = require('fs');
 const mysql = require('mysql');
-var SqlString = require('sqlstring');
+const SqlString = require('sqlstring');
 
 const connection = mysql.createConnection(config.sqlConfig);
 let connectionPromise;
