@@ -129,11 +129,10 @@ describe('Rank', function() {
 	};
 	const canvas = rank.RenderChainOfCommand(sampleChainOfCommand, nicknames);
 	const buf = canvas.toBuffer();
-	fs.writeFileSync('sample-chain-of-command-tmp.png', buf);
-	// Load the written file back in and compare it to the expected output file.
-	const actual = fs.readFileSync('sample-chain-of-command-tmp.png');
+	//fs.writeFileSync('sample-chain-of-command-tmp.png', buf);
+	// Compare the image data to the expected output file.
 	const expected = fs.readFileSync('sample-chain-of-command.png');
-	assert(actual.equals(expected));
+	assert(buf.equals(expected));
     });
     it('Term limits', () => {
 	const presidentID = 2;
