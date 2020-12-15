@@ -118,6 +118,23 @@ describe('Rank', function() {
 	// the algorithm is deterministic.
 	assert.deepEqual(chain, sampleChainOfCommand);
     });
+    it('Render the chain of command as an image', () => {
+	const nicknames = {
+	    6: 'Brobob',
+	    7: 'Jeff',
+	    32: 'Ssulfur',
+	    38: 'watergate',
+	    42: 'Cheatx',
+	    77: 'Zomboscott',
+	};
+	const canvas = rank.RenderChainOfCommand(sampleChainOfCommand, nicknames);
+	const buf = canvas.toBuffer();
+	fs.writeFileSync('sample-chain-of-command-tmp.png', buf);
+	// Load the written file back in and compare it to the expected output file.
+	const actual = fs.readFileSync('sample-chain-of-command-tmp.png');
+	const expected = fs.readFileSync('sample-chain-of-command.png');
+	assert(actual.equals(expected));
+    });
     it('Term limits', () => {
 	const presidentID = 2;
 	const candidates = [1, 2, 3];
@@ -131,19 +148,6 @@ describe('Rank', function() {
 	    1: { id: 1, boss: 2, children: [3], rank: 1 },  // Vice President.
 	    3: { id: 3, boss: 1, rank: 2 },  // General 4.
 	});
-    });
-    it('Render the chain of command as an image', () => {
-	const nicknames = {
-	    6: 'Brobob',
-	    7: 'Jeff',
-	    32: 'Ssulfur',
-	    38: 'watergate',
-	    42: 'Cheatx',
-	    77: 'Zomboscott',
-	};
-	const canvas = rank.RenderChainOfCommand(sampleChainOfCommand, nicknames);
-	const buf = canvas.toBuffer();
-	fs.writeFileSync('sample-chain-of-command.png', buf);
     });
     it('Relationships to time matrix', () => {
 	const candidates = [1, 2, 3];
