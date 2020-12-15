@@ -22,3 +22,7 @@ bearer-token.js
 
 # Data files from crawling - not checked into git.
 *.tsv
+
+# Weird temp files.
+\#*
+.#*
