@@ -104,7 +104,7 @@ async function UpdateChainOfCommandChatChannel(guild, canvas) {
     fs.writeFileSync('live-chain-of-command.png', buf);
     await channel.send(mainMessage, {
 	files: [{
-	    attachment: 'live-achain-of-command.png',
+	    attachment: 'live-chain-of-command.png',
 	    name: 'chain-of-command.png'
 	}]
     });
