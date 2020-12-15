@@ -1,9 +1,10 @@
 # Emacs temp files.
 *~
 
-# Node and NPM files.
+# npm files.
 node_modules/
-package-lock.json
+
+# Log files.
 *.log
 
 # Config file.
