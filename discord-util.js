@@ -84,7 +84,7 @@ async function UpdateChainOfCommandChatChannel(guild, canvas) {
     // Bulk delete messages
     await channel.bulkDelete(3);
     const buf = canvas.toBuffer();
-    fs.writeFileSync('chain-of-command.png', buf);
+    fs.writeFileSync('live-chain-of-command.png', buf);
     await channel.send(mainMessage, {
 	files: [{
 	    attachment: 'chain-of-command.png',

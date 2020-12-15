@@ -13,7 +13,10 @@ config.js
 TODO.txt
 
 # Image files
-*.png
+live-chain-of-command.png
 
 # Sensitive token file.
 bearer-token.js
+
+# Data files from crawling - not checked into git.
+*.tsv
