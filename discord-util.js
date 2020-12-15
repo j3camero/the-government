@@ -1,9 +1,26 @@
 // Helper functions not specific to any particular Discord bot.
+const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
 const UserCache = require('./commissar-user');
 
+// Create the Discord client. Does not connect yet.
+const client = new Discord.Client({
+    fetchAllMembers: true,
+});
+
+// Set to true once the guild roles have been cached once.
 let guildRolesCached = false;
+
+// Returns a Promise that resolves when the Discord bot is connected.
+async function Connect() {
+    return new Promise((resolve, reject) => {
+	client.on('ready', () => {
+	    resolve(client);
+	});
+	client.login(config.discordBotToken);
+    });
+}
 
 // Looks up a Discord role by name. Returns the entire structured Discord Role object.
 async function GetRoleByName(guild, roleName) {
@@ -63,7 +80,7 @@ function GetMainChatChannel(guild) {
 }
 
 // The the "main" Discord Guild for the Secret Clan.
-async function GetMainDiscordGuild(client) {
+async function GetMainDiscordGuild() {
     const guildID = '305840605328703500';
     const guild = await client.guilds.fetch(guildID);
     return guild;
@@ -87,15 +104,15 @@ async function UpdateChainOfCommandChatChannel(guild, canvas) {
     fs.writeFileSync('live-chain-of-command.png', buf);
     await channel.send(mainMessage, {
 	files: [{
-	    attachment: 'chain-of-command.png',
+	    attachment: 'live-chain-of-command.png',
 	    name: 'chain-of-command.png'
 	}]
     });
     channel.send(footerMessage);
 }
 
-async function UpdateHarmonicCentralityChatChannel(client, centrality) {
-    const guild = await GetMainDiscordGuild(client);
+async function UpdateHarmonicCentralityChatChannel(centrality) {
+    const guild = await GetMainDiscordGuild();
     const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
     if (channels.length === 0) {
 	throw new Error('Could not find #harmonic-centrality chat channel.');
@@ -133,8 +150,8 @@ async function UpdateHarmonicCentralityChatChannel(client, centrality) {
     channel.send(message);
 }
 
-async function GetCommissarIdsOfDiscordMembers(client) {
-    const guild = await GetMainDiscordGuild(client);
+async function GetCommissarIdsOfDiscordMembers() {
+    const guild = await GetMainDiscordGuild();
     const members = await guild.members.fetch();
     const ids = [];
     members.forEach((member) => {
@@ -148,6 +165,7 @@ async function GetCommissarIdsOfDiscordMembers(client) {
 }
 
 module.exports = {
+    Connect,
     GetAllMatchingTextChannels,
     GetCommissarIdsOfDiscordMembers,
     GetMainChatChannel,

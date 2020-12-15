@@ -1,5 +1,4 @@
 const Clock = require('./clock');
-const config = require('./config');
 const db = require('./database');
 const deepEqual = require('deep-equal');
 const Discord = require('discord.js');
@@ -8,19 +7,10 @@ const HarmonicCentrality = require('./harmonic-centrality');
 const moment = require('moment');
 const rank = require('./rank');
 const TimeTogetherStream = require('./time-together-stream');
-const TimeUtil = require('./time-util');
 const UserCache = require('./commissar-user');
-
-// Create the Discord client. Does not connect yet.
-const client = new Discord.Client({
-    fetchAllMembers: true,
-});
 
 // This flag sets to true once the bot is connected to Discord (but not yet booted).
 let discordConnected = false;
-
-// This flag sets to true once the bot is fully booted and ready to handle traffic.
-let botActive = false;
 
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
@@ -159,7 +149,7 @@ function UpdateMemberAppearance(member) {
 
 // Updates people's rank and nickname-based insignia (dots, stars) in Discord.
 async function UpdateAllDiscordMemberAppearances() {
-    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
     console.log('Fetching members to update appearances.');
     const members = await guild.members.fetch();
     console.log('Got members. Updating appearances.');
@@ -171,7 +161,7 @@ async function UpdateAllDiscordMemberAppearances() {
 // Looks for 2 or more users in voice channels together and credits them.
 // Looks in the main Discord Guild only.
 async function UpdateVoiceActiveMembersForMainDiscordGuild() {
-    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
     UpdateVoiceActiveMembersForOneGuild(guild);
 }
 
@@ -227,7 +217,7 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
     // also achieve a crude non-guaranteed sorting by rank.
     const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
     setTimeout(async () => {
-	const guild = await DiscordUtil.GetMainDiscordGuild(client);
+	const guild = await DiscordUtil.GetMainDiscordGuild();
 	const channel = DiscordUtil.GetMainChatChannel(guild);
 	channel.send(message);
     }, delayMillis);
@@ -237,7 +227,7 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
 // Calculates the chain of command. If there are changes, the update is made.
 // Only affects the main Discord guild.
 async function UpdateChainOfCommandForMainDiscordGuild() {
-    const candidateIds = await DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    const candidateIds = await DiscordUtil.GetCommissarIdsOfDiscordMembers();
     UpdateChainOfCommandForCandidates(candidateIds);
 }
 
@@ -268,7 +258,7 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	const nicknames = UserCache.GetAllNicknames();
 	// Generate and post an updated image of the chain of command.
 	const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
-	const guild = await DiscordUtil.GetMainDiscordGuild(client);
+	const guild = await DiscordUtil.GetMainDiscordGuild();
 	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
 	// Update the people's ranks.
 	Object.values(chainOfCommand).forEach((user) => {
@@ -292,7 +282,7 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 //
 // Updates the mini-clans for the main Discord guild only.
 async function UpdateMiniClanRolesForMainDiscordGuild() {
-    const guild = await DiscordUtil.GetMainDiscordGuild(client);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
     UpdateMiniClanRolesForOneGuild(guild);
 }
 
@@ -397,7 +387,7 @@ function ElectMrPresident(centrality) {
 }
 
 async function UpdateHarmonicCentrality() {
-    const candidates = await DiscordUtil.GetCommissarIdsOfDiscordMembers(client);
+    const candidates = await DiscordUtil.GetCommissarIdsOfDiscordMembers();
     if (candidates.length === 0) {
 	throw 'ERROR: zero candidates for the #chain-of-command!';
     }
@@ -406,57 +396,13 @@ async function UpdateHarmonicCentrality() {
 	if (7 in centrality) {
 	    delete centrality[7];
 	}
-	DiscordUtil.UpdateHarmonicCentralityChatChannel(client, centrality);
+	DiscordUtil.UpdateHarmonicCentralityChatChannel(centrality);
 	ElectMrPresident(centrality);
     });
 }
 
-// This Discord event fires when the bot successfully connects to Discord.
-client.on('ready', () => {
-    console.log('Discord bot connected.');
-    discordConnected = true;
-});
-
-// This Discord event fires when someone joins a Discord guild that the bot is a member of.
-client.on('guildMemberAdd', (member) => {
-    console.log('Someone joined the guild.');
-    if (!botActive) {
-	return;
-    }
-    if (member.user.bot) {
-	// Ignore other bots.
-	return;
-    }
-    const greeting = `Everybody welcome ${member.user.username} to the server!`;
-    const channel = DiscordUtil.GetMainChatChannel(member.guild);
-    channel.send(greeting);
-    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
-    if (!cu) {
-	// We have no record of this Discord user. Create a new record in the cache.
-	console.log('New Discord user detected.');
-	const yesterday = TimeUtil.YesterdayDateStamp();
-	UserCache.CreateNewDatabaseUser(db.getConnection(), member, () => {
-	    // New user successfully created. Do nothing, for now. They get picked up in the next ranking cycle.
-	});
-    }
-});
-
-// This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
-// unmutes, deafens, undefeans, and possibly other circumstances as well.
-client.on('voiceStateUpdate', (oldVoiceState, newVoiceState) => {
-    console.log('voiceStateUpdate', newVoiceState.member.nickname);
-    if (!botActive) {
-	return;
-    }
-    UpdateVoiceActiveMembersForMainDiscordGuild();
-});
-
-// Set up a 60-second heartbeat event. Take care of things that need attention each minute.
-const oneMinute = 60 * 1000;
-setInterval(() => {
-    if (!botActive) {
-	return;
-    }
+// The 60-second heartbeat event. Take care of things that need attention each minute.
+function MinuteHeartbeat() {
     if (rateLimitQueue.length > 0) {
 	return;
     }
@@ -475,41 +421,68 @@ setInterval(() => {
     UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     db.writeTimeTogetherRecords(recordsToSync);
-}, oneMinute);
+}
 
-// Set up an hourly heartbeat event. Take care of things that need
-// attention once an hour.
-const oneHour = 60 * oneMinute;
-setInterval(() => {
-    if (!botActive) {
-	return;
-    }
+// The hourly heartbeat event. Take care of things that need attention once an hour.
+function HourlyHeartbeat() {
     if (rateLimitQueue.length > 0) {
 	return;
     }
     console.log('Hourly heartbeat');
     UpdateHarmonicCentrality();
-}, oneHour);
+}
 
 // Login the Commissar bot to Discord.
 console.log('Connecting the Discord bot.');
-client.login(config.discordBotToken);
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
-function waitForEverythingToConnect() {
-    console.log('Waiting for everything to connect.', db.isConnected(), discordConnected);
-    if (!db.isConnected() || !discordConnected) {
-	setTimeout(waitForEverythingToConnect, 1000);
-	return;
-    }
-    console.log('Everything connected.');
+async function Start() {
+    console.log('Waiting for Discord bot to connect.');
+    const discordClient = await DiscordUtil.Connect();
+    console.log('Discord bot connected.');
+    console.log('Waiting for the database to connect.');
+    // Wait for the database, too.
+    await db.Connect();
+    console.log('Database connected.');
     console.log('Loading commissar user data.');
     UserCache.LoadAllUsersFromDatabase(db.getConnection(), () => {
 	console.log('Commissar user data loaded.');
 	console.log('Commissar is alive.');
-	// Now the bot is booted and open for business!
-	botActive = true;
     });
+
+    // This Discord event fires when someone joins a Discord guild that the bot is a member of.
+    discordClient.on('guildMemberAdd', (member) => {
+	console.log('Someone joined the guild.');
+	if (member.user.bot) {
+	    // Ignore other bots.
+	    return;
+	}
+	const greeting = `Everybody welcome ${member.user.username} to the server!`;
+	const channel = DiscordUtil.GetMainChatChannel(member.guild);
+	channel.send(greeting);
+	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+	if (!cu) {
+	    // We have no record of this Discord user. Create a new record in the cache.
+	    console.log('New Discord user detected.');
+	    UserCache.CreateNewDatabaseUser(db.getConnection(), member, () => {
+		// New user successfully created. Do nothing, for now. They get picked up in the next ranking cycle.
+	    });
+	}
+    });
+    
+    // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
+    // unmutes, deafens, undefeans, and possibly other circumstances as well.
+    discordClient.on('voiceStateUpdate', (oldVoiceState, newVoiceState) => {
+	console.log('voiceStateUpdate', newVoiceState.member.nickname);
+	UpdateVoiceActiveMembersForMainDiscordGuild();
+    });
+
+    // Set up heartbeat events. These run at fixed intervals of time.
+    const oneSecond = 1000;
+    const oneMinute = 60 * oneSecond;
+    const oneHour = 60 * oneMinute;
+    setInterval(MinuteHeartbeat, oneMinute);
+    setInterval(HourlyHeartbeat, oneHour);
 }
 
-waitForEverythingToConnect();
+Start();
