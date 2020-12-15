@@ -1,7 +1,6 @@
 const Clock = require('./clock');
 const db = require('./database');
 const deepEqual = require('deep-equal');
-const Discord = require('discord.js');
 const DiscordUtil = require('./discord-util');
 const HarmonicCentrality = require('./harmonic-centrality');
 const moment = require('moment');
