@@ -47,3 +47,24 @@ CREATE TABLE battlemetrics_sessions
     INDEX server_index (server_id, start_time, stop_time),
     INDEX player_index (player_id, start_time, stop_time)
 );
+
+CREATE TABLE trials
+(
+    trial_id INT NOT NULL AUTO_INCREMENT,
+    defendant_id INT NOT NULL,
+    accuser_id INT NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    end_time TIMESTAMP,
+    defendant_role_id VARCHAR(32),
+    chatroom_id VARCHAR(32),
+    vote_message_id VARCHAR(32),
+    PRIMARY KEY(trial_id)
+);
+
+CREATE TABLE trial_votes
+(
+    trial_id INT NOT NULL,
+    voter_id INT NOT NULL,
+    vote INT NOT NULL,  -- 1 = GUILTY, 0 = NOT GUILTY
+    PRIMARY KEY(trial_id, voter_id)
+);
