@@ -55,28 +55,15 @@ function GetAllMatchingTextChannels(guild, channelName) {
 
 // Returns the main text chat channel for a discord guild.
 function GetMainChatChannel(guild) {
-  // First, look for any text channel called #main.
-  const mains = GetAllMatchingTextChannels(guild, 'main');
-  if (mains.length > 0) {
-    return mains[0];
-  }
-  // If no #main found, look for any text channel called #general.
-  const generals = GetAllMatchingTextChannels(guild, 'general');
-  if (generals.length > 0) {
-    return generals[0];
-  }
-  // If no #main or #general found, return any text channel at all.
-  let matchingChannel;
-  guild.channels.cache.forEach((channel) => {
-    if (channel.type === 'text') {
-      matchingChannel = channel;
+    const chatroomNames = ['main', 'public', 'general'];
+    for (const i in chatroomNames) {
+	const roomName = chatroomNames[i];
+	const matchingRooms = GetAllMatchingTextChannels(guild, roomName);
+	if (matchingRooms.length > 0) {
+	    return matchingRooms[0];
+	}
     }
-  });
-  if (matchingChannel) {
-    return matchingChannel;
-  }
-  // If no text channels found at all, give up.
-  return null;
+    throw 'Failed to find any main chat channel!';
 }
 
 // The the "main" Discord Guild for the Secret Clan.

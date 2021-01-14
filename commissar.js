@@ -408,6 +408,14 @@ function HandlePingCommand(discordMessage) {
     discordMessage.channel.send('Pong!');
 }
 
+// A cheap live test harness to test the code that finds the main chat channel.
+// This lets me test it anytime I'm worried it's broken.
+async function HandlePingMainChatCommand(discordMessage) {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = DiscordUtil.GetMainChatChannel(guild);
+    channel.send('Pong!');
+}
+
 // The given Discord message is already verified to start with the !ban prefix.
 // Now authenticate and implement it.
 function HandleBanCommand(discordMessage) {
@@ -434,6 +442,8 @@ function HandleBotCommand(discordMessage) {
 	HandleBanCommand(discordMessage);
     } else if (command === '!ping') {
 	HandlePingCommand(discordMessage);
+    } else if (command === '!pingmainchat') {
+	HandlePingMainChatCommand(discordMessage);
     } else {
 	discordMessage.channel.send(`Unknown command ${command}`);
     }
