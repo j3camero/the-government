@@ -7,7 +7,7 @@ const moment = require('moment');
 const rank = require('./rank');
 const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
-const UserCache = require('./commissar-user');
+const UserCache = require('./user-cache');
 
 // This flag sets to true once the bot is connected to Discord (but not yet booted).
 let discordConnected = false;

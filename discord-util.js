@@ -2,7 +2,7 @@
 const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
-const UserCache = require('./commissar-user');
+const UserCache = require('./user-cache');
 
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({

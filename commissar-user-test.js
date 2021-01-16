@@ -1,8 +1,9 @@
 const assert = require('assert');
-const UserCache = require('./commissar-user');
+const CommissarUser = require('./commissar-user');
+const UserCache = require('./user-cache');
 const sampleChainOfCommand = require('./sample-chain-of-command');
 
-describe('CommissarUser', function() {
+describe('UserCache', function() {
     it('FindUnassignedUser President', () => {
 	const mockUserCache = {
 	    6: { commissar_id: 6 },
@@ -111,14 +112,14 @@ describe('CommissarUser', function() {
     });
     it('UpdateClanExecutives all empty', () => {
 	const mockUserCache = {
-	    4: new UserCache.CommissarUser(4),
-	    6: new UserCache.CommissarUser(6),
-	    7: new UserCache.CommissarUser(7),
-	    8: new UserCache.CommissarUser(8),
-	    38: new UserCache.CommissarUser(38),
-	    42: new UserCache.CommissarUser(42),
-	    60: new UserCache.CommissarUser(60),
-	    77: new UserCache.CommissarUser(77),
+	    4: new CommissarUser(4),
+	    6: new CommissarUser(6),
+	    7: new CommissarUser(7),
+	    8: new CommissarUser(8),
+	    38: new CommissarUser(38),
+	    42: new CommissarUser(42),
+	    60: new CommissarUser(60),
+	    77: new CommissarUser(77),
 	};
 	UserCache.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
 	Object.values(mockUserCache).forEach((user) => {
@@ -127,14 +128,14 @@ describe('CommissarUser', function() {
     });
     it('UpdateClanExecutives all full', () => {
 	const mockUserCache = {
-	    4: new UserCache.CommissarUser(4, '', '', 3, null, 'MARINES'),
-	    6: new UserCache.CommissarUser(6, '', '', 0, null, 'PRES'),
-	    7: new UserCache.CommissarUser(7, '', '', 2, null, 'CJCS'),
-	    8: new UserCache.CommissarUser(8, '', '', 3, null, 'ARMY'),
-	    38: new UserCache.CommissarUser(38, '', '', 2, null, 'MINDEF'),
-	    42: new UserCache.CommissarUser(42, '', '', 1, null, 'VP'),
-	    60: new UserCache.CommissarUser(60, '', '', 3, null, 'NAVY'),
-	    77: new UserCache.CommissarUser(77, '', '', 3, null, 'AIR'),
+	    4: new CommissarUser(4, '', '', 3, null, 'MARINES'),
+	    6: new CommissarUser(6, '', '', 0, null, 'PRES'),
+	    7: new CommissarUser(7, '', '', 2, null, 'CJCS'),
+	    8: new CommissarUser(8, '', '', 3, null, 'ARMY'),
+	    38: new CommissarUser(38, '', '', 2, null, 'MINDEF'),
+	    42: new CommissarUser(42, '', '', 1, null, 'VP'),
+	    60: new CommissarUser(60, '', '', 3, null, 'NAVY'),
+	    77: new CommissarUser(77, '', '', 3, null, 'AIR'),
 	};
 	UserCache.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
 	// Spot check one field, but nothing should have changed.
@@ -152,14 +153,14 @@ describe('CommissarUser', function() {
 	    77: { id: 77, rank: 4 },  // Demoted!
 	};
 	const mockUserCache = {
-	    4: new UserCache.CommissarUser(4, '', '', 3, null, 'MARINES'),
-	    6: new UserCache.CommissarUser(6, '', '', 0, null, 'PRES'),
-	    7: new UserCache.CommissarUser(7, '', '', 2, null, 'CJCS'),
-	    8: new UserCache.CommissarUser(8, '', '', 3, null, 'ARMY'),
-	    38: new UserCache.CommissarUser(38, '', '', 2, null, 'MINDEF'),
-	    42: new UserCache.CommissarUser(42, '', '', 1, null, 'VP'),
-	    60: new UserCache.CommissarUser(60, '', '', 3, null, 'NAVY'),
-	    77: new UserCache.CommissarUser(77, '', '', 3, null, 'AIR'),
+	    4: new CommissarUser(4, '', '', 3, null, 'MARINES'),
+	    6: new CommissarUser(6, '', '', 0, null, 'PRES'),
+	    7: new CommissarUser(7, '', '', 2, null, 'CJCS'),
+	    8: new CommissarUser(8, '', '', 3, null, 'ARMY'),
+	    38: new CommissarUser(38, '', '', 2, null, 'MINDEF'),
+	    42: new CommissarUser(42, '', '', 1, null, 'VP'),
+	    60: new CommissarUser(60, '', '', 3, null, 'NAVY'),
+	    77: new CommissarUser(77, '', '', 3, null, 'AIR'),
 	};
 	UserCache.UpdateClanExecutives(chainOfCommand, mockUserCache);
 	assert(mockUserCache[38].office);
