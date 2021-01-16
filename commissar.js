@@ -2,14 +2,13 @@ const Clock = require('./clock');
 const db = require('./database');
 const deepEqual = require('deep-equal');
 const DiscordUtil = require('./discord-util');
+const Executives = require('./executive-offices');
 const HarmonicCentrality = require('./harmonic-centrality');
 const moment = require('moment');
 const rank = require('./rank');
+const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
-const UserCache = require('./commissar-user');
-
-// This flag sets to true once the bot is connected to Discord (but not yet booted).
-let discordConnected = false;
+const UserCache = require('./user-cache');
 
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
@@ -193,12 +192,12 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
     timeTogetherStream.seenTogether(listOfLists);
 }
 
-// Announce a promotion in #main chat, if applicable.
+// Announce a promotion in #public chat, if applicable.
 //
 // nickname - a string of the user's filtered nickname, without insignia.
 // oldRank - integer rank index of the user's old rank.
 // newRank - integer rank index of the user's new rank.
-function AnnounceIfPromotion(nickname, oldRank, newRank) {
+async function AnnounceIfPromotion(nickname, oldRank, newRank) {
     if (oldRank === undefined || oldRank === null ||
 	newRank === undefined || newRank === null ||
 	!Number.isInteger(oldRank) || !Number.isInteger(newRank) ||
@@ -215,11 +214,8 @@ function AnnounceIfPromotion(nickname, oldRank, newRank) {
     // Delay for a few seconds to spread out the promotion messages and
     // also achieve a crude non-guaranteed sorting by rank.
     const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
-    setTimeout(async () => {
-	const guild = await DiscordUtil.GetMainDiscordGuild();
-	const channel = DiscordUtil.GetMainChatChannel(guild);
-	channel.send(message);
-    }, delayMillis);
+    await Sleep(delayMillis);
+    await DiscordUtil.MessagePublicChatChannel(message);
 }
 
 
@@ -260,15 +256,15 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	const guild = await DiscordUtil.GetMainDiscordGuild();
 	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
 	// Update the people's ranks.
-	Object.values(chainOfCommand).forEach((user) => {
+	Object.values(chainOfCommand).forEach(async (user) => {
 	    const cu = UserCache.GetCachedUserByCommissarId(user.id);
 	    // Only announce promotions if the user has been active recently.
 	    if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
-		AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
+		await AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
 	    }
 	    cu.setRank(user.rank);
 	});
-	UserCache.UpdateClanExecutives(chainOfCommand);
+	Executives.UpdateClanExecutives(chainOfCommand);
 	UpdateMiniClanRolesForMainDiscordGuild();
 	console.log('Chain of command updated.');
     });
@@ -349,7 +345,7 @@ async function UpdateMiniClanRolesForOneGuild(guild) {
     }
 
     // Kick off the recursive role assignment.
-    UserCache.ForEachExecutiveWithRoles((execID, recursiveRole, personalRole) => {
+    Executives.ForEachExecutiveWithRoles((execID, recursiveRole, personalRole) => {
 	if (recursiveRole) {
 	    ApplyRoleDownwards(execID, recursiveRole);
 	    ApplyRoleUpwards(execID, recursiveRole);
@@ -400,6 +396,53 @@ async function UpdateHarmonicCentrality() {
     });
 }
 
+// The given Discord message is already verified to start with the !ping prefix.
+// This is an example bot command that has been left in for fun. Maybe it's
+// also useful for teaching people how to use bot commands. It's a harmless
+// practice command that does nothing.
+function HandlePingCommand(discordMessage) {
+    discordMessage.channel.send('Pong!');
+}
+
+// A cheap live test harness to test the code that finds the main chat channel.
+// This lets me test it anytime I'm worried it's broken.
+async function HandlePingPublicChatCommand(discordMessage) {
+    await DiscordUtil.MessagePublicChatChannel('Pong!');
+}
+
+// The given Discord message is already verified to start with the !ban prefix.
+// Now authenticate and implement it.
+function HandleBanCommand(discordMessage) {
+    if (discordMessage.mentions.members.size === 1) {
+	const banMember = discordMessage.mentions.members.first();
+	discordMessage.channel.send(`Test ban ${banMember.nickname}!`);
+    } else if (discordMessage.mentions.members.size < 1) {
+	discordMessage.channel.send('Ban who? Example: !ban @nickname');
+    } else if (discordMessage.mentions.members.size > 1) {
+	discordMessage.channel.send('Must ban exactly one username at a time. Example: !ban @nickname');
+    }
+}
+
+// The given Discord message is already verified to start with the ! prefix.
+// This function figures out what kind of command it is and dispatches control
+// to the appropriate command-specific handler function.
+function HandleBotCommand(discordMessage) {
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length === 0) {
+	return;
+    }
+    const command = tokens[0];
+    if (command === '!ban') {
+	HandleBanCommand(discordMessage);
+    } else if (command === '!ping') {
+	HandlePingCommand(discordMessage);
+    } else if (command === '!pingpublic') {
+	HandlePingPublicChatCommand(discordMessage);
+    } else {
+	discordMessage.channel.send(`Unknown command ${command}`);
+    }
+}
+
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 function MinuteHeartbeat() {
     if (rateLimitQueue.length > 0) {
@@ -407,7 +450,7 @@ function MinuteHeartbeat() {
     }
     console.log('Minute heartbeat');
     // Update clan executive roles.
-    UserCache.UpdateClanExecutives(chainOfCommand);
+    Executives.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
     UpdateMiniClanRolesForMainDiscordGuild();
     // Update the chain of command.
@@ -450,15 +493,14 @@ async function Start() {
     });
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
-    discordClient.on('guildMemberAdd', (member) => {
+    discordClient.on('guildMemberAdd', async (member) => {
 	console.log('Someone joined the guild.');
 	if (member.user.bot) {
 	    // Ignore other bots.
 	    return;
 	}
 	const greeting = `Everybody welcome ${member.user.username} to the server!`;
-	const channel = DiscordUtil.GetMainChatChannel(member.guild);
-	channel.send(greeting);
+	await DiscordUtil.MessagePublicChatChannel(greeting);
 	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (!cu) {
 	    // We have no record of this Discord user. Create a new record in the cache.
@@ -468,7 +510,17 @@ async function Start() {
 	    });
 	}
     });
-    
+
+    // Respond to bot commands.
+    discordClient.on('message', message => {
+	if (!message.content || message.content.length === 0) {
+	    return;
+	}
+	if (message.content.charAt(0) === '!') {
+	    HandleBotCommand(message);
+	}
+    });
+
     // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
     // unmutes, deafens, undefeans, and possibly other circumstances as well.
     discordClient.on('voiceStateUpdate', (oldVoiceState, newVoiceState) => {

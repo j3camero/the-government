@@ -2,7 +2,7 @@
 const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
-const UserCache = require('./commissar-user');
+const UserCache = require('./user-cache');
 
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({
@@ -53,37 +53,31 @@ function GetAllMatchingTextChannels(guild, channelName) {
   return matchingChannels;
 }
 
-// Returns the main text chat channel for a discord guild.
-function GetMainChatChannel(guild) {
-  // First, look for any text channel called #main.
-  const mains = GetAllMatchingTextChannels(guild, 'main');
-  if (mains.length > 0) {
-    return mains[0];
-  }
-  // If no #main found, look for any text channel called #general.
-  const generals = GetAllMatchingTextChannels(guild, 'general');
-  if (generals.length > 0) {
-    return generals[0];
-  }
-  // If no #main or #general found, return any text channel at all.
-  let matchingChannel;
-  guild.channels.cache.forEach((channel) => {
-    if (channel.type === 'text') {
-      matchingChannel = channel;
-    }
-  });
-  if (matchingChannel) {
-    return matchingChannel;
-  }
-  // If no text channels found at all, give up.
-  return null;
-}
-
 // The the "main" Discord Guild for the Secret Clan.
 async function GetMainDiscordGuild() {
     const guildID = '305840605328703500';
     const guild = await client.guilds.fetch(guildID);
     return guild;
+}
+
+// Returns the #public text chat channel in the main discord guild.
+async function GetPublicChatChannel() {
+    const guild = await GetMainDiscordGuild();
+    const chatroomNames = ['main', 'public', 'general'];
+    for (const i in chatroomNames) {
+	const roomName = chatroomNames[i];
+	const matchingRooms = GetAllMatchingTextChannels(guild, roomName);
+	if (matchingRooms.length > 0) {
+	    return matchingRooms[0];
+	}
+    }
+    throw 'Failed to find any main chat channel!';
+}
+
+// Send a message to the main Discord server's #public channel.
+async function MessagePublicChatChannel(discordMessage) {
+    const channel = await GetPublicChatChannel();
+    channel.send(discordMessage);
 }
 
 async function UpdateChainOfCommandChatChannel(guild, canvas) {
@@ -168,10 +162,11 @@ module.exports = {
     Connect,
     GetAllMatchingTextChannels,
     GetCommissarIdsOfDiscordMembers,
-    GetMainChatChannel,
+    GetPublicChatChannel,
     GetMainDiscordGuild,
     GetRoleByName,
     GuildMemberHasRole,
+    MessagePublicChatChannel,
     UpdateChainOfCommandChatChannel,
     UpdateHarmonicCentralityChatChannel,
 };

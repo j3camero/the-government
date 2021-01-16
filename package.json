@@ -32,6 +32,7 @@
     "canvas": "^2.6.1",
     "deep-equal": "^2.0.4",
     "discord.js": "^12.4.1",
+    "gamedig": "^2.0.23",
     "mocha": "^6.2.0",
     "moment": "^2.29.1",
     "mysql": "^2.17.1",
