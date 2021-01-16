@@ -53,8 +53,16 @@ function GetAllMatchingTextChannels(guild, channelName) {
   return matchingChannels;
 }
 
-// Returns the main text chat channel for a discord guild.
-function GetMainChatChannel(guild) {
+// The the "main" Discord Guild for the Secret Clan.
+async function GetMainDiscordGuild() {
+    const guildID = '305840605328703500';
+    const guild = await client.guilds.fetch(guildID);
+    return guild;
+}
+
+// Returns the #public text chat channel in the main discord guild.
+async function GetPublicChatChannel() {
+    const guild = await GetMainDiscordGuild();
     const chatroomNames = ['main', 'public', 'general'];
     for (const i in chatroomNames) {
 	const roomName = chatroomNames[i];
@@ -66,11 +74,10 @@ function GetMainChatChannel(guild) {
     throw 'Failed to find any main chat channel!';
 }
 
-// The the "main" Discord Guild for the Secret Clan.
-async function GetMainDiscordGuild() {
-    const guildID = '305840605328703500';
-    const guild = await client.guilds.fetch(guildID);
-    return guild;
+// Send a message to the main Discord server's #public channel.
+async function MessagePublicChatChannel(discordMessage) {
+    const channel = await GetPublicChatChannel();
+    channel.send(discordMessage);
 }
 
 async function UpdateChainOfCommandChatChannel(guild, canvas) {
@@ -155,10 +162,11 @@ module.exports = {
     Connect,
     GetAllMatchingTextChannels,
     GetCommissarIdsOfDiscordMembers,
-    GetMainChatChannel,
+    GetPublicChatChannel,
     GetMainDiscordGuild,
     GetRoleByName,
     GuildMemberHasRole,
+    MessagePublicChatChannel,
     UpdateChainOfCommandChatChannel,
     UpdateHarmonicCentralityChatChannel,
 };
