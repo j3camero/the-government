@@ -58,6 +58,19 @@ function WriteAllUsersToDatabase(connection) {
     });
 }
 
+// Calls a function once for every cached user.
+//   - innerFunction: this function is called once for each cached user, like:
+//                    innerFunction(user), where user is a CommisarUser object.
+//   - userCache (optional): for unit testing. Leave it out in production.
+function ForEach(innerFunction, userCache) {
+    if (!userCache) {
+	userCache = commissarUserCache;
+    }
+    Object.values(userCache).forEach((user) => {
+	innerFunction(user);
+    });
+}
+
 // Get a cached user record by Commissar ID.
 function GetCachedUserByCommissarId(commissar_id) {
     if (commissar_id in commissarUserCache) {
@@ -119,6 +132,7 @@ function GetAllNicknames() {
 
 module.exports = {
     CreateNewDatabaseUser,
+    ForEach,
     GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,

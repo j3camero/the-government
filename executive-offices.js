@@ -1,5 +1,7 @@
 // Code for updating and establishing various offices & titles in the Discord.
 // Ex: Mr. President, Minister of Defense.
+const UserCache = require('./user-cache');
+
 const executiveOffices = {
     'PRES': {
 	abbreviation: 'Pres.',
@@ -70,7 +72,7 @@ const executiveOffices = {
 function FindUnassignedUser(targetRank, chainOfCommand, userCache) {
     let foundUser = null;
     Object.keys(chainOfCommand).forEach((commissar_id) => {
-	const cachedUser = userCache[commissar_id];
+	const cachedUser = UserCache.GetCachedUserByCommissarId(commissar_id);
 	const comUser = chainOfCommand[commissar_id];
 	if (cachedUser && comUser && comUser.rank === targetRank && !cachedUser.office) {
 	    foundUser = cachedUser;
@@ -82,7 +84,7 @@ function FindUnassignedUser(targetRank, chainOfCommand, userCache) {
 // Calls an inner function for each executive with role. Typically 3-star Generals
 // with roles Army, Navy, Air Force, and Marines.
 function ForEachExecutiveWithRoles(innerFunction) {
-    Object.values(commissarUserCache).forEach((user) => {
+    UserCache.ForEach((user) => {
 	if (user.office) {
 	    const jobDescription = executiveOffices[user.office];
 	    const recursiveRole = jobDescription.recursiveRole;
@@ -98,16 +100,13 @@ function ForEachExecutiveWithRoles(innerFunction) {
 //                production, leave it out to default to the real user cache.
 //   - chainOfCommand: the most recently computed chain of command.
 function UpdateClanExecutives(chainOfCommand, userCache) {
-    if (!userCache) {
-	userCache = commissarUserCache;
-    }
     if (!chainOfCommand || Object.keys(chainOfCommand).length <= 0) {
 	// Do nothing if the chain of command isn't loaded / calculated yet.
 	return;
     }
     const filledPositions = {};
     // Dismiss executives who don't match any more.
-    Object.values(userCache).forEach((user) => {
+    UserCache.ForEach((user) => {
 	if (!user.office) {
 	    return;
 	}
