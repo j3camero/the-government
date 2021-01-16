@@ -72,7 +72,8 @@ const executiveOffices = {
 function FindUnassignedUser(targetRank, chainOfCommand, userCache) {
     let foundUser = null;
     Object.keys(chainOfCommand).forEach((commissar_id) => {
-	const cachedUser = UserCache.GetCachedUserByCommissarId(commissar_id);
+	const cachedUser = userCache ? userCache[commissar_id]
+	      : UserCache.GetCachedUserByCommissarId(commissar_id);
 	const comUser = chainOfCommand[commissar_id];
 	if (cachedUser && comUser && comUser.rank === targetRank && !cachedUser.office) {
 	    foundUser = cachedUser;
@@ -105,8 +106,13 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 	return;
     }
     const filledPositions = {};
+    let ForEach = UserCache.ForEach;
+    // Accomodate mock user cache for unit testing.
+    if (userCache) {
+	ForEach = f => Object.values(userCache).forEach(f);
+    }
     // Dismiss executives who don't match any more.
-    UserCache.ForEach((user) => {
+    ForEach((user) => {
 	if (!user.office) {
 	    return;
 	}
