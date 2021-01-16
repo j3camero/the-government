@@ -10,9 +10,6 @@ const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
 
-// This flag sets to true once the bot is connected to Discord (but not yet booted).
-let discordConnected = false;
-
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
 
@@ -195,7 +192,7 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
     timeTogetherStream.seenTogether(listOfLists);
 }
 
-// Announce a promotion in #main chat, if applicable.
+// Announce a promotion in #public chat, if applicable.
 //
 // nickname - a string of the user's filtered nickname, without insignia.
 // oldRank - integer rank index of the user's old rank.
