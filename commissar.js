@@ -2,6 +2,7 @@ const Clock = require('./clock');
 const db = require('./database');
 const deepEqual = require('deep-equal');
 const DiscordUtil = require('./discord-util');
+const Executives = require('./executive-offices');
 const HarmonicCentrality = require('./harmonic-centrality');
 const moment = require('moment');
 const rank = require('./rank');
@@ -266,7 +267,7 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	    }
 	    cu.setRank(user.rank);
 	});
-	UserCache.UpdateClanExecutives(chainOfCommand);
+	Executives.UpdateClanExecutives(chainOfCommand);
 	UpdateMiniClanRolesForMainDiscordGuild();
 	console.log('Chain of command updated.');
     });
@@ -347,7 +348,7 @@ async function UpdateMiniClanRolesForOneGuild(guild) {
     }
 
     // Kick off the recursive role assignment.
-    UserCache.ForEachExecutiveWithRoles((execID, recursiveRole, personalRole) => {
+    Executives.ForEachExecutiveWithRoles((execID, recursiveRole, personalRole) => {
 	if (recursiveRole) {
 	    ApplyRoleDownwards(execID, recursiveRole);
 	    ApplyRoleUpwards(execID, recursiveRole);
@@ -452,7 +453,7 @@ function MinuteHeartbeat() {
     }
     console.log('Minute heartbeat');
     // Update clan executive roles.
-    UserCache.UpdateClanExecutives(chainOfCommand);
+    Executives.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
     UpdateMiniClanRolesForMainDiscordGuild();
     // Update the chain of command.

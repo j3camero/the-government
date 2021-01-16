@@ -1,15 +1,15 @@
 const assert = require('assert');
 const CommissarUser = require('./commissar-user');
-const UserCache = require('./user-cache');
+const Executives = require('./executive-offices');
 const sampleChainOfCommand = require('./sample-chain-of-command');
 
-describe('UserCache', function() {
+describe('ExecutiveOffices', function() {
     it('FindUnassignedUser President', () => {
 	const mockUserCache = {
 	    6: { commissar_id: 6 },
 	    7: { commissar_id: 7 },
 	};
-	const user = UserCache.FindUnassignedUser(0, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(0, sampleChainOfCommand, mockUserCache);
 	assert.equal(user.commissar_id, 6);
     });
     it('FindUnassignedUser President occupied', () => {
@@ -17,7 +17,7 @@ describe('UserCache', function() {
 	    6: { commissar_id: 6, office: 'PRES' },
 	    7: { commissar_id: 7 },
 	};
-	const user = UserCache.FindUnassignedUser(0, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(0, sampleChainOfCommand, mockUserCache);
 	assert.equal(user, null);
     });
     it('FindUnassignedUser VP', () => {
@@ -26,7 +26,7 @@ describe('UserCache', function() {
 	    7: { commissar_id: 7 },
 	    42: { commissar_id: 42 },
 	};
-	const user = UserCache.FindUnassignedUser(1, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(1, sampleChainOfCommand, mockUserCache);
 	assert.equal(user.commissar_id, 42);
     });
     it('FindUnassignedUser VP occupied', () => {
@@ -35,7 +35,7 @@ describe('UserCache', function() {
 	    7: { commissar_id: 7 },
 	    42: { commissar_id: 42, office: 'VP' },
 	};
-	const user = UserCache.FindUnassignedUser(1, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(1, sampleChainOfCommand, mockUserCache);
 	assert.equal(user, null);
     });
     it('FindUnassignedUser 4-star', () => {
@@ -45,7 +45,7 @@ describe('UserCache', function() {
 	    38: { commissar_id: 38 },
 	    42: { commissar_id: 42 },
 	};
-	const user = UserCache.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
 	assert(user.commissar_id === 38 || user.commissar_id === 7);
     });
     it('FindUnassignedUser 4-star missing A', () => {
@@ -54,7 +54,7 @@ describe('UserCache', function() {
 	    7: { commissar_id: 7 },
 	    42: { commissar_id: 42 },
 	};
-	const user = UserCache.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
 	assert.equal(user.commissar_id, 7);
     });
     it('FindUnassignedUser 4-star missing B', () => {
@@ -63,7 +63,7 @@ describe('UserCache', function() {
 	    38: { commissar_id: 38 },
 	    42: { commissar_id: 42 },
 	};
-	const user = UserCache.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
 	assert.equal(user.commissar_id, 38);
     });
     it('FindUnassignedUser 4-star A occupied', () => {
@@ -73,7 +73,7 @@ describe('UserCache', function() {
 	    38: { commissar_id: 38, office: 'MINDEF' },
 	    42: { commissar_id: 42 },
 	};
-	const user = UserCache.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
 	assert.equal(user.commissar_id, 7);
     });
     it('FindUnassignedUser 4-star B occupied', () => {
@@ -83,7 +83,7 @@ describe('UserCache', function() {
 	    38: { commissar_id: 38 },
 	    42: { commissar_id: 42 },
 	};
-	const user = UserCache.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
 	assert.equal(user.commissar_id, 38);
     });
     it('FindUnassignedUser 4-star both occupied', () => {
@@ -93,7 +93,7 @@ describe('UserCache', function() {
 	    38: { commissar_id: 38, office: 'MINDEF' },
 	    42: { commissar_id: 42 },
 	};
-	const user = UserCache.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(2, sampleChainOfCommand, mockUserCache);
 	assert.equal(user, null);
     });
     it('FindUnassignedUser 3-star one spot left', () => {
@@ -107,7 +107,7 @@ describe('UserCache', function() {
 	    60: { commissar_id: 60, office: 'C' },
 	    77: { commissar_id: 77 },
 	};
-	const user = UserCache.FindUnassignedUser(3, sampleChainOfCommand, mockUserCache);
+	const user = Executives.FindUnassignedUser(3, sampleChainOfCommand, mockUserCache);
 	assert(user.commissar_id === 77);
     });
     it('UpdateClanExecutives all empty', () => {
@@ -121,7 +121,7 @@ describe('UserCache', function() {
 	    60: new CommissarUser(60),
 	    77: new CommissarUser(77),
 	};
-	UserCache.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
+	Executives.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
 	Object.values(mockUserCache).forEach((user) => {
 	    assert(user.office);
 	});
@@ -137,7 +137,7 @@ describe('UserCache', function() {
 	    60: new CommissarUser(60, '', '', 3, null, 'NAVY'),
 	    77: new CommissarUser(77, '', '', 3, null, 'AIR'),
 	};
-	UserCache.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
+	Executives.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
 	// Spot check one field, but nothing should have changed.
 	assert.equal(mockUserCache[38].office, 'MINDEF');
     });
@@ -162,7 +162,7 @@ describe('UserCache', function() {
 	    60: new CommissarUser(60, '', '', 3, null, 'NAVY'),
 	    77: new CommissarUser(77, '', '', 3, null, 'AIR'),
 	};
-	UserCache.UpdateClanExecutives(chainOfCommand, mockUserCache);
+	Executives.UpdateClanExecutives(chainOfCommand, mockUserCache);
 	assert(mockUserCache[38].office);
 	assert(mockUserCache[38].office != 'MINDEF');
 	assert(mockUserCache[60].office);
