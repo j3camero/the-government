@@ -36,12 +36,7 @@ function AddRole(member, role) {
     }
     rateLimitQueue.push(() => {
 	console.log('Adding role', role.name, 'to', member.nickname);
-	member.roles.add(role)
-	    .then((member) => {
-		console.log('OK');
-	    }).catch((err) => {
-		console.log('ERROR!');
-	    });
+	await member.roles.add(role);
     });
 }
 
@@ -51,12 +46,7 @@ function RemoveRole(member, role) {
     }
     rateLimitQueue.push(() => {
 	console.log('Removing role', role.name, 'from', member.nickname);
-	member.roles.remove(role)
-	    .then((member) => {
-		console.log('OK');
-	    }).catch((err) => {
-		console.log('ERROR!');
-	    });
+	await member.roles.remove(role);
     });
 }
 
@@ -121,8 +111,7 @@ function UpdateMemberAppearance(member) {
     }
     const rankData = rank.metadata[cu.rank];
     if (!rankData) {
-	console.error('Invalid rank detected. This can indicate serious problems.');
-	return;
+	throw 'Invalid rank detected. This can indicate serious problems.';
     }
     if (rankData.titleOverride) {
 	// Nickname override for special titles like 'Mr. President'.
@@ -134,12 +123,7 @@ function UpdateMemberAppearance(member) {
     const formattedNickname = `${cu.nickname} ${rankData.insignia}`;
     if (member.nickname != formattedNickname && member.user.id !== member.guild.ownerID) {
 	console.log(`Updating nickname ${formattedNickname}.`);
-	member.setNickname(formattedNickname)
-	    .then((member) => {
-		console.log('OK');
-	    }).catch((err) => {
-		console.log('ERROR!');
-	    });
+	await member.setNickname(formattedNickname);
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData.role);
@@ -387,10 +371,6 @@ async function UpdateHarmonicCentrality() {
 	throw 'ERROR: zero candidates for the #chain-of-command!';
     }
     HarmonicCentrality(candidates, (centrality) => {
-	// Hack: Jeff can't be President.
-	if (7 in centrality) {
-	    delete centrality[7];
-	}
 	DiscordUtil.UpdateHarmonicCentralityChatChannel(centrality);
 	ElectMrPresident(centrality);
     });
