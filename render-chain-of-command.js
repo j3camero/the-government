@@ -3,6 +3,7 @@
 // The resulting picture looks like a hierarchical org chart of the sort
 // used by real-world organizations like militaries and big corporations.
 const Canvas = require('canvas');
+const com = require('./chain-of-command');
 
 // Determines the number of columns used to display the chain of command.
 function CountColumns(chain) {
@@ -26,7 +27,7 @@ function MaxSquadSize(chain) {
     Object.values(chain).forEach((user) => {
 	const lieutenant = 9;
 	if (user.rank === lieutenant) {
-	    const squad = GetSubordinates(chain, user.id);
+	    const squad = com.GetSubordinates(chain, user.id);
 	    biggest = Math.max(squad.length, biggest);
 	}
     });
@@ -174,7 +175,7 @@ function RenderChainOfCommand(chain, nicknames) {
 	const user = chain[userID];
 	if (user.rank >= 9) {
 	    // User is Lieutenant or below. Draw squad as flat list.
-	    const squad = GetSubordinates(chain, user.id);
+	    const squad = com.GetSubordinates(chain, user.id);
 	    const x = DrawSquad(squad, currentColumn);
 	    return { hi: x, lo: x, width: colWidth, x };
 	}
