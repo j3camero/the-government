@@ -57,7 +57,7 @@ async function UpdateMemberRankRoles(member, rankName) {
     DiscordUtil.AddRole(member, addThisRole);
     // Remove roles.
     removeTheseRoles.forEach((roleToRemove) => {
-	RemoveRole(member, roleToRemove);
+	DiscordUtil.RemoveRole(member, roleToRemove);
     });
 }
 
