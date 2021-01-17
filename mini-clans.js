@@ -4,6 +4,7 @@
 // one of the four 3-star Generals.
 const DiscordUtil = require('./discord-util');
 const Executives = require('./executive-offices');
+const UserCache = require('./user-cache');
 
 // Updates the mini-clans for the main Discord guild only.
 async function UpdateRolesForMainDiscordGuild(chainOfCommand) {
