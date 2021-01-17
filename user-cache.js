@@ -1,7 +1,7 @@
+const ChainOfCommand = require('./chain-of-command');
 const CommissarUser = require('./commissar-user');
 const FilterUsername = require('./filter-username');
 const moment = require('moment');
-const rankModule = require('./rank');
 
 // Below is a cache of the users that is kept in-memory, keyed by commissar_id.
 // Various functions are provided to load and sync users, and search the cache.
@@ -97,7 +97,7 @@ function CreateNewDatabaseUser(connection, discordMember, callback) {
     const discord_id = discordMember.user.id;
     const nickname = FilterUsername(discordMember.user.username);
     console.log(`Create a new DB user for ${nickname}`);
-    const rank = rankModule.metadata.length - 1;
+    const rank = ChainOfCommand.metadata.length - 1;
     const last_seen = moment().format();
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};

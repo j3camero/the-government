@@ -1,22 +1,22 @@
 const assert = require('assert');
 const fs = require('fs');
-const rank = require('./rank');
+const com = require('./chain-of-command');
 const sampleChainOfCommand = require('./sample-chain-of-command');
 
-describe('Rank', function() {
+describe('Chain of Command', function() {
     it('Chain of command with zero users', () => {
 	const presidentID = 0;
 	const candidates = [];
 	const relationships = [];
 	assert.throws(() => {
-	    rank.CalculateChainOfCommand(presidentID, candidates, relationships)
+	    com.CalculateChainOfCommand(presidentID, candidates, relationships)
 	});
     });
     it('1 person chain of command', () => {
 	const presidentID = 7;
 	const candidates = [7];
 	const relationships = [];
-	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	const chain = com.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
 	    7: { id: 7, rank: 0 },  // President.
 	});
@@ -27,7 +27,7 @@ describe('Rank', function() {
 	const relationships = [
 	    {lo_user_id: 1, hi_user_id: 2, discounted_diluted_seconds: 7},
 	];
-	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	const chain = com.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
 	    2: { id: 2, children: [1], rank: 0 },  // President.
 	    1: { id: 1, boss: 2, rank: 1 },  // Vice President.
@@ -39,7 +39,7 @@ describe('Rank', function() {
 	const relationships = [
 	    {lo_user_id: 2, hi_user_id: 3, discounted_diluted_seconds: 7},
 	];
-	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	const chain = com.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
 	    2: { id: 2, children: [3], rank: 0 },  // President.
 	    3: { id: 3, boss: 2, children: [1], rank: 1 },  // Vice President.
@@ -52,7 +52,7 @@ describe('Rank', function() {
 	const relationships = [
 	    {lo_user_id: 3, hi_user_id: 4, discounted_diluted_seconds: 7},
 	];
-	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	const chain = com.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
 	    4: { id: 4, children: [3], rank: 0 },  // President.
 	    3: { id: 3, boss: 4, children: [1, 2], rank: 1 },  // Vice President.
@@ -68,7 +68,7 @@ describe('Rank', function() {
 	    {lo_user_id: 1, hi_user_id: 2, discounted_diluted_seconds: 1},
 	    {lo_user_id: 2, hi_user_id: 4, discounted_diluted_seconds: 1},
 	];
-	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	const chain = com.CalculateChainOfCommand(presidentID, candidates, relationships);
 	assert.deepEqual(chain, {
 	    3: { id: 3, children: [2], rank: 0 },  // President.
 	    2: { id: 2, boss: 3, children: [1, 4], rank: 1 },  // Vice President.
@@ -113,28 +113,10 @@ describe('Rank', function() {
 	// Make sure we read the expected amount of data.
 	assert.equal(relationships.length, 1181);
 	// Calculate the chain of command.
-	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships);
+	const chain = com.CalculateChainOfCommand(presidentID, candidates, relationships);
 	// Compare the chain of command to one stored in a file. This tests that
 	// the algorithm is deterministic.
 	assert.deepEqual(chain, sampleChainOfCommand);
-    });
-    it('Render the chain of command as an image', () => {
-	// TODO: find a way to run this test as a separate integration test or something.
-	// It takes too long to run, blowing up the CI environment.
-	//const nicknames = {
-	//    6: 'Brobob',
-	//    7: 'Jeff',
-	//    32: 'Ssulfur',
-	//    38: 'watergate',
-	//    42: 'Cheatx',
-	//    77: 'Zomboscott',
-	//};
-	//const canvas = rank.RenderChainOfCommand(sampleChainOfCommand, nicknames);
-	//const buf = canvas.toBuffer();
-	//fs.writeFileSync('sample-chain-of-command-tmp.png', buf);
-	// Compare the image data to the expected output file.
-	//const expected = fs.readFileSync('sample-chain-of-command.png');
-	//assert(buf.equals(expected));
     });
     it('Term limits', () => {
 	const presidentID = 2;
@@ -143,7 +125,7 @@ describe('Rank', function() {
 	    {lo_user_id: 2, hi_user_id: 3, discounted_diluted_seconds: 7},
 	];
 	const termLimited = [3];
-	const chain = rank.CalculateChainOfCommand(presidentID, candidates, relationships, termLimited);
+	const chain = com.CalculateChainOfCommand(presidentID, candidates, relationships, termLimited);
 	assert.deepEqual(chain, {
 	    2: { id: 2, children: [1], rank: 0 },  // President.
 	    1: { id: 1, boss: 2, children: [3], rank: 1 },  // Vice President.
@@ -155,7 +137,7 @@ describe('Rank', function() {
 	const relationships = [
 	    {lo_user_id: 1, hi_user_id: 2, discounted_diluted_seconds: 7},
 	];
-	const matrix = rank.ConvertRelationshipsToTimeMatrix(relationships, candidates);
+	const matrix = com.ConvertRelationshipsToTimeMatrix(relationships, candidates);
 	// Users 1 and 2 have the same relationships as in the input.
 	assert.equal(matrix[1][2], 7);
 	// The other 2 relationships get tiny subsidies.
@@ -166,72 +148,35 @@ describe('Rank', function() {
     });
     it('Remove element from array by value', () => {
 	// Zero case.
-	assert.deepEqual(rank.RemoveByValue([], 1), []);
+	assert.deepEqual(com.RemoveByValue([], 1), []);
 	// Remove one item.
-	assert.deepEqual(rank.RemoveByValue([2], 2), []);
+	assert.deepEqual(com.RemoveByValue([2], 2), []);
 	// Typical case.
-	assert.deepEqual(rank.RemoveByValue([3, 5, 7, 9], 7), [3, 5, 9]);
+	assert.deepEqual(com.RemoveByValue([3, 5, 7, 9], 7), [3, 5, 9]);
 	// Only remove the first occurrence.
-	assert.deepEqual(rank.RemoveByValue([1, 2, 3, 1, 2, 3], 3), [1, 2, 1, 2, 3]);
+	assert.deepEqual(com.RemoveByValue([1, 2, 3, 1, 2, 3], 3), [1, 2, 1, 2, 3]);
 	// Don't remove missing items.
-	assert.deepEqual(rank.RemoveByValue([7, 8, 9], 6), [7, 8, 9]);
+	assert.deepEqual(com.RemoveByValue([7, 8, 9], 6), [7, 8, 9]);
 	// Different types.
-	assert.deepEqual(rank.RemoveByValue(['abc', 'def', 'xyz'], 'def'), ['abc', 'xyz']);
-	assert.deepEqual(rank.RemoveByValue(['abc', 15, false], false), ['abc', 15]);
+	assert.deepEqual(com.RemoveByValue(['abc', 'def', 'xyz'], 'def'), ['abc', 'xyz']);
+	assert.deepEqual(com.RemoveByValue(['abc', 15, false], false), ['abc', 15]);
 	// Modify the original array in-place.
 	const arr = [1, 2, 3];
-	rank.RemoveByValue(arr, 2);
+	com.RemoveByValue(arr, 2);
 	assert.deepEqual(arr, [1, 3]);
     });
     it('Copy and filter', () => {
-	assert.deepEqual(rank.CopyAndFilter([], []), []);
-	assert.deepEqual(rank.CopyAndFilter([], [1]), []);
-	assert.deepEqual(rank.CopyAndFilter([1], []), [1]);
-	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], []), [1, 2, 3]);
-	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], [1]), [2, 3]);
-	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], [2]), [1, 3]);
-	assert.deepEqual(rank.CopyAndFilter([1, 2, 3], [3]), [1, 2]);
-	assert.deepEqual(rank.CopyAndFilter(['a', 'b', 'c'], ['b']), ['a', 'c']);
-	assert.deepEqual(rank.CopyAndFilter([2, 4, 6, 8], [4, 6]), [2, 8]);
-	assert.deepEqual(rank.CopyAndFilter([2, 4, 6, 8], [4, 6, 2, 8, 1, 3]), []);
-	assert.deepEqual(rank.CopyAndFilter([2, 4, 6, 8], [2, 6, 8]), [4]);
-    });
-    it('Superiors null case', () => {
-	assert.deepEqual(rank.GetSuperiorIDs(null, null), []);
-    });
-    it('Superiors minimal case', () => {
-	const chain = {
-	    4: { id: 4 },
-	};
-	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [4]);
-    });
-    it('Superiors one boss', () => {
-	const chain = {
-	    4: { id: 4 },
-	    7: { id: 7, boss: 4 },
-	};
-	assert.deepEqual(rank.GetSuperiorIDs(7, chain), [4, 7]);
-	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [4]);
-    });
-    it('Superiors two bosses', () => {
-	const chain = {
-	    4: { id: 4, boss: 5 },
-	    5: { id: 5 },
-	    7: { id: 7, boss: 4 },
-	};
-	assert.deepEqual(rank.GetSuperiorIDs(7, chain), [5, 4, 7]);
-	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [5, 4]);
-	assert.deepEqual(rank.GetSuperiorIDs(5, chain), [5]);
-    });
-    it('Superiors branch', () => {
-	const chain = {
-	    4: { id: 4, boss: 7 },
-	    5: { id: 5, boss: 7 },
-	    7: { id: 7 },
-	};
-	assert.deepEqual(rank.GetSuperiorIDs(7, chain), [7]);
-	assert.deepEqual(rank.GetSuperiorIDs(4, chain), [7, 4]);
-	assert.deepEqual(rank.GetSuperiorIDs(5, chain), [7, 5]);
+	assert.deepEqual(com.CopyAndFilter([], []), []);
+	assert.deepEqual(com.CopyAndFilter([], [1]), []);
+	assert.deepEqual(com.CopyAndFilter([1], []), [1]);
+	assert.deepEqual(com.CopyAndFilter([1, 2, 3], []), [1, 2, 3]);
+	assert.deepEqual(com.CopyAndFilter([1, 2, 3], [1]), [2, 3]);
+	assert.deepEqual(com.CopyAndFilter([1, 2, 3], [2]), [1, 3]);
+	assert.deepEqual(com.CopyAndFilter([1, 2, 3], [3]), [1, 2]);
+	assert.deepEqual(com.CopyAndFilter(['a', 'b', 'c'], ['b']), ['a', 'c']);
+	assert.deepEqual(com.CopyAndFilter([2, 4, 6, 8], [4, 6]), [2, 8]);
+	assert.deepEqual(com.CopyAndFilter([2, 4, 6, 8], [4, 6, 2, 8, 1, 3]), []);
+	assert.deepEqual(com.CopyAndFilter([2, 4, 6, 8], [2, 6, 8]), [4]);
     });
     it('Matchmaking choose the only option', () => {
 	const chain = {
@@ -244,7 +189,7 @@ describe('Rank', function() {
 		7: 1,
 	    },
 	};
-	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	const match = com.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
 	assert.equal(match.bossID, 4);
 	assert.equal(match.minionID, 7);
     });
@@ -263,7 +208,7 @@ describe('Rank', function() {
 		7: 2,  // Strongest relationship.
 	    },
 	};
-	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	const match = com.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
 	assert.equal(match.bossID, 5);
 	assert.equal(match.minionID, 7);
     });
@@ -279,7 +224,7 @@ describe('Rank', function() {
 		8: 3,  // Strongest relationship.
 	    },
 	};
-	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	const match = com.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
 	assert.equal(match.bossID, 5);
 	assert.equal(match.minionID, 8);
     });
@@ -302,7 +247,7 @@ describe('Rank', function() {
 		9: 5,  // Choose this because #7 + #9 > #6 + #8 despite weaker direct bond.
 	    },
 	};
-	const match = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	const match = com.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
 	assert.equal(match.bossID, 9);
 	assert.equal(match.minionID, 2);
     });
@@ -323,11 +268,11 @@ describe('Rank', function() {
 	    },
 	};
 	// When constrained, we fall back to the second choice.
-	const a = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 1);
+	const a = com.SelectBestMatch(bosses, candidates, timeMatrix, chain, 1);
 	assert.equal(a.bossID, 3);
 	assert.equal(a.minionID, 4);
 	// When unconstrained, the first choice is picked.
-	const b = rank.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
+	const b = com.SelectBestMatch(bosses, candidates, timeMatrix, chain, 2);
 	assert.equal(b.bossID, 1);
 	assert.equal(b.minionID, 4);
     });
@@ -335,21 +280,21 @@ describe('Rank', function() {
 	const bosses = [
 	    { children: [] },
 	];
-	const limit = rank.LimitMaxChildren(1, bosses);
+	const limit = com.LimitMaxChildren(1, bosses);
 	assert.equal(limit, 1);
     });
     it('Limit max children 2:1 with zero children', () => {
 	const bosses = [
 	    { children: [] },
 	];
-	const limit = rank.LimitMaxChildren(2, bosses);
+	const limit = com.LimitMaxChildren(2, bosses);
 	assert.equal(limit, 2);
     });
     it('Limit max children 2:1 with 1 child', () => {
 	const bosses = [
 	    { children: [1] },
 	];
-	const limit = rank.LimitMaxChildren(2, bosses);
+	const limit = com.LimitMaxChildren(2, bosses);
 	assert.equal(limit, 3);
     });
     it('Limit max children 2 bosses', () => {
@@ -357,64 +302,64 @@ describe('Rank', function() {
 	    { children: [] },
 	    { children: [] },
 	];
-	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
-	assert.equal(rank.LimitMaxChildren(2, bosses), 1);
-	assert.equal(rank.LimitMaxChildren(3, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(4, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(5, bosses), 3);
+	assert.equal(com.LimitMaxChildren(1, bosses), 1);
+	assert.equal(com.LimitMaxChildren(2, bosses), 1);
+	assert.equal(com.LimitMaxChildren(3, bosses), 2);
+	assert.equal(com.LimitMaxChildren(4, bosses), 2);
+	assert.equal(com.LimitMaxChildren(5, bosses), 3);
     });
     it('Limit max children 2 bosses and 1 existing child', () => {
 	const bosses = [
 	    { children: [1] },
 	    { children: [] },
 	];
-	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
-	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(3, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
-	assert.equal(rank.LimitMaxChildren(5, bosses), 3);
+	assert.equal(com.LimitMaxChildren(1, bosses), 1);
+	assert.equal(com.LimitMaxChildren(2, bosses), 2);
+	assert.equal(com.LimitMaxChildren(3, bosses), 2);
+	assert.equal(com.LimitMaxChildren(4, bosses), 3);
+	assert.equal(com.LimitMaxChildren(5, bosses), 3);
     });
     it('Limit max children 2 bosses with 2 children', () => {
 	const bosses = [
 	    { children: [1, 2] },
 	    { children: [] },
 	];
-	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
-	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(3, bosses), 3);
-	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
-	assert.equal(rank.LimitMaxChildren(5, bosses), 4);
+	assert.equal(com.LimitMaxChildren(1, bosses), 1);
+	assert.equal(com.LimitMaxChildren(2, bosses), 2);
+	assert.equal(com.LimitMaxChildren(3, bosses), 3);
+	assert.equal(com.LimitMaxChildren(4, bosses), 3);
+	assert.equal(com.LimitMaxChildren(5, bosses), 4);
     });
     it('Limit max children 2 bosses with 1 child each', () => {
 	const bosses = [
 	    { children: [1] },
 	    { children: [2] },
 	];
-	assert.equal(rank.LimitMaxChildren(1, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(3, bosses), 3);
-	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
-	assert.equal(rank.LimitMaxChildren(5, bosses), 4);
+	assert.equal(com.LimitMaxChildren(1, bosses), 2);
+	assert.equal(com.LimitMaxChildren(2, bosses), 2);
+	assert.equal(com.LimitMaxChildren(3, bosses), 3);
+	assert.equal(com.LimitMaxChildren(4, bosses), 3);
+	assert.equal(com.LimitMaxChildren(5, bosses), 4);
     });
     it('Limit max children 2 bosses 3 children', () => {
 	const bosses30 = [
 	    { children: [1, 2, 3] },
 	    { children: [] },
 	];
-	assert.equal(rank.LimitMaxChildren(1, bosses30), 1);
-	assert.equal(rank.LimitMaxChildren(2, bosses30), 2);
-	assert.equal(rank.LimitMaxChildren(3, bosses30), 3);
-	assert.equal(rank.LimitMaxChildren(4, bosses30), 4);
-	assert.equal(rank.LimitMaxChildren(5, bosses30), 4);
+	assert.equal(com.LimitMaxChildren(1, bosses30), 1);
+	assert.equal(com.LimitMaxChildren(2, bosses30), 2);
+	assert.equal(com.LimitMaxChildren(3, bosses30), 3);
+	assert.equal(com.LimitMaxChildren(4, bosses30), 4);
+	assert.equal(com.LimitMaxChildren(5, bosses30), 4);
 	const bosses21 = [
 	    { children: [1, 2] },
 	    { children: [3] },
 	];
-	assert.equal(rank.LimitMaxChildren(1, bosses21), 2);
-	assert.equal(rank.LimitMaxChildren(2, bosses21), 3);
-	assert.equal(rank.LimitMaxChildren(3, bosses21), 3);
-	assert.equal(rank.LimitMaxChildren(4, bosses21), 4);
-	assert.equal(rank.LimitMaxChildren(5, bosses21), 4);
+	assert.equal(com.LimitMaxChildren(1, bosses21), 2);
+	assert.equal(com.LimitMaxChildren(2, bosses21), 3);
+	assert.equal(com.LimitMaxChildren(3, bosses21), 3);
+	assert.equal(com.LimitMaxChildren(4, bosses21), 4);
+	assert.equal(com.LimitMaxChildren(5, bosses21), 4);
     });
     it('Limit max children 3 bosses', () => {
 	const bosses = [
@@ -422,15 +367,52 @@ describe('Rank', function() {
 	    { children: [4] },
 	    { children: [] },
 	];
-	assert.equal(rank.LimitMaxChildren(1, bosses), 1);
-	assert.equal(rank.LimitMaxChildren(2, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(3, bosses), 2);
-	assert.equal(rank.LimitMaxChildren(4, bosses), 3);
-	assert.equal(rank.LimitMaxChildren(5, bosses), 3);
-	assert.equal(rank.LimitMaxChildren(6, bosses), 4);
-	assert.equal(rank.LimitMaxChildren(7, bosses), 4);
-	assert.equal(rank.LimitMaxChildren(8, bosses), 4);
-	assert.equal(rank.LimitMaxChildren(9, bosses), 5);
+	assert.equal(com.LimitMaxChildren(1, bosses), 1);
+	assert.equal(com.LimitMaxChildren(2, bosses), 2);
+	assert.equal(com.LimitMaxChildren(3, bosses), 2);
+	assert.equal(com.LimitMaxChildren(4, bosses), 3);
+	assert.equal(com.LimitMaxChildren(5, bosses), 3);
+	assert.equal(com.LimitMaxChildren(6, bosses), 4);
+	assert.equal(com.LimitMaxChildren(7, bosses), 4);
+	assert.equal(com.LimitMaxChildren(8, bosses), 4);
+	assert.equal(com.LimitMaxChildren(9, bosses), 5);
+    });
+    it('Superiors null case', () => {
+	assert.deepEqual(com.GetSuperiorIDs(null, null), []);
+    });
+    it('Superiors minimal case', () => {
+	const chain = {
+	    4: { id: 4 },
+	};
+	assert.deepEqual(com.GetSuperiorIDs(4, chain), [4]);
+    });
+    it('Superiors one boss', () => {
+	const chain = {
+	    4: { id: 4 },
+	    7: { id: 7, boss: 4 },
+	};
+	assert.deepEqual(com.GetSuperiorIDs(7, chain), [4, 7]);
+	assert.deepEqual(com.GetSuperiorIDs(4, chain), [4]);
+    });
+    it('Superiors two bosses', () => {
+	const chain = {
+	    4: { id: 4, boss: 5 },
+	    5: { id: 5 },
+	    7: { id: 7, boss: 4 },
+	};
+	assert.deepEqual(com.GetSuperiorIDs(7, chain), [5, 4, 7]);
+	assert.deepEqual(com.GetSuperiorIDs(4, chain), [5, 4]);
+	assert.deepEqual(com.GetSuperiorIDs(5, chain), [5]);
+    });
+    it('Superiors branch', () => {
+	const chain = {
+	    4: { id: 4, boss: 7 },
+	    5: { id: 5, boss: 7 },
+	    7: { id: 7 },
+	};
+	assert.deepEqual(com.GetSuperiorIDs(7, chain), [7]);
+	assert.deepEqual(com.GetSuperiorIDs(4, chain), [7, 4]);
+	assert.deepEqual(com.GetSuperiorIDs(5, chain), [7, 5]);
     });
     it('Calculate subordinates', () => {
 	const chain = {
@@ -439,9 +421,9 @@ describe('Rank', function() {
 	    3: { id: 3 },
 	    4: { id: 4 },
 	};
-	assert.equal(rank.GetSubordinates(chain, 1).length, 4);
-	assert.equal(rank.GetSubordinates(chain, 2).length, 3);
-	assert.equal(rank.GetSubordinates(chain, 3).length, 1);
-	assert.equal(rank.GetSubordinates(chain, 4).length, 1);
+	assert.equal(com.GetSubordinates(chain, 1).length, 4);
+	assert.equal(com.GetSubordinates(chain, 2).length, 3);
+	assert.equal(com.GetSubordinates(chain, 3).length, 1);
+	assert.equal(com.GetSubordinates(chain, 4).length, 1);
     });
 });

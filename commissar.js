@@ -1,12 +1,14 @@
+const ChainOfCommand = require('./chain-of-command');
 const Clock = require('./clock');
 const db = require('./database');
 const deepEqual = require('deep-equal');
 const DiscordUtil = require('./discord-util');
 const Executives = require('./executive-offices');
 const HarmonicCentrality = require('./harmonic-centrality');
+const MiniClans = require('./mini-clans');
 const moment = require('moment');
-const rank = require('./rank');
 const RateLimit = require('./rate-limit');
+const RenderChainOfCommand = require('./render-chain-of-command');
 const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
@@ -80,7 +82,7 @@ function UpdateMemberAppearance(member) {
 	// The user has not been assigned a rank yet. Bail.
 	return;
     }
-    const rankData = rank.metadata[cu.rank];
+    const rankData = ChainOfCommand.metadata[cu.rank];
     if (!rankData) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
@@ -162,8 +164,8 @@ async function AnnounceIfPromotion(nickname, oldRank, newRank) {
     }
     // If we get past here, a promotion has been detected.
     // Announce it in main chat.
-    const oldMeta = rank.metadata[oldRank];
-    const newMeta = rank.metadata[newRank];
+    const oldMeta = ChainOfCommand.metadata[oldRank];
+    const newMeta = ChainOfCommand.metadata[newRank];
     const message = `${nickname} ${newMeta.insignia} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
     console.log(message);
     // Delay for a few seconds to spread out the promotion messages and
@@ -197,7 +199,7 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	// User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
 	// TODO: replace this with a column in the users table of the database to avoid hardcoding.
 	const termLimited = [7];
-	const newChainOfCommand = rank.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships, termLimited);
+	const newChainOfCommand = ChainOfCommand.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships, termLimited);
 	if (deepEqual(newChainOfCommand, chainOfCommand)) {
 	    // Bail if there are no changes to the chain of command.
 	    return;
@@ -207,7 +209,7 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	chainOfCommand = newChainOfCommand;
 	const nicknames = UserCache.GetAllNicknames();
 	// Generate and post an updated image of the chain of command.
-	const canvas = rank.RenderChainOfCommand(chainOfCommand, nicknames);
+	const canvas = RenderChainOfCommand(chainOfCommand, nicknames);
 	const guild = await DiscordUtil.GetMainDiscordGuild();
 	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
 	// Update the people's ranks.
@@ -219,104 +221,7 @@ function UpdateChainOfCommandForCandidates(candidateIds) {
 	    }
 	    cu.setRank(user.rank);
 	});
-	Executives.UpdateClanExecutives(chainOfCommand);
-	UpdateMiniClanRolesForMainDiscordGuild();
 	console.log('Chain of command updated.');
-    });
-}
-
-// Updates the Army, Navy, Air Force, and Marines.
-//
-// The four mini-clans are based on chain-of-command. Each 'branch' is headed by
-// one of the four 3-star Generals.
-//
-// Updates the mini-clans for the main Discord guild only.
-async function UpdateMiniClanRolesForMainDiscordGuild() {
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    UpdateMiniClanRolesForOneGuild(guild);
-}
-
-// Updates the mini-clans for one Discord guild only.
-async function UpdateMiniClanRolesForOneGuild(guild) {
-    if (!chainOfCommand) {
-	// Bail if the chain of command isn't booted up yet.
-	return;
-    }
-    // Get the Discord roles for each mini-clan.
-    const allRoleNames = [
-	'Army', 'Navy', 'Air Force', 'Marines',
-	'Minister of Defense', 'Chairman of the Joint Chiefs of Staff',
-    ];
-    const rolesByName = {};
-    allRoleNames.forEach(async (roleName) => {
-	rolesByName[roleName] = await DiscordUtil.GetRoleByName(guild, roleName);
-    });
-
-    // Custom role updating function for mini-clans. It applies the given
-    // roles and actively removes any others.
-    function UpdateRoles(member, names) {
-	const addRoles = [];
-	const removeRoles = [];
-	Object.keys(rolesByName).forEach((name) => {
-	    const role = rolesByName[name];
-	    if (names.includes(name)) {
-		DiscordUtil.AddRole(member, role);
-	    } else {
-		DiscordUtil.RemoveRole(member, role);
-	    }
-	});
-    }
-
-    // A list of roles to be applied, keyed by commissar_id. It's this
-    // way to accomodate giving senior leaders several roles.
-    const rolesById = {};
-
-    // Add a role to the list of roles buffered for one user by ID.
-    function AddRoleToId(commissar_id, roleName) {
-	const userRoles = rolesById[commissar_id] || [];
-	userRoles.push(roleName);
-	rolesById[commissar_id] = userRoles;
-    }
-
-    // Apply a role to a user and their children in the chain of command, recursively.
-    function ApplyRoleDownwards(commissar_id, roleName) {
-	AddRoleToId(commissar_id, roleName);
-	const chainUser = chainOfCommand[commissar_id];
-	if (!chainUser || !chainUser.children) {
-	    return;
-	}
-	chainUser.children.forEach((child) => {
-	    ApplyRoleDownwards(child, roleName);
-	});
-    }
-
-    // Apply a role to a user and their bosses in the chain of command, recursively.
-    function ApplyRoleUpwards(commissar_id, roleName) {
-	AddRoleToId(commissar_id, roleName);
-	const chainUser = chainOfCommand[commissar_id];
-	if (chainUser && chainUser.boss) {
-	    ApplyRoleUpwards(chainUser.boss, roleName);
-	}
-    }
-
-    // Kick off the recursive role assignment.
-    Executives.ForEachExecutiveWithRoles((execID, recursiveRole, personalRole) => {
-	if (recursiveRole) {
-	    ApplyRoleDownwards(execID, recursiveRole);
-	    ApplyRoleUpwards(execID, recursiveRole);
-	}
-	if (personalRole) {
-	    AddRoleToId(execID, personalRole);
-	}
-    });
-    // Apply the calculated mini-clan roles to each user in the Discord guild.
-    const members = await guild.members.fetch();
-    members.forEach((member) => {
-	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
-	if (cu && cu.commissar_id in rolesById) {
-	    const roleNames = rolesById[cu.commissar_id];
-	    UpdateRoles(member, roleNames);
-	}
     });
 }
 
@@ -403,7 +308,7 @@ function MinuteHeartbeat() {
     // Update clan executive roles.
     Executives.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
-    UpdateMiniClanRolesForMainDiscordGuild();
+    MiniClans.UpdateRolesForMainDiscordGuild();
     // Update the chain of command.
     UpdateChainOfCommandForMainDiscordGuild();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
