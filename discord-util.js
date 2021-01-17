@@ -2,6 +2,7 @@
 const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
+const RateLimit = require('./rate-limit');
 const UserCache = require('./user-cache');
 
 // Create the Discord client. Does not connect yet.
@@ -40,6 +41,32 @@ async function GetRoleByName(guild, roleName) {
 function GuildMemberHasRole(member, targetRole) {
     const foundRole = member.roles.cache.find(role => role.id === targetRole.id);
     return foundRole ? true : false;
+}
+
+// Adds a role to a GuildMember.
+//
+// Tries to be efficient by checking if the member already has the role.
+function AddRole(member, role) {
+    if (!role || GuildMemberHasRole(member, role)) {
+	return;
+    }
+    RateLimit.Run(() => {
+	console.log('Adding role', role.name, 'to', member.nickname);
+	member.roles.add(role);
+    });
+}
+
+// Removes a role from a GuildMember.
+//
+// Tries to be efficient by checking if the member already has the role.
+function RemoveRole(member, role) {
+    if (!role || !GuildMemberHasRole(member, role)) {
+	return;
+    }
+    RateLimit.Run(() => {
+	console.log('Removing role', role.name, 'from', member.nickname);
+	member.roles.remove(role);
+    });
 }
 
 // Returns a list of text channels with names that match channelName.
@@ -159,6 +186,7 @@ async function GetCommissarIdsOfDiscordMembers() {
 }
 
 module.exports = {
+    AddRole,
     Connect,
     GetAllMatchingTextChannels,
     GetCommissarIdsOfDiscordMembers,
@@ -167,6 +195,7 @@ module.exports = {
     GetRoleByName,
     GuildMemberHasRole,
     MessagePublicChatChannel,
+    RemoveRole,
     UpdateChainOfCommandChatChannel,
     UpdateHarmonicCentralityChatChannel,
 };

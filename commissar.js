@@ -21,26 +21,6 @@ let mrPresident;
 // The elements form an implcit tree.
 let chainOfCommand = {};
 
-function AddRole(member, role) {
-    if (!role || DiscordUtil.GuildMemberHasRole(member, role)) {
-	return;
-    }
-    RateLimit.Run(() => {
-	console.log('Adding role', role.name, 'to', member.nickname);
-	member.roles.add(role);
-    });
-}
-
-function RemoveRole(member, role) {
-    if (!role || !DiscordUtil.GuildMemberHasRole(member, role)) {
-	return;
-    }
-    RateLimit.Run(() => {
-	console.log('Removing role', role.name, 'from', member.nickname);
-	member.roles.remove(role);
-    });
-}
-
 // Updates a guild member's color.
 async function UpdateMemberRankRoles(member, rankName) {
     // Look up the IDs of the 4 big categories.
@@ -72,7 +52,7 @@ async function UpdateMemberRankRoles(member, rankName) {
 	throw `Invalid rank category name: ${rankName}`;
     };
     // Add role.
-    AddRole(member, addThisRole);
+    DiscordUtil.AddRole(member, addThisRole);
     // Remove roles.
     removeTheseRoles.forEach((roleToRemove) => {
 	RemoveRole(member, roleToRemove);
@@ -280,9 +260,9 @@ async function UpdateMiniClanRolesForOneGuild(guild) {
 	Object.keys(rolesByName).forEach((name) => {
 	    const role = rolesByName[name];
 	    if (names.includes(name)) {
-		AddRole(member, role);
+		DiscordUtil.AddRole(member, role);
 	    } else {
-		RemoveRole(member, role);
+		DiscordUtil.RemoveRole(member, role);
 	    }
 	});
     }
