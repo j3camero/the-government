@@ -6,6 +6,7 @@ const Executives = require('./executive-offices');
 const HarmonicCentrality = require('./harmonic-centrality');
 const moment = require('moment');
 const rank = require('./rank');
+const RateLimit = require('./rate-limit');
 const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
@@ -20,23 +21,13 @@ let mrPresident;
 // The elements form an implcit tree.
 let chainOfCommand = {};
 
-// Callbacks can be queued in here for later execution.
-const rateLimitQueue = [];
-
-setInterval(() => {
-    if (rateLimitQueue.length > 0) {
-	const nextTask = rateLimitQueue.shift();
-	nextTask();
-    }
-}, 750);
-
 function AddRole(member, role) {
     if (!role || DiscordUtil.GuildMemberHasRole(member, role)) {
 	return;
     }
-    rateLimitQueue.push(() => {
+    RateLimit.Run(() => {
 	console.log('Adding role', role.name, 'to', member.nickname);
-	await member.roles.add(role);
+	member.roles.add(role);
     });
 }
 
@@ -44,9 +35,9 @@ function RemoveRole(member, role) {
     if (!role || !DiscordUtil.GuildMemberHasRole(member, role)) {
 	return;
     }
-    rateLimitQueue.push(() => {
+    RateLimit.Run(() => {
 	console.log('Removing role', role.name, 'from', member.nickname);
-	await member.roles.remove(role);
+	member.roles.remove(role);
     });
 }
 
@@ -123,7 +114,7 @@ function UpdateMemberAppearance(member) {
     const formattedNickname = `${cu.nickname} ${rankData.insignia}`;
     if (member.nickname != formattedNickname && member.user.id !== member.guild.ownerID) {
 	console.log(`Updating nickname ${formattedNickname}.`);
-	await member.setNickname(formattedNickname);
+	member.setNickname(formattedNickname);
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData.role);
@@ -425,7 +416,7 @@ function HandleBotCommand(discordMessage) {
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 function MinuteHeartbeat() {
-    if (rateLimitQueue.length > 0) {
+    if (RateLimit.Busy()) {
 	return;
     }
     console.log('Minute heartbeat');
@@ -447,7 +438,7 @@ function MinuteHeartbeat() {
 
 // The hourly heartbeat event. Take care of things that need attention once an hour.
 function HourlyHeartbeat() {
-    if (rateLimitQueue.length > 0) {
+    if (RateLimit.Busy()) {
 	return;
     }
     console.log('Hourly heartbeat');
