@@ -89,7 +89,7 @@ function RenderChainOfCommand(chain, nicknames) {
 
     // Draws one username at a centered x, y coordinate.
     function DrawName(user, x, y, maxWidth) {
-	const rank = metadata[user.rank];
+	const rank = com.metadata[user.rank];
 	context.fillStyle = colors[rank.role] || lightGrey;
 	let name = user.id;
 	if (user.id in nicknames) {
@@ -115,7 +115,7 @@ function RenderChainOfCommand(chain, nicknames) {
 
     // Draws a standin for a group of people, like "+3 More *".
     function DrawStandin(groupSize, x, y, maxWidth) {
-	const rank = metadata[12];
+	const rank = com.metadata[12];
 	context.fillStyle = colors[rank.role] || lightGrey;
 	const formattedName = `+${groupSize} More ${rank.insignia}`;
 	// Shrink the font to make the text fit if necessary.
@@ -180,7 +180,7 @@ function RenderChainOfCommand(chain, nicknames) {
 	    return { hi: x, lo: x, width: colWidth, x };
 	}
 	// User is high ranking. Draw as part of the tree.
-	const rankMetadata = metadata[user.rank];
+	const rankMetadata = com.metadata[user.rank];
 	const textHeight = fontSizes[rankMetadata.role];
 	const bufferHeight = Math.round(textHeight * textVerticalMarginRatio);
 	const textBottomY = topY + textHeight + bufferHeight;

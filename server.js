@@ -176,7 +176,6 @@ async function AnnounceIfPromotion(nickname, oldRank, newRank) {
     await DiscordUtil.MessagePublicChatChannel(message);
 }
 
-
 // Calculates the chain of command. If there are changes, the update is made.
 // Only affects the main Discord guild.
 async function UpdateChainOfCommandForMainDiscordGuild() {
@@ -262,7 +261,7 @@ function MinuteHeartbeat() {
     // Update clan executive roles.
     Executives.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
-    MiniClans.UpdateRolesForMainDiscordGuild();
+    MiniClans.UpdateRolesForMainDiscordGuild(chainOfCommand);
     // Update the chain of command.
     UpdateChainOfCommandForMainDiscordGuild();
     // Update the nickname, insignia, and roles of the members of the Discord channel.

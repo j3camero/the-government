@@ -6,9 +6,9 @@ const DiscordUtil = require('./discord-util');
 const Executives = require('./executive-offices');
 
 // Updates the mini-clans for the main Discord guild only.
-async function UpdateRolesForMainDiscordGuild() {
+async function UpdateRolesForMainDiscordGuild(chainOfCommand) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    UpdateRolesForOneGuild(guild);
+    UpdateRolesForOneGuild(guild, chainOfCommand);
 }
 
 // Updates the mini-clans for one Discord guild only.
