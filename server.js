@@ -1,3 +1,4 @@
+const BotCommands = require('./bot-commands');
 const ChainOfCommand = require('./chain-of-command');
 const Clock = require('./clock');
 const db = require('./database');
@@ -252,53 +253,6 @@ async function UpdateHarmonicCentrality() {
     });
 }
 
-// The given Discord message is already verified to start with the !ping prefix.
-// This is an example bot command that has been left in for fun. Maybe it's
-// also useful for teaching people how to use bot commands. It's a harmless
-// practice command that does nothing.
-function HandlePingCommand(discordMessage) {
-    discordMessage.channel.send('Pong!');
-}
-
-// A cheap live test harness to test the code that finds the main chat channel.
-// This lets me test it anytime I'm worried it's broken.
-async function HandlePingPublicChatCommand(discordMessage) {
-    await DiscordUtil.MessagePublicChatChannel('Pong!');
-}
-
-// The given Discord message is already verified to start with the !ban prefix.
-// Now authenticate and implement it.
-function HandleBanCommand(discordMessage) {
-    if (discordMessage.mentions.members.size === 1) {
-	const banMember = discordMessage.mentions.members.first();
-	discordMessage.channel.send(`Test ban ${banMember.nickname}!`);
-    } else if (discordMessage.mentions.members.size < 1) {
-	discordMessage.channel.send('Ban who? Example: !ban @nickname');
-    } else if (discordMessage.mentions.members.size > 1) {
-	discordMessage.channel.send('Must ban exactly one username at a time. Example: !ban @nickname');
-    }
-}
-
-// The given Discord message is already verified to start with the ! prefix.
-// This function figures out what kind of command it is and dispatches control
-// to the appropriate command-specific handler function.
-function HandleBotCommand(discordMessage) {
-    const tokens = discordMessage.content.split(' ');
-    if (tokens.length === 0) {
-	return;
-    }
-    const command = tokens[0];
-    if (command === '!ban') {
-	HandleBanCommand(discordMessage);
-    } else if (command === '!ping') {
-	HandlePingCommand(discordMessage);
-    } else if (command === '!pingpublic') {
-	HandlePingPublicChatCommand(discordMessage);
-    } else {
-	discordMessage.channel.send(`Unknown command ${command}`);
-    }
-}
-
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 function MinuteHeartbeat() {
     if (RateLimit.Busy()) {
@@ -339,7 +293,6 @@ async function Start() {
     const discordClient = await DiscordUtil.Connect();
     console.log('Discord bot connected.');
     console.log('Waiting for the database to connect.');
-    // Wait for the database, too.
     await db.Connect();
     console.log('Database connected.');
     console.log('Loading commissar user data.');
@@ -368,14 +321,7 @@ async function Start() {
     });
 
     // Respond to bot commands.
-    discordClient.on('message', message => {
-	if (!message.content || message.content.length === 0) {
-	    return;
-	}
-	if (message.content.charAt(0) === '!') {
-	    HandleBotCommand(message);
-	}
-    });
+    discordClient.on('message', BotCommands.Dispatch);
 
     // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
     // unmutes, deafens, undefeans, and possibly other circumstances as well.
