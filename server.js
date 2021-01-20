@@ -260,8 +260,6 @@ async function MinuteHeartbeat() {
     UpdateChainOfCommandForMainDiscordGuild();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances();
-    // Sync user data to the database.
-    UserCache.WriteDirtyUsersToDatabase();
     // Update time matrix and sync to database.
     UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);

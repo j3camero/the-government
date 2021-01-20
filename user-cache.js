@@ -26,22 +26,6 @@ async function LoadAllUsersFromDatabase() {
     commissarUserCache = newCache;
 }
 
-// Write only the dirty records to the database.
-function WriteDirtyUsersToDatabase() {
-    let firstOne = true;
-    Object.keys(commissarUserCache).forEach((id) => {
-	const u = commissarUserCache[id];
-	if (u.dirty) {
-	    u.writeToDatabase();
-	    if (firstOne) {
-		console.log(`Writing dirty users to the DB.`);
-		firstOne = false;
-	    }
-	    console.log(`    * ${u.nickname}`);
-	}
-    });
-}
-
 // Calls a function once for every cached user.
 //   - innerFunction: this function is called once for each cached user, like:
 //                    innerFunction(user), where user is a CommisarUser object.
@@ -114,5 +98,4 @@ module.exports = {
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     LoadAllUsersFromDatabase,
-    WriteDirtyUsersToDatabase,
 };
