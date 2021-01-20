@@ -287,15 +287,11 @@ console.log('Connecting the Discord bot.');
 async function Start() {
     console.log('Waiting for Discord bot to connect.');
     const discordClient = await DiscordUtil.Connect();
-    console.log('Discord bot connected.');
-    console.log('Waiting for the database to connect.');
+    console.log('Discord bot connected. Waiting for the database to connect.');
     await db.Connect();
-    console.log('Database connected.');
-    console.log('Loading commissar user data.');
-    UserCache.LoadAllUsersFromDatabase(db.getConnection(), () => {
-	console.log('Commissar user data loaded.');
-	console.log('Commissar is alive.');
-    });
+    console.log('Database connected. Loading commissar user data.');
+    await UserCache.LoadAllUsersFromDatabase();
+    console.log('Commissar user data loaded. Commissar is alive.');
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
     discordClient.on('guildMemberAdd', async (member) => {

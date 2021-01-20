@@ -1,5 +1,6 @@
 const ChainOfCommand = require('./chain-of-command');
 const CommissarUser = require('./commissar-user');
+const DB = require('./database');
 const FilterUsername = require('./filter-username');
 const moment = require('moment');
 
@@ -8,14 +9,10 @@ const moment = require('moment');
 let commissarUserCache = {};
 
 // Read all the users from the database, then swap the cache.
-// Calls the provided callback on success.
-function LoadAllUsersFromDatabase(connection, callback) {
-    connection.query('SELECT * FROM users', (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	const newCache = {};
-	result.forEach((row) => {
+async function LoadAllUsersFromDatabase() {
+    const results = await DB.query('SELECT * FROM users');
+    const newCache = {};
+    results.forEach((row) => {
 	    const newUser = new CommissarUser(
 		row.commissar_id,
 		row.discord_id,
@@ -24,13 +21,9 @@ function LoadAllUsersFromDatabase(connection, callback) {
 		row.last_seen,
 		row.office
 	    );
-	    newCache[row.commissar_id] = newUser;
-	});
-	commissarUserCache = newCache;
-	if (callback) {
-	    callback();
-	}
+	newCache[row.commissar_id] = newUser;
     });
+    commissarUserCache = newCache;
 }
 
 // Write only the dirty records to the database.
@@ -83,7 +76,7 @@ function GetCachedUserByDiscordId(discord_id) {
     return foundUser;
 }
 
-// Creates a new user in the database. On success, the new user is added to the cache and the callback is called.
+// Creates a new user in the database. On success, the new user is added to the cache.
 async function CreateNewDatabaseUser(discordMember) {
     const discord_id = discordMember.user.id;
     const nickname = FilterUsername(discordMember.user.username);
@@ -103,9 +96,6 @@ async function CreateNewDatabaseUser(discordMember) {
 	office
     );
     commissarUserCache[commissar_id] = newUser;
-    if (callback) {
-	callback();
-    }
 }
 
 // Returns a dictionary of nicknames, keyed by Commissar ID.
