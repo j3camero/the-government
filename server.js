@@ -267,7 +267,7 @@ function MinuteHeartbeat() {
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     UpdateAllDiscordMemberAppearances();
     // Sync user data to the database.
-    UserCache.WriteDirtyUsersToDatabase(db.getConnection());
+    UserCache.WriteDirtyUsersToDatabase();
     // Update time matrix and sync to database.
     UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
@@ -276,9 +276,6 @@ function MinuteHeartbeat() {
 
 // The hourly heartbeat event. Take care of things that need attention once an hour.
 function HourlyHeartbeat() {
-    if (RateLimit.Busy()) {
-	return;
-    }
     console.log('Hourly heartbeat');
     UpdateHarmonicCentrality();
 }

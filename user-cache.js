@@ -34,27 +34,18 @@ function LoadAllUsersFromDatabase(connection, callback) {
 }
 
 // Write only the dirty records to the database.
-function WriteDirtyUsersToDatabase(connection) {
+function WriteDirtyUsersToDatabase() {
     let firstOne = true;
     Object.keys(commissarUserCache).forEach((id) => {
 	const u = commissarUserCache[id];
 	if (u.dirty) {
-	    u.writeToDatabase(connection);
+	    u.writeToDatabase();
 	    if (firstOne) {
 		console.log(`Writing dirty users to the DB.`);
 		firstOne = false;
 	    }
 	    console.log(`    * ${u.nickname}`);
 	}
-    });
-}
-
-// Update all the cached users in the database.
-function WriteAllUsersToDatabase(connection) {
-    console.log(`Writing all users to the DB.`);
-    Object.keys(commissarUserCache).forEach((id) => {
-	const u = commissarUserCache[id];
-	u.writeToDatabase(connection);
     });
 }
 
@@ -137,6 +128,5 @@ module.exports = {
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     LoadAllUsersFromDatabase,
-    WriteAllUsersToDatabase,
     WriteDirtyUsersToDatabase,
 };
