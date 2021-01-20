@@ -52,7 +52,7 @@ class CommissarUser {
     async updateFieldInDatabase(fieldName, fieldValue) {
 	const sql = `UPDATE users SET ${fieldName} = ? WHERE commissar_id = ?`;
 	const values = [fieldValue, this.commissar_id];
-	const result = await DB.query(sql, values);
+	const result = await DB.Query(sql, values);
 	if (result.affectedRows !== 1) {
 	    throw `Updated wrong number of records. Should only update 1 (${result.affectedRows}).`;
 	}
@@ -67,7 +67,7 @@ class CommissarUser {
 	    this.discord_id, this.nickname, this.rank,
 	    this.last_seen, this.office, this.commissar_id
 	];
-	const result = await DB.query(sql, values);
+	const result = await DB.Query(sql, values);
 	if (result.affectedRows !== 1) {
 	    throw `Updated wrong number of records. Should only update 1 (${result.affectedRows}).`;
 	}

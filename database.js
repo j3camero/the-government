@@ -25,6 +25,18 @@ async function Connect() {
 
 Connect();
 
+async function Query(sql, values) {
+    return new Promise((resolve, reject) => {
+	connection.query(sql, values, (err, results) => {
+	    if (err) {
+		reject(err);
+	    } else {
+		resolve(results);
+	    }
+	});
+    });
+}
+
 connection.on('error', async (err) => {
     console.log('Database error:', err);
     if (err.code === 'PROTOCOL_CONNECTION_LOST') {
@@ -36,13 +48,13 @@ connection.on('error', async (err) => {
 
 // Send a simple query periodically to keep the connection alive.
 setInterval(function () {
-    connection.query('SELECT 1');
+    Query('SELECT 1');
 }, 8 * 60 * 1000);
 
 // Write these records to the database immediately without buffering.
 // Each record represents time spent together between a pair of
 // Commissar users.
-function writeTimeTogetherRecords(records) {
+async function WriteTimeTogetherRecords(records) {
     if (records.length === 0) {
 	return;
     }
@@ -57,27 +69,20 @@ function writeTimeTogetherRecords(records) {
 	'INSERT INTO time_together ' +
 	'(lo_user_id, hi_user_id, duration_seconds, diluted_seconds) ' +
 	'VALUES ' + sqlParts.join(', '));
-    connection.query(sql, (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	console.log(`Wrote ${records.length} records to the time matrix.`);
-    });
+    await Query(sql);
+    console.log(`Wrote ${records.length} records to the time matrix.`);
 }
 
 // Query the database for the latest time matrix.
-// On success, calls the given callback with a list of entries from the time matrix.
-function getTimeMatrix(callback) {
-    const sqlFilename = 'discounted-time-matrix.sql';
-    fs.readFile(sqlFilename, 'utf8', function(err, sqlQuery) {
-	if (err) {
-	    throw err;
-	}
-	connection.query(sqlQuery, (err, results, fields) => {
+async function GetTimeMatrix() {
+    return new Promise((resolve, reject) => {
+	const sqlFilename = 'discounted-time-matrix.sql';
+	fs.readFile(sqlFilename, 'utf8', async (err, sqlQuery) => {
 	    if (err) {
-		throw err;
+		reject(err);
 	    }
-	    callback(results);
+	    const results = await Query(sqlQuery);
+	    resolve(results);
 	});
     });
 }
@@ -88,7 +93,7 @@ function getTimeMatrix(callback) {
 // If any sessions already exist in the database (according to the
 // Battlemetrics session id) then their fields are updated. Duplicate
 // records are not created in the database.
-function writeBattlemetricsSessions(sessions) {
+async function WriteBattlemetricsSessions(sessions) {
     if (!sessions || sessions.length === 0) {
 	return;
     }
@@ -125,31 +130,15 @@ function writeBattlemetricsSessions(sessions) {
 	    '    battlemetrics_sessions.identifier_id = VALUES(battlemetrics_sessions.identifier_id)');
     // Time the database operation.
     const startTime = Date.now();
-    connection.query(sql, (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	const elapsed = Date.now() - startTime;
-	console.log(`Wrote ${sessions.length} Battlemetrics sessions to the DB. [${elapsed} ms]`);
-    });
-}
-
-async function query(sql, values) {
-    return new Promise((resolve, reject) => {
-	connection.query(sql, values, (err, results) => {
-	    if (err) {
-		reject(err);
-	    } else {
-		resolve(results);
-	    }
-	});
-    });
+    await Query(sql);
+    const elapsed = Date.now() - startTime;
+    console.log(`Wrote ${sessions.length} Battlemetrics sessions to the DB. [${elapsed} ms]`);
 }
 
 module.exports = {
     Connect,
-    getTimeMatrix,
-    query,
-    writeBattlemetricsSessions,
-    writeTimeTogetherRecords,
+    GetTimeMatrix,
+    Query,
+    WriteBattlemetricsSessions,
+    WriteTimeTogetherRecords,
 };

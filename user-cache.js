@@ -10,7 +10,7 @@ let commissarUserCache = {};
 
 // Read all the users from the database, then swap the cache.
 async function LoadAllUsersFromDatabase() {
-    const results = await DB.query('SELECT * FROM users');
+    const results = await DB.Query('SELECT * FROM users');
     const newCache = {};
     results.forEach((row) => {
 	    const newUser = new CommissarUser(
@@ -85,7 +85,7 @@ async function CreateNewDatabaseUser(discordMember) {
     const last_seen = moment().format();
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};
-    const result = await DB.query('INSERT INTO users SET ?', fields);
+    const result = await DB.Query('INSERT INTO users SET ?', fields);
     const commissar_id = result.insertId;
     const newUser = new CommissarUser(
 	commissar_id,

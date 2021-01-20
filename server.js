@@ -1,7 +1,7 @@
 const BotCommands = require('./bot-commands');
 const ChainOfCommand = require('./chain-of-command');
 const Clock = require('./clock');
-const db = require('./database');
+const DB = require('./database');
 const deepEqual = require('deep-equal');
 const DiscordUtil = require('./discord-util');
 const Executives = require('./executive-offices');
@@ -187,42 +187,37 @@ async function UpdateChainOfCommandForMainDiscordGuild() {
 //
 // candidateIds - Only these Commissar IDs are eligible to be in the chain-of-command.
 //                Removes bots and the like.
-function UpdateChainOfCommandForCandidates(candidateIds) {
+async function UpdateChainOfCommandForCandidates(candidateIds) {
     if (!mrPresident) {
-	// There is no mrPresident yet. We can't calculate the Chain of Command.
-	// Bail, but also kick off a Harmonic Centrality update so there will be
-	// a mrPresident next time we try a chain-of-command update.
-	UpdateHarmonicCentrality();
+	throw 'No Mr. President selected yet. This shouldn\'t happen.';
+    }
+    const relationships = await DB.GetTimeMatrix();
+    // User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
+    // TODO: replace this with a column in the users table of the database to avoid hardcoding.
+    const termLimited = [7];
+    const newChainOfCommand = ChainOfCommand.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships, termLimited);
+    if (deepEqual(newChainOfCommand, chainOfCommand)) {
+	// Bail if there are no changes to the chain of command.
 	return;
     }
-    db.getTimeMatrix(async (relationships) => {
-	// User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
-	// TODO: replace this with a column in the users table of the database to avoid hardcoding.
-	const termLimited = [7];
-	const newChainOfCommand = ChainOfCommand.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships, termLimited);
-	if (deepEqual(newChainOfCommand, chainOfCommand)) {
-	    // Bail if there are no changes to the chain of command.
-	    return;
+    console.log('About to update the chain of command');
+    // Pass this point only if there is a change to the chain of command.
+    chainOfCommand = newChainOfCommand;
+    const nicknames = UserCache.GetAllNicknames();
+    // Generate and post an updated image of the chain of command.
+    const canvas = RenderChainOfCommand(chainOfCommand, nicknames);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
+    // Update the people's ranks.
+    Object.values(chainOfCommand).forEach(async (user) => {
+	const cu = UserCache.GetCachedUserByCommissarId(user.id);
+	// Only announce promotions if the user has been active recently.
+	if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
+	    await AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
 	}
-	console.log('About to update the chain of command');
-	// Pass this point only if there is a change to the chain of command.
-	chainOfCommand = newChainOfCommand;
-	const nicknames = UserCache.GetAllNicknames();
-	// Generate and post an updated image of the chain of command.
-	const canvas = RenderChainOfCommand(chainOfCommand, nicknames);
-	const guild = await DiscordUtil.GetMainDiscordGuild();
-	DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
-	// Update the people's ranks.
-	Object.values(chainOfCommand).forEach(async (user) => {
-	    const cu = UserCache.GetCachedUserByCommissarId(user.id);
-	    // Only announce promotions if the user has been active recently.
-	    if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
-		await AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
-	    }
-	    cu.setRank(user.rank);
-	});
-	console.log('Chain of command updated.');
+	cu.setRank(user.rank);
     });
+    console.log('Chain of command updated.');
 }
 
 function ElectMrPresident(centrality) {
@@ -246,14 +241,13 @@ async function UpdateHarmonicCentrality() {
     if (candidates.length === 0) {
 	throw 'ERROR: zero candidates for the #chain-of-command!';
     }
-    HarmonicCentrality(candidates, (centrality) => {
-	DiscordUtil.UpdateHarmonicCentralityChatChannel(centrality);
-	ElectMrPresident(centrality);
-    });
+    const centrality = await HarmonicCentrality(candidates);
+    DiscordUtil.UpdateHarmonicCentralityChatChannel(centrality);
+    ElectMrPresident(centrality);
 }
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
-function MinuteHeartbeat() {
+async function MinuteHeartbeat() {
     if (RateLimit.Busy()) {
 	return;
     }
@@ -271,27 +265,26 @@ function MinuteHeartbeat() {
     // Update time matrix and sync to database.
     UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
-    db.writeTimeTogetherRecords(recordsToSync);
+    await DB.WriteTimeTogetherRecords(recordsToSync);
 }
 
 // The hourly heartbeat event. Take care of things that need attention once an hour.
-function HourlyHeartbeat() {
+async function HourlyHeartbeat() {
     console.log('Hourly heartbeat');
-    UpdateHarmonicCentrality();
+    await UpdateHarmonicCentrality();
 }
-
-// Login the Commissar bot to Discord.
-console.log('Connecting the Discord bot.');
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
 async function Start() {
     console.log('Waiting for Discord bot to connect.');
     const discordClient = await DiscordUtil.Connect();
     console.log('Discord bot connected. Waiting for the database to connect.');
-    await db.Connect();
+    await DB.Connect();
     console.log('Database connected. Loading commissar user data.');
     await UserCache.LoadAllUsersFromDatabase();
     console.log('Commissar user data loaded. Commissar is alive.');
+    await HourlyHeartbeat();
+    await MinuteHeartbeat();
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
     discordClient.on('guildMemberAdd', async (member) => {

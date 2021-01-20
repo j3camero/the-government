@@ -1,4 +1,4 @@
-const db = require('./database');
+const DB = require('./database');
 
 function GetDistance(d, i, j) {
     if (i === j) {
@@ -67,12 +67,11 @@ function ConvertDistanceMatrixToHarmonicCentrality(d, candidates) {
     return h;
 }
 
-function HarmonicCentrality(candidates, callback) {
-    db.getTimeMatrix((relationships) => {
-	const d = FloydWarshall(relationships, candidates);
-	const h = ConvertDistanceMatrixToHarmonicCentrality(d, candidates);
-	callback(h);
-    });
+async function HarmonicCentrality(candidates) {
+    const relationships = await DB.GetTimeMatrix();
+    const d = FloydWarshall(relationships, candidates);
+    const h = ConvertDistanceMatrixToHarmonicCentrality(d, candidates);
+    return h;
 }
 
 module.exports = HarmonicCentrality;
