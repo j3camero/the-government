@@ -11,6 +11,8 @@ function HandlePingCommand(discordMessage) {
 // A cheap live test harness to test the code that finds the main chat channel.
 // This lets me test it anytime I'm worried it's broken.
 async function HandlePingPublicChatCommand(discordMessage) {
+    // TODO: add permissions so only high ranking people can use
+    // this command.
     await DiscordUtil.MessagePublicChatChannel('Pong!');
 }
 
@@ -29,7 +31,10 @@ function HandleBanCommand(discordMessage) {
 
 // Handle any unrecognized commands, possibly replying with an error message.
 function HandleUnknownCommand(discordMessage) {
-    discordMessage.channel.send(`Unknown command ${command}`);
+    // TODO: add permission checks. Only high enough ranks should get a error
+    // message as a reply. Those of lower rank shouldn't get any response at
+    // all to avoid spam.
+    discordMessage.channel.send(`Unknown command.`);
 }
 
 // This function analyzes a Discord message to see if it contains a bot command.
