@@ -39,10 +39,6 @@ setInterval(function () {
     connection.query('SELECT 1');
 }, 8 * 60 * 1000);
 
-function getConnection() {
-    return connection;
-}
-
 // Write these records to the database immediately without buffering.
 // Each record represents time spent together between a pair of
 // Commissar users.
@@ -152,7 +148,6 @@ async function query(sql, values) {
 
 module.exports = {
     Connect,
-    getConnection,
     getTimeMatrix,
     query,
     writeBattlemetricsSessions,
