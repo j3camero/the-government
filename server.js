@@ -129,7 +129,7 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
     guild.channels.cache.forEach((channel) => {
 	if (channel.type === 'voice') {
 	    const channelActive = [];
-	    channel.members.forEach((member) => {
+	    channel.members.forEach(async (member) => {
 		if (member.mute) {
 		    return;
 		}
@@ -139,7 +139,7 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
 		    return;
 		}
 		// Update this user's 'last seen' time.
-		cu.seenNow();
+		await cu.seenNow();
 		channelActive.push(cu.commissar_id);
 	    });
 	    if (channelActive.length >= 2) {

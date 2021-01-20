@@ -37,9 +37,9 @@ class CommissarUser {
 	this.rank = rank;
     }
 
-    seenNow() {
-	this.dirty = true;
+    async seenNow() {
 	this.last_seen = moment().format();
+	await this.updateFieldInDatabase('last_seen', this.last_seen);
     }
 
     setOffice(office) {
