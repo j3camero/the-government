@@ -64,7 +64,7 @@ async function UpdateMemberRankRoles(member, rankName) {
 
 // Update the rank insignia, nickname, and roles of a Discord guild
 // member based on the latest info stored in the user cache.
-function UpdateMemberAppearance(member) {
+async function UpdateMemberAppearance(member) {
     if (member.user.bot) {
 	// Ignore other bots.
 	return;
@@ -73,10 +73,10 @@ function UpdateMemberAppearance(member) {
     if (!cu) {
 	// We have no record of this Discord user. Create a new record in the cache.
 	console.log('New Discord user detected.');
-	UserCache.CreateNewDatabaseUser(db.getConnection(), member, () => {
-	    // Try updating the member again after the new user record has been created.
-	    UpdateMemberAppearance(member);
-	});
+	// Wait for the new user record to be created.
+	await UserCache.CreateNewDatabaseUser(member);
+	// Try updating the member again after the new user record has been created.
+	UpdateMemberAppearance(member);
 	return;
     }
     if (!cu.rank && cu.rank !== 0) {
@@ -310,9 +310,7 @@ async function Start() {
 	if (!cu) {
 	    // We have no record of this Discord user. Create a new record in the cache.
 	    console.log('New Discord user detected.');
-	    UserCache.CreateNewDatabaseUser(db.getConnection(), member, () => {
-		// New user successfully created. Do nothing, for now. They get picked up in the next ranking cycle.
-	    });
+	    await UserCache.CreateNewDatabaseUser(member);
 	}
     });
 

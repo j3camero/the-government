@@ -84,7 +84,7 @@ function GetCachedUserByDiscordId(discord_id) {
 }
 
 // Creates a new user in the database. On success, the new user is added to the cache and the callback is called.
-function CreateNewDatabaseUser(connection, discordMember, callback) {
+async function CreateNewDatabaseUser(discordMember) {
     const discord_id = discordMember.user.id;
     const nickname = FilterUsername(discordMember.user.username);
     console.log(`Create a new DB user for ${nickname}`);
@@ -92,24 +92,20 @@ function CreateNewDatabaseUser(connection, discordMember, callback) {
     const last_seen = moment().format();
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};
-    connection.query('INSERT INTO users SET ?', fields, (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	const commissar_id = result.insertId;
-	const newUser = new CommissarUser(
-	    commissar_id,
-	    discord_id,
-	    nickname,
-	    rank,
-	    last_seen,
-	    office
-	);
-	commissarUserCache[commissar_id] = newUser;
-	if (callback) {
-	    callback();
-	}
-    });
+    const result = await DB.query('INSERT INTO users SET ?', fields);
+    const commissar_id = result.insertId;
+    const newUser = new CommissarUser(
+	commissar_id,
+	discord_id,
+	nickname,
+	rank,
+	last_seen,
+	office
+    );
+    commissarUserCache[commissar_id] = newUser;
+    if (callback) {
+	callback();
+    }
 }
 
 // Returns a dictionary of nicknames, keyed by Commissar ID.
