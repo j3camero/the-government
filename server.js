@@ -87,15 +87,11 @@ async function UpdateMemberAppearance(member) {
     if (!rankData) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
-    if (rankData.titleOverride) {
-	// Nickname override for special titles like 'Mr. President'.
-	cu.setNickname(`${rankData.abbreviation} ${rankData.title}`);
-    } else {
-	// Normal case: filter the user's own chosen Discord display name.
-	cu.setNickname(member.user.username);
-    }
-    const formattedNickname = `${cu.nickname} ${rankData.insignia}`;
-    if (member.nickname != formattedNickname && member.user.id !== member.guild.ownerID) {
+    await cu.setNickname(member.user.username);
+    // Nickname override for special titles like 'Mr. President'.
+    const nicknameOrTitle = rankData.title ? rankData.title : cu.nickname;
+    const formattedNickname = `${nicknameOrTitle} ${rankData.insignia}`;
+    if (member.nickname !== formattedNickname && member.user.id !== member.guild.ownerID) {
 	console.log(`Updating nickname ${formattedNickname}.`);
 	member.setNickname(formattedNickname);
     }
@@ -215,12 +211,12 @@ async function UpdateChainOfCommandForCandidates(candidateIds) {
 	if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
 	    await AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
 	}
-	cu.setRank(user.rank);
+	await cu.setRank(user.rank);
     });
     console.log('Chain of command updated.');
 }
 
-function ElectMrPresident(centrality) {
+async function ElectMrPresident(centrality) {
     console.log('Electing Mr. President.');
     let bestId;
     Object.keys(centrality).forEach((i) => {
@@ -232,7 +228,7 @@ function ElectMrPresident(centrality) {
 	return;
     }
     mrPresident = UserCache.GetCachedUserByCommissarId(bestId);
-    mrPresident.setRank(0);
+    await mrPresident.setRank(0);
     console.log(`Elected ID ${bestId} (${mrPresident.nickname})`);
 }
 
@@ -243,7 +239,7 @@ async function UpdateHarmonicCentrality() {
     }
     const centrality = await HarmonicCentrality(candidates);
     DiscordUtil.UpdateHarmonicCentralityChatChannel(centrality);
-    ElectMrPresident(centrality);
+    await ElectMrPresident(centrality);
 }
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
