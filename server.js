@@ -75,8 +75,6 @@ async function UpdateMemberAppearance(member) {
 	console.log('New Discord user detected.');
 	// Wait for the new user record to be created.
 	await UserCache.CreateNewDatabaseUser(member);
-	// Try updating the member again after the new user record has been created.
-	UpdateMemberAppearance(member);
 	return;
     }
     if (!cu.rank && cu.rank !== 0) {
