@@ -87,11 +87,15 @@ async function UpdateMemberAppearance(member) {
     }
     await cu.setNickname(member.user.username);
     // Nickname override for special titles like 'Mr. President'.
-    const nicknameOrTitle = rankData.title ? rankData.title : cu.nickname;
-    const formattedNickname = `${nicknameOrTitle} ${rankData.insignia}`;
-    if (member.nickname !== formattedNickname && member.user.id !== member.guild.ownerID) {
-	console.log(`Updating nickname ${formattedNickname}.`);
-	member.setNickname(formattedNickname);
+    let displayName = cu.nickname;
+    if (cu.rank < 2) {
+	const genderAbbrev = 'Mr.';
+	displayName = `${genderAbbrev} ${rankData.title}`;
+    }
+    displayName += ` ${rankData.insignia}`;
+    if (member.nickname !== displayName && member.user.id !== member.guild.ownerID) {
+	console.log(`Updating nickname ${displayName}.`);
+	member.setNickname(displayName);
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData.role);
