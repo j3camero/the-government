@@ -5,12 +5,14 @@ const metadata = [
 	insignia: '⚑',
 	role: 'Marshal',
 	title: 'President',
+	titleOverride: true,
     },
     {
 	count: 1,
 	insignia: '⚑',
 	role: 'Marshal',
 	title: 'Vice President',
+	titleOverride: true,
     },
     {
 	count: 2,

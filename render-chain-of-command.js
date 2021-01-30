@@ -96,7 +96,8 @@ function RenderChainOfCommand(chain, nicknames) {
 	    name = nicknames[user.id];
 	}
 	if (rank.titleOverride) {
-	    name = `${rank.abbreviation} ${rank.title}`;
+	    const genderAbbrev = 'Mr.';
+	    name = `${genderAbbrev} ${rank.title}`;
 	}
 	const formattedName = `${name} ${rank.insignia}`;
 	// Shrink the font to make the text fit if necessary.
