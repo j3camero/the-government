@@ -68,7 +68,8 @@ async function WriteTimeTogetherRecords(records) {
     const sql = (
 	'INSERT INTO time_together ' +
 	'(lo_user_id, hi_user_id, duration_seconds, diluted_seconds) ' +
-	'VALUES ' + sqlParts.join(', '));
+	    'VALUES ' + sqlParts.join(', '));
+    console.log('About to write records to the time matrix.');
     await Query(sql);
     console.log(`Wrote ${records.length} records to the time matrix.`);
 }

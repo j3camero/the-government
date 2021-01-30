@@ -133,7 +133,7 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
 		    return;
 		}
 		// Update this user's 'last seen' time.
-		await cu.seenNow();
+		cu.seenNow();
 		channelActive.push(cu.commissar_id);
 	    });
 	    if (channelActive.length >= 2) {
