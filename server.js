@@ -267,6 +267,7 @@ async function MinuteHeartbeat() {
 // The hourly heartbeat event. Take care of things that need attention once an hour.
 async function HourlyHeartbeat() {
     console.log('Hourly heartbeat');
+    await DB.ConsolidateTimeMatrix();
     await UpdateHarmonicCentrality();
 }
 

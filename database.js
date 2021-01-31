@@ -74,10 +74,10 @@ async function WriteTimeTogetherRecords(records) {
     console.log(`Wrote ${records.length} records to the time matrix.`);
 }
 
-// Query the database for the latest time matrix.
-async function GetTimeMatrix() {
+// Run a SQL query from a file. Returns a promise that can be awaited to get
+// the results of the query if applicable.
+async function QueryFromFile(sqlFilename) {
     return new Promise((resolve, reject) => {
-	const sqlFilename = 'discounted-time-matrix.sql';
 	fs.readFile(sqlFilename, 'utf8', async (err, sqlQuery) => {
 	    if (err) {
 		reject(err);
@@ -86,6 +86,22 @@ async function GetTimeMatrix() {
 	    resolve(results);
 	});
     });
+}
+
+// Query the database for the latest time matrix.
+async function GetTimeMatrix() {
+    return QueryFromFile('discounted-time-matrix.sql');
+}
+
+// Consolidate the time matrix. The time matrix can have duplicate entries in the
+// short term. It's designed this way to make the records more efficient to store
+// at the moment when they are first created. The consolidation process has to be
+// run at routine intervals to stop too many duplicate records piling up. Two
+// records are considered duplicate if they record time spent between the same
+// pair of two users. Duplicate records are consolidated by adding them together,
+// with the time decay properly factored in.
+async function ConsolidateTimeMatrix() {
+    return QueryFromFile('consolidate-time-matrix.sql');
 }
 
 // Write some Battlemetrics session records to the database.
@@ -138,8 +154,10 @@ async function WriteBattlemetricsSessions(sessions) {
 
 module.exports = {
     Connect,
+    ConsolidateTimeMatrix,
     GetTimeMatrix,
     Query,
+    QueryFromFile,
     WriteBattlemetricsSessions,
     WriteTimeTogetherRecords,
 };
