@@ -132,7 +132,7 @@ async function UpdateChainOfCommandChatChannel(guild, canvas) {
     channel.send(footerMessage);
 }
 
-async function UpdateHarmonicCentralityChatChannel(centrality) {
+async function UpdateHarmonicCentralityChatChannel(ser) {
     const guild = await GetMainDiscordGuild();
     const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
     if (channels.length === 0) {
@@ -140,24 +140,14 @@ async function UpdateHarmonicCentralityChatChannel(centrality) {
     }
     const channel = channels[0];
     // Bulk delete messages
-    channel.bulkDelete(3);
-    const flat = [];
-    Object.keys(centrality).forEach((i) => {
-	flat.push({
-	    cid: i,
-	    centrality: centrality[i],
-	});
-    });
-    flat.sort((a, b) => {
-	return b.centrality - a.centrality;
-    });
-    const topN = 5;
+    await channel.bulkDelete(3);
+    const flat = UserCache.GetMostCentralUsers(5);
     const threeBackticks = '\`\`\`';
     let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
 		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
 		   'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
-    for (let i = 0; i < topN && i < flat.length; ++i) {
-	const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
+    for (let i = 0; i < flat.length; ++i) {
+	const cu = UserCache.GetCachedUserByCommissarId(flat[i].commissar_id);
 	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 	const margin = flat[i].centrality / flat[0].centrality - 1;
 	const marginString = Math.round(100 * margin);
@@ -168,7 +158,7 @@ async function UpdateHarmonicCentralityChatChannel(centrality) {
 	message += '\n';
     }
     message += threeBackticks;
-    channel.send(message);
+    await channel.send(message);
 }
 
 async function GetCommissarIdsOfDiscordMembers() {

@@ -51,8 +51,7 @@ function GetCachedUserByCommissarId(commissar_id) {
 // Get a cached user record by Discord ID.
 function GetCachedUserByDiscordId(discord_id) {
     let foundUser = null;
-    Object.keys(commissarUserCache).forEach((commissar_id) => {
-	const user = commissarUserCache[commissar_id];
+    ForEach((user) => {
 	if (user.discord_id === discord_id) {
 	    foundUser = user;
 	}
@@ -80,22 +79,53 @@ async function CreateNewDatabaseUser(discordMember) {
 	office
     );
     commissarUserCache[commissar_id] = newUser;
+    return newUser;
 }
 
 // Returns a dictionary of nicknames, keyed by Commissar ID.
 function GetAllNicknames() {
     const nicknames = {};
-    Object.values(commissarUserCache).forEach((user) => {
+    ForEach((user) => {
 	nicknames[user.commissar_id] = user.nickname;
     });
     return nicknames;
 }
 
+// Get the N top users by Harmonic Centrality. Returns a list of pairs:
+// [(commissar_id, centrality), ...]
+function GetMostCentralUsers(topN) {
+    const flat = [];
+    ForEach(user => flat.push({
+	commissar_id: user.commissar_id,
+	centrality: user.harmonic_centrality || 0,
+    }));
+    flat.sort((a, b) => {
+	return b.centrality - a.centrality;
+    });
+    return flat.slice(0, topN);
+}
+
+async function BulkCentralityUpdate(centralityScores) {
+    // Sequential for loop used on purpose. This loop awaits each user update
+    // in turn.
+    console.log(centralityScores);
+    for (const commissar_id in centralityScores) {
+	if (!commissar_id) {
+	    throw 'Nope';
+	}
+	const centrality = centralityScores[commissar_id];
+	const user = GetCachedUserByCommissarId(commissar_id);
+	await user.setHarmonicCentrality(centrality);
+    }
+}
+
 module.exports = {
+    BulkCentralityUpdate,
     CreateNewDatabaseUser,
     ForEach,
     GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
+    GetMostCentralUsers,
     LoadAllUsersFromDatabase,
 };

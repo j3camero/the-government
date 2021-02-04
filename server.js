@@ -218,16 +218,12 @@ async function UpdateChainOfCommandForCandidates(candidateIds) {
     console.log('Chain of command updated.');
 }
 
-async function ElectMrPresident(centrality) {
+async function ElectMrPresident() {
     console.log('Electing Mr. President.');
-    let bestId;
-    Object.keys(centrality).forEach((i) => {
-	if (!bestId || centrality[i] > centrality[bestId]) {
-	    bestId = i;
-	}
-    });
+    const topTwo = UserCache.GetMostCentralUsers(2);
+    const bestId = topTwo[0].commissar_id;
     if (!bestId) {
-	return;
+	throw 'Failed to find a best candidate for Mr. President!';
     }
     mrPresident = UserCache.GetCachedUserByCommissarId(bestId);
     await mrPresident.setRank(0);
@@ -239,9 +235,9 @@ async function UpdateHarmonicCentrality() {
     if (candidates.length === 0) {
 	throw 'ERROR: zero candidates for the #chain-of-command!';
     }
-    const centrality = await HarmonicCentrality(candidates);
-    DiscordUtil.UpdateHarmonicCentralityChatChannel(centrality);
-    await ElectMrPresident(centrality);
+    const centralityScoresById = await HarmonicCentrality(candidates);
+    await UserCache.BulkCentralityUpdate(centralityScoresById);
+    await DiscordUtil.UpdateHarmonicCentralityChatChannel();
 }
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
@@ -269,6 +265,7 @@ async function HourlyHeartbeat() {
     console.log('Hourly heartbeat');
     await DB.ConsolidateTimeMatrix();
     await UpdateHarmonicCentrality();
+    await ElectMrPresident();
 }
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
