@@ -36,6 +36,7 @@ class CommissarUser {
 	}
 	this.rank = rank;
 	await this.updateFieldInDatabase('rank', this.rank);
+	await this.setPeakRank(this.rank);
     }
 
     async seenNow() {
@@ -49,6 +50,48 @@ class CommissarUser {
 	}
 	this.office = office;
 	await this.updateFieldInDatabase('office', this.office);
+    }
+
+    async setHarmonicCentrality(new_centrality) {
+	if (new_centrality === this.harmonic_centrality) {
+	    return;
+	}
+	this.harmonic_centrality = new_centrality;
+	await this.updateFieldInDatabase('harmonic_centrality', this.harmonic_centrality);
+    }
+
+    async setPeakRank(peak_rank) {
+	// Lower ranks are more senior, in the database.
+	if (!this.peak_rank || peak_rank < this.peak_rank) {
+	    this.peak_rank = peak_rank;
+	    await this.updateFieldInDatabase('peak_rank', this.peak_rank);
+	}
+    }
+
+    async setGender(gender) {
+	// Gender is any capital ASCII letter in the database. M, F, L, G, B, T, Q...
+	if (!gender) {
+	    throw `Invalid gender value: ${gender}`;
+	}
+	if (gender === this.gender) {
+	    // Bail because the same value is already in the cache. Not an error.
+	    return;
+	}
+	if (typeof gender !== 'string' || gender.length !== 1) {
+	    throw 'Gender has to be a string of length 1. It says so in the Bible!';
+	}
+	this.gender = gender;
+	await this.updateFieldInDatabase('gender', this.gender);
+    }
+
+    // True or false value. Represents whether or not this user is a member of the
+    // Discord guild. Members who have left or been banned will have the value false.
+    async setCitizen(is_citizen) {
+	if (is_citizen === this.citizen) {
+	    return;
+	}
+	this.citizen = is_citizen;
+	await this.updateFieldInDatabase('citizen', this.citizen);
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {

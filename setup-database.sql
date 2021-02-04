@@ -13,6 +13,13 @@ CREATE TABLE users
     rank INT NOT NULL DEFAULT 12,  -- Rank. 0 = President, 1 = VP, 2 = 4-star General, etc.
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Last time active in voice chat.
     office VARCHAR(32),  -- Which office (executive title) the user occupies, if any.
+    harmonic_centrality FLOAT DEFAULT 0,  -- A measure of this user's social influence.
+    peak_rank INT DEFAULT 12,  -- The most senior rank (lowest rank number) ever achieved by this user.
+    gender VARCHAR(1),  -- M, F, NULL, or any other single alphabetic letter.
+                        -- L, G, B, T, Q... whatever letter people want to identify as!
+			-- Must be a single alphabetic character from the ASCII range.
+			-- It says so in the Bible. Everyone knows God created exactly 26 genders!
+    citizen BOOLEAN DEFAULT TRUE,
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );
