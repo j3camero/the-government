@@ -108,7 +108,6 @@ function GetMostCentralUsers(topN) {
 async function BulkCentralityUpdate(centralityScores) {
     // Sequential for loop used on purpose. This loop awaits each user update
     // in turn.
-    console.log(centralityScores);
     for (const commissar_id in centralityScores) {
 	if (!commissar_id) {
 	    throw 'Nope';
