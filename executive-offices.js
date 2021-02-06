@@ -4,62 +4,40 @@ const UserCache = require('./user-cache');
 
 const executiveOffices = {
     'PRES': {
-	abbreviation: 'Pres.',
-	longTitle: 'President',
 	rank: 0,
-	shortTitle: 'President',
+	title: 'President',
     },
     'VP': {
-	abbreviation: 'VP',
-	longTitle: 'Vice President',
 	rank: 1,
-	shortTitle: 'Vice President',
+	title: 'Vice President',
     },
     'CJCS': {
-	abbreviation: 'Chmn.',
-	longTitle: 'Chairman of the Joint Chiefs of Staff',
 	personalRole: 'Chairman of the Joint Chiefs of Staff',
 	rank: 2,
-	shortTitle: 'Chairman',
     },
     'MINDEF': {
-	abbreviation: 'Min.',
-	longTitle: 'Minister of Defense',
 	personalRole: 'Minister of Defense',
 	rank: 2,
-	shortTitle: 'Minister',
     },
     'ARMY': {
-	abbreviation: 'Chf.',
-	chatroom: 'army-only',
-	longTitle: 'Chief of the Army',
+	personalRole: 'Chief of the Army',
 	rank: 3,
 	recursiveRole: 'Army',
-	shortTitle: 'Chief',
     },
     'NAVY': {
-	abbreviation: 'Sec.',
-	chatroom: 'navy-only',
-	longTitle: 'Secretary of the Navy',
+	personalRole: 'Secretary of the Navy',
 	rank: 3,
 	recursiveRole: 'Navy',
-	shortTitle: 'Secretary',
     },
     'AIR': {
-	abbreviation: 'Cmdr.',
-	chatroom: 'air-force',
-	longTitle: 'Commander of the Air Force',
+	personalRole: 'Commander of the Air Force',
 	rank: 3,
 	recursiveRole: 'Air Force',
-	shortTitle: 'Commander',
     },
     'MARINES': {
-	abbreviation: 'Cmdt.',
-	chatroom: 'marines-only',
-	longTitle: 'Commandant of the Marines',
+	personalRole: 'Commandant of the Marines',
 	rank: 3,
 	recursiveRole: 'Marines',
-	shortTitle: 'Commandant',
     },
 };
 
@@ -119,6 +97,7 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 	const jobDescription = executiveOffices[user.office];
 	const chainUser = chainOfCommand[user.commissar_id];
 	if ((user.office in filledPositions) || !chainUser || (chainUser.rank !== jobDescription.rank)) {
+	    // Do not await to avoid creating a race condition.
 	    user.setOffice(null);
 	} else {
 	    filledPositions[user.office] = true;
@@ -132,6 +111,7 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 	}
 	const appointee = FindUnassignedUser(jobDescription.rank, chainOfCommand, userCache);
 	if (appointee) {
+	    // Do not await to avoid creating race condition.
 	    appointee.setOffice(jobID);
 	}
     });

@@ -89,7 +89,7 @@ async function UpdateMemberAppearance(member) {
     // Nickname override for special titles like 'Mr. President'.
     let displayName = cu.nickname;
     if (cu.rank < 2) {
-	const genderAbbrev = 'Mr.';
+	const genderAbbrev = cu.gender === 'F' ? 'Madam' : 'Mr.';
 	displayName = `${genderAbbrev} ${rankData.title}`;
     }
     displayName += ` ${rankData.insignia}`;
