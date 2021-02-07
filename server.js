@@ -82,7 +82,6 @@ async function UpdateMemberAppearance(member) {
     if (!rankData) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
-    await cu.setNickname(member.user.username);
     // Nickname override for special titles like 'Mr. President'.
     let displayName = cu.nickname;
     if (cu.rank < 2) {
@@ -251,7 +250,9 @@ async function UpdateAllCitizens() {
 	    });
 	    if (!discordMember) {
 		await user.setCitizen(false);
+		return;
 	    }
+	    await user.setNickname(discordMember.user.username);
 	}
     });
 }
