@@ -141,7 +141,7 @@ async function UpdateHarmonicCentralityChatChannel(ser) {
     const channel = channels[0];
     // Bulk delete messages
     await channel.bulkDelete(3);
-    const flat = UserCache.GetMostCentralUsers(5);
+    const flat = await UserCache.GetMostCentralUsers(5);
     const threeBackticks = '\`\`\`';
     let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
 		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
