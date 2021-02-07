@@ -24,19 +24,24 @@ async function LoadAllUsersFromDatabase() {
 	newCache[row.commissar_id] = newUser;
     });
     commissarUserCache = newCache;
+    const n = Object.keys(commissarUserCache).length;
+    console.log(`Loaded ${n} users from the database.`);
 }
 
 // Calls a function once for every cached user.
 //   - innerFunction: this function is called once for each cached user, like:
 //                    innerFunction(user), where user is a CommisarUser object.
 //   - userCache (optional): for unit testing. Leave it out in production.
-function ForEach(innerFunction, userCache) {
+async function ForEach(innerFunction, userCache) {
     if (!userCache) {
 	userCache = commissarUserCache;
     }
-    Object.values(userCache).forEach((user) => {
-	innerFunction(user);
-    });
+    const userList = Object.values(userCache);
+    // Sequential for loop on purpose, so that we can await each item one after the other.
+    for (let i = 0; i < userList.length; ++i) {
+	const user = userList[i];
+	await innerFunction(user);
+    }
 }
 
 // Get a cached user record by Commissar ID.
@@ -49,9 +54,9 @@ function GetCachedUserByCommissarId(commissar_id) {
 }
 
 // Get a cached user record by Discord ID.
-function GetCachedUserByDiscordId(discord_id) {
+async function GetCachedUserByDiscordId(discord_id) {
     let foundUser = null;
-    ForEach((user) => {
+    await ForEach((user) => {
 	if (user.discord_id === discord_id) {
 	    foundUser = user;
 	}
@@ -83,9 +88,9 @@ async function CreateNewDatabaseUser(discordMember) {
 }
 
 // Returns a dictionary of nicknames, keyed by Commissar ID.
-function GetAllNicknames() {
+async function GetAllNicknames() {
     const nicknames = {};
-    ForEach((user) => {
+    await ForEach((user) => {
 	nicknames[user.commissar_id] = user.nickname;
     });
     return nicknames;
@@ -93,9 +98,9 @@ function GetAllNicknames() {
 
 // Get the N top users by Harmonic Centrality. Returns a list of pairs:
 // [(commissar_id, centrality), ...]
-function GetMostCentralUsers(topN) {
+async function GetMostCentralUsers(topN) {
     const flat = [];
-    ForEach(user => flat.push({
+    await ForEach(user => flat.push({
 	commissar_id: user.commissar_id,
 	centrality: user.harmonic_centrality || 0,
     }));

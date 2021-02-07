@@ -165,13 +165,13 @@ async function GetCommissarIdsOfDiscordMembers() {
     const guild = await GetMainDiscordGuild();
     const members = await guild.members.fetch();
     const ids = [];
-    members.forEach((member) => {
-	const discordID = member.id;
-	const cu = UserCache.GetCachedUserByDiscordId(discordID);
+    for (const member of members) {
+	const discordID = member[0];
+	const cu = await UserCache.GetCachedUserByDiscordId(discordID);
 	if (cu) {
 	    ids.push(cu.commissar_id);
 	}
-    });
+    }
     return ids;
 }
 

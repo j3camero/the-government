@@ -69,12 +69,9 @@ async function UpdateMemberAppearance(member) {
 	// Ignore other bots.
 	return;
     }
-    const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+    const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
     if (!cu) {
-	// We have no record of this Discord user. Create a new record in the cache.
-	console.log('New Discord user detected.');
-	// Wait for the new user record to be created.
-	await UserCache.CreateNewDatabaseUser(member);
+	console.log('Unknown user detected!');
 	return;
     }
     if (!cu.rank && cu.rank !== 0) {
@@ -131,7 +128,7 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
 		if (member.mute) {
 		    return;
 		}
-		const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+		const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
 		if (!cu) {
 		    // Shouldn't happen, but ignore and hope for recovery.
 		    return;
@@ -201,7 +198,7 @@ async function UpdateChainOfCommandForCandidates(candidateIds) {
     console.log('About to update the chain of command');
     // Pass this point only if there is a change to the chain of command.
     chainOfCommand = newChainOfCommand;
-    const nicknames = UserCache.GetAllNicknames();
+    const nicknames = await UserCache.GetAllNicknames();
     // Generate and post an updated image of the chain of command.
     const canvas = RenderChainOfCommand(chainOfCommand, nicknames);
     const guild = await DiscordUtil.GetMainDiscordGuild();
@@ -220,7 +217,7 @@ async function UpdateChainOfCommandForCandidates(candidateIds) {
 
 async function ElectMrPresident() {
     console.log('Electing Mr. President.');
-    const topTwo = UserCache.GetMostCentralUsers(2);
+    const topTwo = await UserCache.GetMostCentralUsers(2);
     const bestId = topTwo[0].commissar_id;
     if (!bestId) {
 	throw 'Failed to find a best candidate for Mr. President!';
@@ -240,6 +237,24 @@ async function UpdateHarmonicCentrality() {
     await DiscordUtil.UpdateHarmonicCentralityChatChannel();
 }
 
+async function UpdateAllCitizens() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    await UserCache.ForEach(async (user) => {
+	if (user.citizen) {
+	    const discordMember = await RateLimit(async () => {
+		try {
+		    return await guild.members.fetch(user.discord_id);
+		} catch (error) {
+		    return null;
+		}
+	    });
+	    if (!discordMember) {
+		await user.setCitizen(false);
+	    }
+	}
+    });
+}
+
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 async function MinuteHeartbeat() {
     if (RateLimit.Busy()) {
@@ -247,7 +262,7 @@ async function MinuteHeartbeat() {
     }
     console.log('Minute heartbeat');
     // Update clan executive roles.
-    Executives.UpdateClanExecutives(chainOfCommand);
+    await Executives.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
     MiniClans.UpdateRolesForMainDiscordGuild(chainOfCommand);
     // Update the chain of command.
@@ -263,8 +278,13 @@ async function MinuteHeartbeat() {
 // The hourly heartbeat event. Take care of things that need attention once an hour.
 async function HourlyHeartbeat() {
     console.log('Hourly heartbeat');
+    console.log('Consolidating the time matrix.');
     await DB.ConsolidateTimeMatrix();
+    console.log('Checking all the citizens.');
+    //await UpdateAllCitizens();
+    console.log('Update harmonic centrality.');
     await UpdateHarmonicCentrality();
+    console.log('Elect Mr. President.');
     await ElectMrPresident();
 }
 

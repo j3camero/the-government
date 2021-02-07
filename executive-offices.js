@@ -62,8 +62,8 @@ function FindUnassignedUser(targetRank, chainOfCommand, userCache) {
 
 // Calls an inner function for each executive with role. Typically 3-star Generals
 // with roles Army, Navy, Air Force, and Marines.
-function ForEachExecutiveWithRoles(innerFunction) {
-    UserCache.ForEach((user) => {
+async function ForEachExecutiveWithRoles(innerFunction) {
+    await UserCache.ForEach((user) => {
 	if (user.office) {
 	    const jobDescription = executiveOffices[user.office];
 	    const recursiveRole = jobDescription.recursiveRole;
@@ -78,7 +78,7 @@ function ForEachExecutiveWithRoles(innerFunction) {
 //   - userCache: for unit testing, pass in a mock of the user cache. In
 //                production, leave it out to default to the real user cache.
 //   - chainOfCommand: the most recently computed chain of command.
-function UpdateClanExecutives(chainOfCommand, userCache) {
+async function UpdateClanExecutives(chainOfCommand, userCache) {
     if (!chainOfCommand || Object.keys(chainOfCommand).length <= 0) {
 	// Do nothing if the chain of command isn't loaded / calculated yet.
 	return;
@@ -90,7 +90,7 @@ function UpdateClanExecutives(chainOfCommand, userCache) {
 	ForEach = f => Object.values(userCache).forEach(f);
     }
     // Dismiss executives who don't match any more.
-    ForEach((user) => {
+    await ForEach((user) => {
 	if (!user.office) {
 	    return;
 	}

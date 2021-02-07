@@ -76,7 +76,7 @@ async function UpdateRolesForOneGuild(guild, chainOfCommand) {
     }
 
     // Kick off the recursive role assignment.
-    Executives.ForEachExecutiveWithRoles((execID, recursiveRole, personalRole) => {
+    await Executives.ForEachExecutiveWithRoles((execID, recursiveRole, personalRole) => {
 	if (recursiveRole) {
 	    ApplyRoleDownwards(execID, recursiveRole);
 	    ApplyRoleUpwards(execID, recursiveRole);

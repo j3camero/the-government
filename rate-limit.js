@@ -26,9 +26,9 @@ function Busy() {
 // for await-ing rate-limited tasks.
 function Run(callback) {
     return new Promise((resolve, reject) => {
-	rateLimitQueue.push(() => {
-	    callback();
-	    resolve();
+	rateLimitQueue.push(async () => {
+	    const result = await callback();
+	    resolve(result);
 	});
     });
 }

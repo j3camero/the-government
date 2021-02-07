@@ -110,7 +110,7 @@ describe('ExecutiveOffices', function() {
 	const user = Executives.FindUnassignedUser(3, sampleChainOfCommand, mockUserCache);
 	assert(user.commissar_id === 77);
     });
-    it('UpdateClanExecutives all empty', () => {
+    it('UpdateClanExecutives all empty', async () => {
 	const mockUserCache = {
 	    4: new CommissarUser(4),
 	    6: new CommissarUser(6),
@@ -121,12 +121,12 @@ describe('ExecutiveOffices', function() {
 	    60: new CommissarUser(60),
 	    77: new CommissarUser(77),
 	};
-	Executives.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
+	await Executives.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
 	Object.values(mockUserCache).forEach((user) => {
 	    assert(user.office);
 	});
     });
-    it('UpdateClanExecutives all full', () => {
+    it('UpdateClanExecutives all full', async () => {
 	const mockUserCache = {
 	    4: new CommissarUser(4, '', '', 3, null, 'MARINES'),
 	    6: new CommissarUser(6, '', '', 0, null, 'PRES'),
@@ -137,11 +137,11 @@ describe('ExecutiveOffices', function() {
 	    60: new CommissarUser(60, '', '', 3, null, 'NAVY'),
 	    77: new CommissarUser(77, '', '', 3, null, 'AIR'),
 	};
-	Executives.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
+	await Executives.UpdateClanExecutives(sampleChainOfCommand, mockUserCache);
 	// Spot check one field, but nothing should have changed.
 	assert.equal(mockUserCache[38].office, 'MINDEF');
     });
-    it('UpdateClanExecutives fire & hire the right people', () => {
+    it('UpdateClanExecutives fire & hire the right people', async () => {
 	const chainOfCommand = {
 	    4: { id: 4, rank: 3 },
 	    6: { id: 6, rank: 0 },
@@ -162,7 +162,7 @@ describe('ExecutiveOffices', function() {
 	    60: new CommissarUser(60, '', '', 3, null, 'NAVY'),
 	    77: new CommissarUser(77, '', '', 3, null, 'AIR'),
 	};
-	Executives.UpdateClanExecutives(chainOfCommand, mockUserCache);
+	await Executives.UpdateClanExecutives(chainOfCommand, mockUserCache);
 	assert(mockUserCache[38].office);
 	assert(mockUserCache[38].office != 'MINDEF');
 	assert(mockUserCache[60].office);
