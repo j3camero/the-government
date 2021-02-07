@@ -323,6 +323,13 @@ async function Start() {
 	UpdateVoiceActiveMembersForMainDiscordGuild();
     });
 
+    // When a user changes their username or other user details.
+    discordClient.on('userUpdate', async (oldUser, newUser) => {
+	console.log('userUpdate', newUser.username);
+	const cu = UserCache.GetCachedUserByDiscordId(newUser.id);
+	await cu.setNickname(newUser.username);
+    });
+
     // Set up heartbeat events. These run at fixed intervals of time.
     const oneSecond = 1000;
     const oneMinute = 60 * oneSecond;
