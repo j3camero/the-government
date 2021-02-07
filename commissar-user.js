@@ -1,4 +1,6 @@
+const ChainOfCommand = require('./chain-of-command');
 const DB = require('./database');
+const jobDescriptions = require('./executive-config');
 const FilterUsername = require('./filter-username');
 const moment = require('moment');
 
@@ -116,6 +118,38 @@ class CommissarUser {
 	if (result.affectedRows !== 1) {
 	    throw `Updated wrong number of records. Should only update 1 (${result.affectedRows}).`;
 	}
+    }
+
+    getGenderPrefix() {
+	if (this.gender === 'F') {
+	    return 'Madam';
+	} else {
+	    return 'Mr.';
+	}
+    }
+
+    getNicknameOrTitle() {
+	if (!this.office) {
+	    return this.nickname;
+	}
+	const job = jobDescriptions[this.office];
+	if (job.title) {
+	    const prefix = this.getGenderPrefix();
+	    return `${prefix} ${job.title}`;
+	} else {
+	    return this.nickname;
+	}
+    }
+
+    getInsignia() {
+	const rankData = ChainOfCommand.metadata[this.rank];
+	return rankData.insignia;
+    }
+
+    getNameWithInsignia() {
+	const name = this.getNicknameOrTitle();
+	const insignia = this.getInsignia();
+	return `${name} ${insignia}`;
     }
 }
 

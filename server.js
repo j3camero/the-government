@@ -83,12 +83,7 @@ async function UpdateMemberAppearance(member) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
     // Nickname override for special titles like 'Mr. President'.
-    let displayName = cu.nickname;
-    if (cu.rank < 2) {
-	const genderAbbrev = cu.gender === 'F' ? 'Madam' : 'Mr.';
-	displayName = `${genderAbbrev} ${rankData.title}`;
-    }
-    displayName += ` ${rankData.insignia}`;
+    const displayName = cu.getNameWithInsignia();
     if (member.nickname !== displayName && member.user.id !== member.guild.ownerID) {
 	console.log(`Updating nickname ${displayName}.`);
 	member.setNickname(displayName);
@@ -173,7 +168,7 @@ async function AnnounceIfPromotion(nickname, oldRank, newRank) {
 // Calculates the chain of command. If there are changes, the update is made.
 // Only affects the main Discord guild.
 async function UpdateChainOfCommandForMainDiscordGuild() {
-    const candidateIds = await DiscordUtil.GetCommissarIdsOfDiscordMembers();
+    const candidateIds = await UserCache.GetAllCitizenCommissarIds();
     UpdateChainOfCommandForCandidates(candidateIds);
 }
 
@@ -217,23 +212,23 @@ async function UpdateChainOfCommandForCandidates(candidateIds) {
 async function ElectMrPresident() {
     console.log('Electing Mr. President.');
     const topTwo = await UserCache.GetMostCentralUsers(2);
-    const bestId = topTwo[0].commissar_id;
-    if (!bestId) {
+    mrPresident = topTwo[0];
+    if (!mrPresident) {
 	throw 'Failed to find a best candidate for Mr. President!';
     }
-    mrPresident = UserCache.GetCachedUserByCommissarId(bestId);
     await mrPresident.setRank(0);
-    console.log(`Elected ID ${bestId} (${mrPresident.nickname})`);
+    console.log(`Elected ${mrPresident.nickname}`);
 }
 
 async function UpdateHarmonicCentrality() {
-    const candidates = await DiscordUtil.GetCommissarIdsOfDiscordMembers();
+    const candidates = await UserCache.GetAllCitizenCommissarIds();
     if (candidates.length === 0) {
 	throw 'ERROR: zero candidates for the #chain-of-command!';
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    await DiscordUtil.UpdateHarmonicCentralityChatChannel();
+    const mostCentral = await UserCache.GetMostCentralUsers(5);
+    await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
 async function UpdateAllCitizens() {

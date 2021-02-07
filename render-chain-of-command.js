@@ -91,15 +91,7 @@ function RenderChainOfCommand(chain, nicknames) {
     function DrawName(user, x, y, maxWidth) {
 	const rank = com.metadata[user.rank];
 	context.fillStyle = colors[rank.role] || lightGrey;
-	let name = user.id;
-	if (user.id in nicknames) {
-	    name = nicknames[user.id];
-	}
-	if (rank.titleOverride) {
-	    const genderAbbrev = 'Mr.';
-	    name = `${genderAbbrev} ${rank.title}`;
-	}
-	const formattedName = `${name} ${rank.insignia}`;
+	const formattedName = nicknames[user.id] || user.id;
 	// Shrink the font to make the text fit if necessary.
 	let fontSize = fontSizes[rank.role];
 	for ( ; fontSize >= 9; fontSize -= 1) {

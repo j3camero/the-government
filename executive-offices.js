@@ -1,45 +1,7 @@
 // Code for updating and establishing various offices & titles in the Discord.
 // Ex: Mr. President, Minister of Defense.
+const jobDescriptions = require('./executive-config');
 const UserCache = require('./user-cache');
-
-const executiveOffices = {
-    'PRES': {
-	rank: 0,
-	title: 'President',
-    },
-    'VP': {
-	rank: 1,
-	title: 'Vice President',
-    },
-    'CJCS': {
-	personalRole: 'Chairman of the Joint Chiefs of Staff',
-	rank: 2,
-    },
-    'MINDEF': {
-	personalRole: 'Minister of Defense',
-	rank: 2,
-    },
-    'ARMY': {
-	personalRole: 'Chief of the Army',
-	rank: 3,
-	recursiveRole: 'Army',
-    },
-    'NAVY': {
-	personalRole: 'Secretary of the Navy',
-	rank: 3,
-	recursiveRole: 'Navy',
-    },
-    'AIR': {
-	personalRole: 'Commander of the Air Force',
-	rank: 3,
-	recursiveRole: 'Air Force',
-    },
-    'MARINES': {
-	personalRole: 'Commandant of the Marines',
-	rank: 3,
-	recursiveRole: 'Marines',
-    },
-};
 
 // Returns a user with the given target rank, who doesn't already have an office.
 // If all users of the target rank already have an office, returns null.
@@ -58,19 +20,6 @@ function FindUnassignedUser(targetRank, chainOfCommand, userCache) {
 	}
     });
     return foundUser;
-}
-
-// Calls an inner function for each executive with role. Typically 3-star Generals
-// with roles Army, Navy, Air Force, and Marines.
-async function ForEachExecutiveWithRoles(innerFunction) {
-    await UserCache.ForEach((user) => {
-	if (user.office) {
-	    const jobDescription = executiveOffices[user.office];
-	    const recursiveRole = jobDescription.recursiveRole;
-	    const personalRole = jobDescription.personalRole;
-	    innerFunction(user.commissar_id, recursiveRole, personalRole);
-	}
-    });
 }
 
 // Updates the clan executives. Fire any users that don't match their jobs any
@@ -94,7 +43,7 @@ async function UpdateClanExecutives(chainOfCommand, userCache) {
 	if (!user.office) {
 	    return;
 	}
-	const jobDescription = executiveOffices[user.office];
+	const jobDescription = jobDescriptions[user.office];
 	const chainUser = chainOfCommand[user.commissar_id];
 	if ((user.office in filledPositions) || !chainUser || (chainUser.rank !== jobDescription.rank)) {
 	    // Do not await to avoid creating a race condition.
@@ -104,8 +53,8 @@ async function UpdateClanExecutives(chainOfCommand, userCache) {
 	}
     });
     // Attempt to fill all empty executive roles.
-    Object.keys(executiveOffices).forEach((jobID) => {
-	const jobDescription = executiveOffices[jobID];
+    Object.keys(jobDescriptions).forEach((jobID) => {
+	const jobDescription = jobDescriptions[jobID];
 	if (jobID in filledPositions) {
 	    return;
 	}
@@ -113,6 +62,19 @@ async function UpdateClanExecutives(chainOfCommand, userCache) {
 	if (appointee) {
 	    // Do not await to avoid creating race condition.
 	    appointee.setOffice(jobID);
+	}
+    });
+}
+
+// Calls an inner function for each executive with role. Typically 3-star Generals
+// with roles Army, Navy, Air Force, and Marines.
+async function ForEachExecutiveWithRoles(innerFunction) {
+    await UserCache.ForEach((user) => {
+	if (user.office) {
+	    const jobDescription = jobDescriptions[user.office];
+	    const recursiveRole = jobDescription.recursiveRole;
+	    const personalRole = jobDescription.personalRole;
+	    innerFunction(user.commissar_id, recursiveRole, personalRole);
 	}
     });
 }

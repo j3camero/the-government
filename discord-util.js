@@ -3,7 +3,6 @@ const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
 const RateLimit = require('./rate-limit');
-const UserCache = require('./user-cache');
 
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({
@@ -132,7 +131,7 @@ async function UpdateChainOfCommandChatChannel(guild, canvas) {
     channel.send(footerMessage);
 }
 
-async function UpdateHarmonicCentralityChatChannel(ser) {
+async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     const guild = await GetMainDiscordGuild();
     const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
     if (channels.length === 0) {
@@ -141,17 +140,16 @@ async function UpdateHarmonicCentralityChatChannel(ser) {
     const channel = channels[0];
     // Bulk delete messages
     await channel.bulkDelete(3);
-    const flat = await UserCache.GetMostCentralUsers(5);
     const threeBackticks = '\`\`\`';
     let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
 		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
 		   'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
-    for (let i = 0; i < flat.length; ++i) {
-	const cu = UserCache.GetCachedUserByCommissarId(flat[i].commissar_id);
-	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-	const margin = flat[i].centrality / flat[0].centrality - 1;
+    for (let i = 0; i < mostCentralUsers.length; ++i) {
+	const cu = mostCentralUsers[i];
+	const scoreString = Math.round(cu.harmonic_centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	const margin = cu.harmonic_centrality / mostCentralUsers[0].harmonic_centrality - 1;
 	const marginString = Math.round(100 * margin);
-	message += `${i + 1} ${cu.nickname} (\$${scoreString})`
+	message += `${i + 1} ${cu.getNameWithInsignia()} (\$${scoreString})`
 	if (i > 0) {
 	    message += ` [${marginString}\%]`
 	}
@@ -161,25 +159,10 @@ async function UpdateHarmonicCentralityChatChannel(ser) {
     await channel.send(message);
 }
 
-async function GetCommissarIdsOfDiscordMembers() {
-    const guild = await GetMainDiscordGuild();
-    const members = await guild.members.fetch();
-    const ids = [];
-    for (const member of members) {
-	const discordID = member[0];
-	const cu = await UserCache.GetCachedUserByDiscordId(discordID);
-	if (cu) {
-	    ids.push(cu.commissar_id);
-	}
-    }
-    return ids;
-}
-
 module.exports = {
     AddRole,
     Connect,
     GetAllMatchingTextChannels,
-    GetCommissarIdsOfDiscordMembers,
     GetPublicChatChannel,
     GetMainDiscordGuild,
     GetRoleByName,

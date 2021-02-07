@@ -95,7 +95,7 @@ async function CreateNewDatabaseUser(discordMember) {
 async function GetAllNicknames() {
     const nicknames = {};
     await ForEach((user) => {
-	nicknames[user.commissar_id] = user.nickname;
+	nicknames[user.commissar_id] = user.getNameWithInsignia();
     });
     return nicknames;
 }
@@ -104,12 +104,9 @@ async function GetAllNicknames() {
 // [(commissar_id, centrality), ...]
 async function GetMostCentralUsers(topN) {
     const flat = [];
-    await ForEach(user => flat.push({
-	commissar_id: user.commissar_id,
-	centrality: user.harmonic_centrality || 0,
-    }));
+    await ForEach(user => flat.push(user));
     flat.sort((a, b) => {
-	return b.centrality - a.centrality;
+	return b.harmonic_centrality - a.harmonic_centrality;
     });
     return flat.slice(0, topN);
 }
@@ -127,10 +124,21 @@ async function BulkCentralityUpdate(centralityScores) {
     }
 }
 
+async function GetAllCitizenCommissarIds() {
+    const ids = [];
+    await ForEach((user) => {
+	if (user.citizen) {
+	    ids.push(user.commissar_id);
+	}
+    });
+    return ids;
+}
+
 module.exports = {
     BulkCentralityUpdate,
     CreateNewDatabaseUser,
     ForEach,
+    GetAllCitizenCommissarIds,
     GetAllNicknames,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,

@@ -7,7 +7,7 @@
     "node": ">=0.14.15"
   },
   "scripts": {
-    "start": "node server.js --unhandled-rejections=strict",
+    "start": "node server.js --unhandled-rejections=strict --trace-warnings",
     "test": "mocha './{,!(node_modules)/**}/*-test.js'"
   },
   "repository": {
