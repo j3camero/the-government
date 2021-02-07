@@ -241,7 +241,8 @@ async function UpdateAllCitizens() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     await UserCache.ForEach(async (user) => {
 	if (user.citizen) {
-	    const discordMember = await RateLimit(async () => {
+	    console.log(`Checking user ${user.nickname} (ID:${user.commissar_id}).`);
+	    const discordMember = await RateLimit.Run(async () => {
 		try {
 		    return await guild.members.fetch(user.discord_id);
 		} catch (error) {
@@ -281,10 +282,9 @@ async function HourlyHeartbeat() {
     console.log('Consolidating the time matrix.');
     await DB.ConsolidateTimeMatrix();
     console.log('Checking all the citizens.');
-    //await UpdateAllCitizens();
+    await UpdateAllCitizens();
     console.log('Update harmonic centrality.');
     await UpdateHarmonicCentrality();
-    console.log('Elect Mr. President.');
     await ElectMrPresident();
 }
 

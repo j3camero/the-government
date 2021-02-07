@@ -13,14 +13,18 @@ async function LoadAllUsersFromDatabase() {
     const results = await DB.Query('SELECT * FROM users');
     const newCache = {};
     results.forEach((row) => {
-	    const newUser = new CommissarUser(
-		row.commissar_id,
-		row.discord_id,
-		row.nickname,
-		row.rank,
-		row.last_seen,
-		row.office
-	    );
+	const newUser = new CommissarUser(
+	    row.commissar_id,
+	    row.discord_id,
+	    row.nickname,
+	    row.rank,
+	    row.last_seen,
+	    row.office,
+	    row.harmonic_centrality,
+	    row.peak_rank,
+	    row.gender,
+	    row.citizen
+	);
 	newCache[row.commissar_id] = newUser;
     });
     commissarUserCache = newCache;

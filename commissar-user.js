@@ -4,13 +4,27 @@ const moment = require('moment');
 
 // Represents a member of the guild.
 class CommissarUser {
-    constructor(commissar_id, discord_id, nickname, rank, last_seen, office) {
+    constructor(
+	commissar_id,
+	discord_id,
+	nickname,
+	rank,
+	last_seen,
+	office,
+	harmonic_centrality,
+	peak_rank,
+	gender,
+	citizen) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
 	this.rank = rank;
 	this.last_seen = last_seen;
 	this.office = office;
+	this.harmonic_centrality = harmonic_centrality;
+	this.peak_rank = peak_rank;
+	this.gender = gender;
+	this.citizen = citizen;
     }
 
     async setDiscordId(discord_id) {
