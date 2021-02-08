@@ -103,7 +103,7 @@ class CommissarUser {
     // True or false value. Represents whether or not this user is a member of the
     // Discord guild. Members who have left or been banned will have the value false.
     async setCitizen(is_citizen) {
-	if (is_citizen === this.citizen) {
+	if ((is_citizen && this.citizen) || (!is_citizen && !this.citizen)) {
 	    return;
 	}
 	this.citizen = is_citizen;

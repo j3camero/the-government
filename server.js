@@ -127,8 +127,6 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
 		    // Shouldn't happen, but ignore and hope for recovery.
 		    return;
 		}
-		// Update this user's 'last seen' time.
-		cu.seenNow();
 		channelActive.push(cu.commissar_id);
 	    });
 	    if (channelActive.length >= 2) {
@@ -243,11 +241,12 @@ async function UpdateAllCitizens() {
 		    return null;
 		}
 	    });
-	    if (!discordMember) {
+	    if (discordMember) {
+		await user.setCitizen(true);
+		await user.setNickname(discordMember.user.username);
+	    } else {
 		await user.setCitizen(false);
-		return;
 	    }
-	    await user.setNickname(discordMember.user.username);
 	}
     });
 }
@@ -277,8 +276,6 @@ async function HourlyHeartbeat() {
     console.log('Hourly heartbeat');
     console.log('Consolidating the time matrix.');
     await DB.ConsolidateTimeMatrix();
-    console.log('Checking all the citizens.');
-    await UpdateAllCitizens();
     console.log('Update harmonic centrality.');
     await UpdateHarmonicCentrality();
     await ElectMrPresident();
@@ -292,9 +289,7 @@ async function Start() {
     await DB.Connect();
     console.log('Database connected. Loading commissar user data.');
     await UserCache.LoadAllUsersFromDatabase();
-    console.log('Commissar user data loaded. Commissar is alive.');
-    await HourlyHeartbeat();
-    await MinuteHeartbeat();
+    console.log('Commissar user data loaded.');
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
     discordClient.on('guildMemberAdd', async (member) => {
@@ -305,37 +300,93 @@ async function Start() {
 	}
 	const greeting = `Everybody welcome ${member.user.username} to the server!`;
 	await DiscordUtil.MessagePublicChatChannel(greeting);
-	const cu = UserCache.GetCachedUserByDiscordId(member.user.id);
+	const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (!cu) {
 	    // We have no record of this Discord user. Create a new record in the cache.
 	    console.log('New Discord user detected.');
 	    await UserCache.CreateNewDatabaseUser(member);
+	    return;
 	}
+	await cu.setCitizen(true);
+    });
+
+    // Emitted whenever a member leaves a guild, or is kicked.
+    discordClient.on('guildMemberRemove', async (member) => {
+	console.log('Someone left the guild.');
+	const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
+	if (!cu) {
+	    return;
+	}
+	await cu.setCitizen(false);
+    });
+
+    // Emitted whenever a member is banned from a guild.
+    discordClient.on('guildBanAdd', async (guild, user) => {
+	console.log('Someone got banned.');
+	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
+	if (!cu) {
+	    return;
+	}
+	await cu.setCitizen(false);
     });
 
     // Respond to bot commands.
-    discordClient.on('message', BotCommands.Dispatch);
+    discordClient.on('message', async (message) => {
+	const cu = await UserCache.GetCachedUserByDiscordId(message.author.id);
+	if (!cu) {
+	    // Shouldn't happen. Bail and hope for recovery.
+	    return;
+	}
+	await cu.setCitizen(true);
+	await BotCommands.Dispatch(message);
+    });
 
     // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
     // unmutes, deafens, undefeans, and possibly other circumstances as well.
-    discordClient.on('voiceStateUpdate', (oldVoiceState, newVoiceState) => {
+    discordClient.on('voiceStateUpdate', async (oldVoiceState, newVoiceState) => {
 	console.log('voiceStateUpdate', newVoiceState.member.nickname);
 	UpdateVoiceActiveMembersForMainDiscordGuild();
+	const cu = await UserCache.GetCachedUserByDiscordId(newVoiceState.member.user.id);
+	if (!cu) {
+	    // Shouldn't happen. Bail and hope for recovery.
+	    return;
+	}
+	await cu.setCitizen(true);
+	await cu.seenNow();
     });
 
     // When a user changes their username or other user details.
     discordClient.on('userUpdate', async (oldUser, newUser) => {
 	console.log('userUpdate', newUser.username);
-	const cu = UserCache.GetCachedUserByDiscordId(newUser.id);
+	const cu = await UserCache.GetCachedUserByDiscordId(newUser.id);
 	await cu.setNickname(newUser.username);
+    });
+
+    // When a guild member changes their nickname or other details.
+    discordClient.on('guildMemberUpdate', async (oldMember, newMember) => {
+	console.log('guildMemberUpdate', newMember.user.username);
+	const cu = await UserCache.GetCachedUserByDiscordId(newMember.user.id);
+	if (!cu) {
+	    // This shouldn't happen but ignore and hope for recovery.
+	    return;
+	}
+	await cu.setNickname(newMember.user.username);
+	await cu.setCitizen(true);
     });
 
     // Set up heartbeat events. These run at fixed intervals of time.
     const oneSecond = 1000;
     const oneMinute = 60 * oneSecond;
     const oneHour = 60 * oneMinute;
-    setInterval(MinuteHeartbeat, oneMinute);
+    // Run the hourly and minute heartbeat routines once each to fully prime
+    // the bot rather than waiting until an hour or a minute has passed.
+    await HourlyHeartbeat();
+    await MinuteHeartbeat();
+    // Set up the hour and minute heartbeat routines to run on autopilot.
     setInterval(HourlyHeartbeat, oneHour);
+    setInterval(MinuteHeartbeat, oneMinute);
+    // Check each citizen once on startup.
+    await UpdateAllCitizens();
 }
 
 Start();
