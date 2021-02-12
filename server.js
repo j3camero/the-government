@@ -107,18 +107,18 @@ async function UpdateAllDiscordMemberAppearances() {
 // Looks in the main Discord Guild only.
 async function UpdateVoiceActiveMembersForMainDiscordGuild() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    UpdateVoiceActiveMembersForOneGuild(guild);
+    await UpdateVoiceActiveMembersForOneGuild(guild);
 }
 
 // Looks for 2 or more users in voice channels together and credits them.
 //
 // guild - Looks for voice channels in this guild only.
-function UpdateVoiceActiveMembersForOneGuild(guild) {
+async function UpdateVoiceActiveMembersForOneGuild(guild) {
     const listOfLists = [];
-    guild.channels.cache.forEach((channel) => {
+    for (const [channelId, channel] of guild.channels.cache) {
 	if (channel.type === 'voice') {
 	    const channelActive = [];
-	    channel.members.forEach(async (member) => {
+	    for (const [memberId, member] of channel.members) {
 		if (member.mute) {
 		    return;
 		}
@@ -128,12 +128,14 @@ function UpdateVoiceActiveMembersForOneGuild(guild) {
 		    return;
 		}
 		channelActive.push(cu.commissar_id);
-	    });
+	    }
 	    if (channelActive.length >= 2) {
 		listOfLists.push(channelActive);
 	    }
 	}
-    });
+    }
+    console.log('Voice active members by ID:');
+    console.log(listOfLists);
     timeTogetherStream.seenTogether(listOfLists);
 }
 
@@ -260,13 +262,13 @@ async function MinuteHeartbeat() {
     // Update clan executive roles.
     await Executives.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
-    MiniClans.UpdateRolesForMainDiscordGuild(chainOfCommand);
+    await MiniClans.UpdateRolesForMainDiscordGuild(chainOfCommand);
     // Update the chain of command.
-    UpdateChainOfCommandForMainDiscordGuild();
+    await UpdateChainOfCommandForMainDiscordGuild();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
-    UpdateAllDiscordMemberAppearances();
+    await UpdateAllDiscordMemberAppearances();
     // Update time matrix and sync to database.
-    UpdateVoiceActiveMembersForMainDiscordGuild();
+    await UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     await DB.WriteTimeTogetherRecords(recordsToSync);
 }
