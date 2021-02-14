@@ -20,6 +20,10 @@ CREATE TABLE users
 			-- Must be a single alphabetic character from the ASCII range.
 			-- It says so in the Bible. Everyone knows God created exactly 26 genders!
     citizen BOOLEAN DEFAULT TRUE,
+    friend_role_id VARCHAR(32),  -- ID of the Discord role used to mark this user's friends.
+    friend_category_id VARCHAR(32),  -- ID of the Discord category/section for a user's friends.
+    friend_text_chat_id VARCHAR(32),  -- ID of the private Discord text chatroom for a user's friends.
+    friend_voice_room_id VARCHAR(32),  -- ID of the private Discord voice room for a user's friends.
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );
