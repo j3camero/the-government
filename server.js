@@ -120,12 +120,12 @@ async function UpdateVoiceActiveMembersForOneGuild(guild) {
 	    const channelActive = [];
 	    for (const [memberId, member] of channel.members) {
 		if (member.mute) {
-		    return;
+		    continue;
 		}
 		const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
 		if (!cu) {
 		    // Shouldn't happen, but ignore and hope for recovery.
-		    return;
+		    continue;
 		}
 		channelActive.push(cu.commissar_id);
 	    }
