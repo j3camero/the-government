@@ -1,12 +1,13 @@
 // Routines for handling bot commands like !ping and !ban.
+const DiscordUtil = require('./discord-util');
 const UserCache = require('./user-cache');
 
 // The given Discord message is already verified to start with the !ping prefix.
 // This is an example bot command that has been left in for fun. Maybe it's
 // also useful for teaching people how to use bot commands. It's a harmless
 // practice command that does nothing.
-function HandlePingCommand(discordMessage) {
-    discordMessage.channel.send('Pong!');
+async function HandlePingCommand(discordMessage) {
+    await discordMessage.channel.send('Pong!');
 }
 
 // A cheap live test harness to test the code that finds the main chat channel.
@@ -41,23 +42,114 @@ async function HandleGenderCommand(discordMessage) {
 
 // The given Discord message is already verified to start with the !ban prefix.
 // Now authenticate and implement it.
-function HandleBanCommand(discordMessage) {
+async function HandleBanCommand(discordMessage) {
     if (discordMessage.mentions.members.size === 1) {
 	const banMember = discordMessage.mentions.members.first();
-	discordMessage.channel.send(`Test ban ${banMember.nickname}!`);
+	await discordMessage.channel.send(`Test ban ${banMember.nickname}!`);
     } else if (discordMessage.mentions.members.size < 1) {
-	discordMessage.channel.send('Ban who? Example: !ban @nickname');
+	await discordMessage.channel.send('Ban who? Example: !ban @nickname');
     } else if (discordMessage.mentions.members.size > 1) {
-	discordMessage.channel.send('Must ban exactly one username at a time. Example: !ban @nickname');
+	await discordMessage.channel.send('Must ban exactly one username at a time. Example: !ban @nickname');
     }
 }
 
+async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
+    // Look for exactly one member being mentioned.
+    let mentionedMember;
+    // First, check for explicit @mentions. There must be at most 1 or it's an error.
+    if (!discordMessage ||
+	!discordMessage.mentions ||
+	!discordMessage.mentions.members ||
+	discordMessage.mentions.members.size < 1) {
+	// No members mentioned using @mention. Do nothing. A member might be mentioned
+	// in another way, such as by Discord ID.
+    } else if (discordMessage.mentions.members.size === 1) {
+	mentionedMember = discordMessage.mentions.members.first();
+    } else if (discordMessage.mentions.members.size > 1) {
+	await discordMessage.channel.send(
+	    'Error: !friend one person at a time. Example: !friend @nickname');
+	return null;
+    }
+    // Second, check for mentions by full Discord user ID. This will usually be a long
+    // sequence of digits. Still, finding more than 1 mentioned member is an error.
+    const tokens = discordMessage.content.split(' ');
+    for (const token of tokens) {
+	const isNumber = /^\d+$/.test(token);
+	if (token.length > 5 && isNumber) {
+	    if (mentionedMember) {
+		await discordMessage.channel.send(
+		    'Error: !friend one person at a time. Example: !friend 987654321098765432');
+		return null;
+	    }
+	    try {
+		const guild = await DiscordUtil.GetMainDiscordGuild();
+		mentionedMember = await guild.members.fetch(token);
+	    } catch (error) {
+		await discordMessage.channel.send(
+		    `Error: invalid Discord user ID ${token}. Right-click the person you want and select Copy ID.`);
+		return null;
+	    }
+	} else {
+	    await discordMessage.channel.send(
+		`Error: invalid Discord user ID ${token}. Right-click the person you want and select Copy ID.`);
+	    return null;
+	}
+    }
+    // We might get this far and find no member mentioned by @ or by ID.
+    if (!mentionedMember) {
+	await discordMessage.channel.send('Example: !friend @nickname');
+	return null;
+    }
+    // If we get this far, it means we found exactly one member mentioned,
+    // whether by @mention or by user ID.
+    return mentionedMember;
+}
+
+async function GetAuthorFriendRole(discordMessage) {
+    const cu = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!cu || !cu.friend_role_id) {
+	console.log(`Author ${discordMessage.author.username} lacks friend role.`);
+	return null;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const friendRole = await guild.roles.resolve(cu.friend_role_id);
+    return friendRole;
+}
+
+// The given Discord message is already verified to start with the !friend prefix.
+async function HandleFriendCommand(discordMessage) {
+    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	return;
+    }
+    const friendRole = await GetAuthorFriendRole(discordMessage);
+    if (!friendRole) {
+	return;
+    }
+    console.log(`ADD FRIEND: ${discordMessage.author.username} adds ${mentionedMember.nickname}`);
+    DiscordUtil.AddRole(mentionedMember, friendRole);
+}
+
+// The given Discord message is already verified to start with the !unfriend prefix.
+async function HandleUnfriendCommand(discordMessage) {
+    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	return;
+    }
+    const friendRole = await GetAuthorFriendRole(discordMessage);
+    if (!friendRole) {
+	return;
+    }
+    console.log(`UN FRIEND: ${discordMessage.author.username} unfriends ${mentionedMember.nickname}`);
+    DiscordUtil.RemoveRole(mentionedMember, friendRole);
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
-function HandleUnknownCommand(discordMessage) {
+async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
     // message as a reply. Those of lower rank shouldn't get any response at
     // all to avoid spam.
-    discordMessage.channel.send(`Unknown command.`);
+    //await discordMessage.channel.send(`Unknown command.`);
 }
 
 // This function analyzes a Discord message to see if it contains a bot command.
@@ -82,6 +174,10 @@ async function Dispatch(discordMessage) {
 	await HandlePingCommand(discordMessage);
     } else if (command === '!pingpublic') {
 	await HandlePingPublicChatCommand(discordMessage);
+    } else if (command === '!friend') {
+	await HandleFriendCommand(discordMessage);
+    } else if (command === '!unfriend') {
+	await HandleUnfriendCommand(discordMessage);
     } else {
 	await HandleUnknownCommand(discordMessage);
     }
