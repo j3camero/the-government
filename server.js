@@ -286,10 +286,45 @@ async function CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild) {
     return role;
 }
 
+async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild) {
+    const sectionName = cu.getNicknameWithInsignia();
+    const section = await RateLimit.Run(async () => {
+	if (cu.friend_category_id) {
+	    return await guild.channels.resolve(cu.friend_category_id);
+	} else {
+	    const botsRole = await DiscordUtil.GetRoleByName(guild, 'Bots');
+	    return await guild.channels.create(sectionName, {
+		type: 'category',
+		permissionOverwrites: [
+		    {
+			deny: ['CONNECT', 'VIEW_CHANNEL'],
+			id: guild.roles.everyone.id,
+		    },
+		    {
+			allow: ['CONNECT', 'VIEW_CHANNEL'],
+			id: friendRole.id,
+		    },
+		    {
+			allow: ['CONNECT', 'VIEW_CHANNEL'],
+			id: botsRole.id,
+		    },
+		],
+	    });
+	}
+    });
+    if (section.name !== sectionName) {
+	await section.setName(sectionName);
+    }
+    return section;
+}
+
 async function CreateOrUpdateDiscordFriendZoneForCommissarUser(cu, guild) {
     const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
-    console.log('Created or updated friend role:');
-    console.log(friendRole);
+    const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild);
+    console.log('Update or created section:');
+    console.log(section);
+    // await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
+    // await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
 }
 
 // TODO: remove this after friend features are finished development.
