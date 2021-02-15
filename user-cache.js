@@ -23,7 +23,11 @@ async function LoadAllUsersFromDatabase() {
 	    row.harmonic_centrality,
 	    row.peak_rank,
 	    row.gender,
-	    row.citizen
+	    row.citizen,
+	    row.friend_role_id,
+	    row.friend_category_id,
+	    row.friend_text_chat_id,
+	    row.friend_voice_room_id,
 	);
 	newCache[row.commissar_id] = newUser;
     });
@@ -95,7 +99,7 @@ async function CreateNewDatabaseUser(discordMember) {
 async function GetAllNicknames() {
     const nicknames = {};
     await ForEach((user) => {
-	nicknames[user.commissar_id] = user.getNameWithInsignia();
+	nicknames[user.commissar_id] = user.getNicknameOrTitleWithInsignia();
     });
     return nicknames;
 }

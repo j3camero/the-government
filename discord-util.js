@@ -149,7 +149,7 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
 	const scoreString = Math.round(cu.harmonic_centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 	const margin = cu.harmonic_centrality / mostCentralUsers[0].harmonic_centrality - 1;
 	const marginString = Math.round(100 * margin);
-	message += `${i + 1} ${cu.getNameWithInsignia()} (\$${scoreString})`
+	message += `${i + 1} ${cu.getNicknameOrTitleWithInsignia()} (\$${scoreString})`
 	if (i > 0) {
 	    message += ` [${marginString}\%]`
 	}

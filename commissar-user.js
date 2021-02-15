@@ -16,7 +16,11 @@ class CommissarUser {
 	harmonic_centrality,
 	peak_rank,
 	gender,
-	citizen) {
+	citizen,
+        friend_role_id,
+        friend_category_id,
+        friend_text_chat_id,
+        friend_voice_room_id) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -27,6 +31,10 @@ class CommissarUser {
 	this.peak_rank = peak_rank;
 	this.gender = gender;
 	this.citizen = citizen;
+	this.friend_role_id = friend_role_id;
+	this.friend_category_id = friend_category_id;
+	this.friend_text_chat_id = friend_text_chat_id;
+	this.friend_voice_room_id = friend_voice_room_id;
     }
 
     async setDiscordId(discord_id) {
@@ -110,6 +118,38 @@ class CommissarUser {
 	await this.updateFieldInDatabase('citizen', this.citizen);
     }
 
+    async setFriendRoleId(friend_role_id) {
+	if (friend_role_id === this.friend_role_id) {
+	    return;
+	}
+	this.friend_role_id = friend_role_id;
+	await this.updateFieldInDatabase('friend_role_id', this.friend_role_id);
+    }
+
+    async setFriendCategorityId() {
+	if (friend_category_id === this.friend_category_id) {
+	    return;
+	}
+	this.friend_category_id = friend_category_id;
+	await this.updateFieldInDatabase('friend_category_id', this.friend_category_id);
+    }
+
+    async setFriendTextChatId() {
+	if (friend_text_chat_id === this.friend_text_chat_id) {
+	    return;
+	}
+	this.friend_text_chat_id = friend_text_chat_id;
+	await this.updateFieldInDatabase('friend_text_chat_id', this.friend_text_chat_id);
+    }
+
+    async setFriendVoiceRoomId() {
+	if (friend_voice_room_id === this.friend_voice_room_id) {
+	    return;
+	}
+	this.friend_voice_room_id = friend_voice_room_id;
+	await this.updateFieldInDatabase('friend_voice_room_id', this.friend_voice_room_id);
+    }
+
     async updateFieldInDatabase(fieldName, fieldValue) {
 	console.log(`DB update ${fieldName} = ${fieldValue} for ${this.nickname} (ID:${this.commissar_id}).`);
 	const sql = `UPDATE users SET ${fieldName} = ? WHERE commissar_id = ?`;
@@ -146,7 +186,12 @@ class CommissarUser {
 	return rankData.insignia;
     }
 
-    getNameWithInsignia() {
+    getNicknameWithInsignia() {
+	const insignia = this.getInsignia();
+	return `${this.nickname} ${insignia}`;
+    }
+
+    getNicknameOrTitleWithInsignia() {
 	const name = this.getNicknameOrTitle();
 	const insignia = this.getInsignia();
 	return `${name} ${insignia}`;

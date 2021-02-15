@@ -83,7 +83,7 @@ async function UpdateMemberAppearance(member) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
     // Nickname override for special titles like 'Mr. President'.
-    const displayName = cu.getNameWithInsignia();
+    const displayName = cu.getNicknameOrTitleWithInsignia();
     if (member.nickname !== displayName && member.user.id !== member.guild.ownerID) {
 	console.log(`Updating nickname ${displayName}.`);
 	member.setNickname(displayName);
@@ -253,6 +253,52 @@ async function UpdateAllCitizens() {
     });
 }
 
+// Returns the created or updated role object.
+async function CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild) {
+    const roleName = cu.getNicknameWithInsignia();
+    const role = await RateLimit.Run(async () => {
+	if (cu.friend_role_id) {
+	    return await guild.roles.fetch(cu.friend_role_id);
+	} else {
+	    const armyGreen = '#86a70b';
+	    const navyBlue = '#2d9085';
+	    const airForceOrange = '#e77c1b';
+	    const marinePurple = '#8e6495';
+	    const secondaryPalette = [armyGreen, navyBlue, airForceOrange, marinePurple];
+	    const randomColorIndex = Math.floor(Math.random() * secondaryPalette.length);
+	    const randomColor = secondaryPalette[randomColorIndex];
+	    console.log(`Creating new friend role: ${roleName}`);
+	    return await guild.roles.create({
+		data: {
+		    name: roleName,
+		    color: randomColor,
+		    hoist: false,
+		    mentionable: false,
+		},
+	    });
+	}
+    });
+    await cu.setFriendRoleId(role.id);
+    if (role.name !== roleName) {
+	console.log(`Changing friend role name from ${role.name} to ${roleName}.`);
+	await role.setName(roleName);
+    }
+    return role;
+}
+
+async function CreateOrUpdateDiscordFriendZoneForCommissarUser(cu, guild) {
+    const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
+    console.log('Created or updated friend role:');
+    console.log(friendRole);
+}
+
+// TODO: remove this after friend features are finished development.
+async function FriendTestHarness() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const cu = UserCache.GetCachedUserByCommissarId(7);
+    await CreateOrUpdateDiscordFriendZoneForCommissarUser(cu, guild);
+}
+
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 async function MinuteHeartbeat() {
     if (RateLimit.Busy()) {
@@ -384,6 +430,8 @@ async function Start() {
     // the bot rather than waiting until an hour or a minute has passed.
     await HourlyHeartbeat();
     await MinuteHeartbeat();
+    // TODO: remove this after friend features are finished development.
+    await FriendTestHarness();
     // Set up the hour and minute heartbeat routines to run on autopilot.
     setInterval(HourlyHeartbeat, oneHour);
     setInterval(MinuteHeartbeat, oneMinute);
