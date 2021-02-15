@@ -320,25 +320,48 @@ async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole
 }
 
 async function CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild) {
+    const roomName = 'chat';
     const chatroom = await RateLimit.Run(async () => {
 	if (cu.friend_text_chat_id) {
 	    return await guild.channels.resolve(cu.friend_text_chat_id);
 	} else {
-	    const newChannel = await guild.channels.create('text', { type: 'text' });
+	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
 	    await newChannel.setParent(section.id);
 	    await newChannel.lockPermissions();
 	    return newChannel;
 	}
     });
     await cu.setFriendTextChatId(chatroom.id);
+    if (chatroom.name !== roomName) {
+	await chatroom.setName(roomName);
+    }
     return chatroom;
+}
+
+async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild) {
+    const roomName = 'Chill';
+    const voice = await RateLimit.Run(async () => {
+	if (cu.friend_voice_room_id) {
+	    return await guild.channels.resolve(cu.friend_voice_room_id);
+	} else {
+	    const newChannel = await guild.channels.create(roomName, { type: 'voice' });
+	    await newChannel.setParent(section.id);
+	    await newChannel.lockPermissions();
+	    return newChannel;
+	}
+    });
+    await cu.setFriendVoiceRoomId(voice.id);
+    if (voice.name !== roomName) {
+	await voice.setName(roomName);
+    }
+    return voice;
 }
 
 async function CreateOrUpdateDiscordFriendZoneForCommissarUser(cu, guild) {
     const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
     const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild);
     await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
-    // await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
+    await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
 }
 
 // TODO: remove this after friend features are finished development.
