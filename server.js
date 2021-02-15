@@ -312,6 +312,7 @@ async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole
 	    });
 	}
     });
+    await cu.setFriendCategorityId(section.id);
     if (section.name !== sectionName) {
 	await section.setName(sectionName);
     }

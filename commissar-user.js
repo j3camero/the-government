@@ -126,7 +126,7 @@ class CommissarUser {
 	await this.updateFieldInDatabase('friend_role_id', this.friend_role_id);
     }
 
-    async setFriendCategorityId() {
+    async setFriendCategorityId(friend_category_id) {
 	if (friend_category_id === this.friend_category_id) {
 	    return;
 	}
@@ -134,7 +134,7 @@ class CommissarUser {
 	await this.updateFieldInDatabase('friend_category_id', this.friend_category_id);
     }
 
-    async setFriendTextChatId() {
+    async setFriendTextChatId(friend_text_chat_id) {
 	if (friend_text_chat_id === this.friend_text_chat_id) {
 	    return;
 	}
@@ -142,7 +142,7 @@ class CommissarUser {
 	await this.updateFieldInDatabase('friend_text_chat_id', this.friend_text_chat_id);
     }
 
-    async setFriendVoiceRoomId() {
+    async setFriendVoiceRoomId(friend_voice_room_id) {
 	if (friend_voice_room_id === this.friend_voice_room_id) {
 	    return;
 	}
