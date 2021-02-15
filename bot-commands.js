@@ -64,7 +64,7 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
 	// No members mentioned using @mention. Do nothing. A member might be mentioned
 	// in another way, such as by Discord ID.
     } else if (discordMessage.mentions.members.size === 1) {
-	mentionedMember = discordMessage.mentions.members.first();
+	return discordMessage.mentions.members.first();
     } else if (discordMessage.mentions.members.size > 1) {
 	await discordMessage.channel.send(
 	    'Error: !friend one person at a time. Example: !friend @nickname');
@@ -73,6 +73,8 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
     // Second, check for mentions by full Discord user ID. This will usually be a long
     // sequence of digits. Still, finding more than 1 mentioned member is an error.
     const tokens = discordMessage.content.split(' ');
+    // Throw out the first token, which we know is the command itself. Keep only the arguments.
+    tokens.shift();
     for (const token of tokens) {
 	const isNumber = /^\d+$/.test(token);
 	if (token.length > 5 && isNumber) {
@@ -118,12 +120,12 @@ async function GetAuthorFriendRole(discordMessage) {
 
 // The given Discord message is already verified to start with the !friend prefix.
 async function HandleFriendCommand(discordMessage) {
-    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	return;
-    }
     const friendRole = await GetAuthorFriendRole(discordMessage);
     if (!friendRole) {
+	return;
+    }
+    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
 	return;
     }
     console.log(`ADD FRIEND: ${discordMessage.author.username} adds ${mentionedMember.nickname}`);
@@ -132,12 +134,12 @@ async function HandleFriendCommand(discordMessage) {
 
 // The given Discord message is already verified to start with the !unfriend prefix.
 async function HandleUnfriendCommand(discordMessage) {
-    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	return;
-    }
     const friendRole = await GetAuthorFriendRole(discordMessage);
     if (!friendRole) {
+	return;
+    }
+    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
 	return;
     }
     console.log(`UN FRIEND: ${discordMessage.author.username} unfriends ${mentionedMember.nickname}`);
