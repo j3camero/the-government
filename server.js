@@ -319,12 +319,25 @@ async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole
     return section;
 }
 
+async function CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild) {
+    const chatroom = await RateLimit.Run(async () => {
+	if (cu.friend_text_chat_id) {
+	    return await guild.channels.resolve(cu.friend_text_chat_id);
+	} else {
+	    const newChannel = await guild.channels.create('text', { type: 'text' });
+	    await newChannel.setParent(section.id);
+	    await newChannel.lockPermissions();
+	    return newChannel;
+	}
+    });
+    await cu.setFriendTextChatId(chatroom.id);
+    return chatroom;
+}
+
 async function CreateOrUpdateDiscordFriendZoneForCommissarUser(cu, guild) {
     const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
     const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild);
-    console.log('Update or created section:');
-    console.log(section);
-    // await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
+    await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
     // await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
 }
 
