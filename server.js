@@ -357,18 +357,25 @@ async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section,
     return voice;
 }
 
-async function CreateOrUpdateDiscordFriendZoneForCommissarUser(cu, guild) {
+async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
+//    if (!cu.friend_role_id) {
+//	if (cu.rank > 0) {
+//	    return;
+//	}
+//    }
     const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
     const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild);
     await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
     await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
+    const member = await guild.members.fetch(cu.discord_id);
+    DiscordUtil.AddRole(member, friendRole);
 }
 
 // TODO: remove this after friend features are finished development.
 async function FriendTestHarness() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const cu = UserCache.GetCachedUserByCommissarId(7);
-    await CreateOrUpdateDiscordFriendZoneForCommissarUser(cu, guild);
+    const cu = UserCache.GetCachedUserByCommissarId(126);
+    await UpdateDiscordFriendZoneForCommissarUser(cu, guild);
 }
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
