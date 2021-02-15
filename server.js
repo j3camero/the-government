@@ -243,12 +243,13 @@ async function UpdateAllCitizens() {
 		    return null;
 		}
 	    });
-	    if (discordMember) {
-		await user.setCitizen(true);
-		await user.setNickname(discordMember.user.username);
-	    } else {
+	    if (!discordMember) {
 		await user.setCitizen(false);
+		return;
 	    }
+	    await user.setCitizen(true);
+	    await user.setNickname(discordMember.user.username);
+	    await UpdateDiscordFriendZoneForCommissarUser(user, guild);
 	}
     });
 }
@@ -358,24 +359,15 @@ async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section,
 }
 
 async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
-//    if (!cu.friend_role_id) {
-//	if (cu.rank > 0) {
-//	    return;
-//	}
-//    }
+    if (!cu.friend_role_id) {
+	return;
+    }
     const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
     const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild);
     await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
     await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
     const member = await guild.members.fetch(cu.discord_id);
     DiscordUtil.AddRole(member, friendRole);
-}
-
-// TODO: remove this after friend features are finished development.
-async function FriendTestHarness() {
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const cu = UserCache.GetCachedUserByCommissarId(126);
-    await UpdateDiscordFriendZoneForCommissarUser(cu, guild);
 }
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
@@ -509,8 +501,6 @@ async function Start() {
     // the bot rather than waiting until an hour or a minute has passed.
     await HourlyHeartbeat();
     await MinuteHeartbeat();
-    // TODO: remove this after friend features are finished development.
-    await FriendTestHarness();
     // Set up the hour and minute heartbeat routines to run on autopilot.
     setInterval(HourlyHeartbeat, oneHour);
     setInterval(MinuteHeartbeat, oneMinute);
