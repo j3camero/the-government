@@ -406,6 +406,7 @@ async function HourlyHeartbeat() {
     console.log('Update harmonic centrality.');
     await UpdateHarmonicCentrality();
     await ElectMrPresident();
+    await UpdateAllCitizens();
 }
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
@@ -505,15 +506,13 @@ async function Start() {
     const oneSecond = 1000;
     const oneMinute = 60 * oneSecond;
     const oneHour = 60 * oneMinute;
+    // Set up the hour and minute heartbeat routines to run on autopilot.
+    setInterval(HourlyHeartbeat, oneHour);
+    setInterval(MinuteHeartbeat, oneMinute);
     // Run the hourly and minute heartbeat routines once each to fully prime
     // the bot rather than waiting until an hour or a minute has passed.
     await HourlyHeartbeat();
     await MinuteHeartbeat();
-    // Set up the hour and minute heartbeat routines to run on autopilot.
-    setInterval(HourlyHeartbeat, oneHour);
-    setInterval(MinuteHeartbeat, oneMinute);
-    // Check each citizen once on startup.
-    await UpdateAllCitizens();
 }
 
 Start();
