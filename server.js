@@ -327,8 +327,12 @@ async function CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, 
 	    return await guild.channels.resolve(cu.friend_text_chat_id);
 	} else {
 	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
-	    await newChannel.setParent(section.id);
-	    await newChannel.lockPermissions();
+	    await RateLimit.Run(async () => {
+		await newChannel.setParent(section.id);
+	    });
+	    await RateLimit.Run(async () => {
+		await newChannel.lockPermissions();
+	    });
 	    return newChannel;
 	}
     });
@@ -346,8 +350,12 @@ async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section,
 	    return await guild.channels.resolve(cu.friend_voice_room_id);
 	} else {
 	    const newChannel = await guild.channels.create(roomName, { type: 'voice' });
-	    await newChannel.setParent(section.id);
-	    await newChannel.lockPermissions();
+	    await RateLimit.Run(async () => {
+		await newChannel.setParent(section.id);
+	    });
+	    await RateLimit.Run(async () => {
+		await newChannel.lockPermissions();
+	    });
 	    return newChannel;
 	}
     });
@@ -359,10 +367,7 @@ async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section,
 }
 
 async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
-    if (!cu.friend_role_id) {
-	//if (cu.rank > 0) {
-	//    return;
-	//}
+    if (!cu.friend_role_id && cu.rank > 2) {
 	return;
     }
     const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
