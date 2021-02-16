@@ -367,7 +367,7 @@ async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section,
 }
 
 async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
-    if (!cu.friend_role_id && cu.rank > 2) {
+    if (!cu.friend_role_id && cu.rank > 6) {
 	return;
     }
     const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
