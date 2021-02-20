@@ -264,7 +264,7 @@ function LimitMaxChildren(numMinionsLeftToChoose, bosses) {
 //
 // This function is pure ranking logic, with no connection to database
 // calls or other external dependencies. It is unit-testable offline.
-function CalculateChainOfCommand(presidentID, candidates, relationships, termLimited) {
+function CalculateChainOfCommand(presidentID, vicePresidentID, candidates, relationships) {
     if (!candidates.includes(presidentID)) {
 	throw new Error('Invalid Presidential candidate.');
     }
@@ -275,30 +275,29 @@ function CalculateChainOfCommand(presidentID, candidates, relationships, termLim
     });
     // Mr. President is the first boss.
     const mrPresident = chain[presidentID];
+    mrPresident.children = [vicePresidentID];
     mrPresident.rank = 0;
     RemoveByValue(candidates, presidentID);
+    // Mr. Vice President is the second boss.
+    const mrVicePresident = chain[vicePresidentID];
+    mrVicePresident.rank = 1;
+    mrVicePresident.boss = presidentID;
+    RemoveByValue(candidates, vicePresidentID);
     // Fill the ranks from top to bottom, choosing minions one by one.
     // When the minion rank fills up, the minions become the new bosses.
     // Then the selection process continues, filling up the next rank.
-    let bosses = [mrPresident];
+    let bosses = [mrVicePresident];
     let minions = [];
-    let minionRank = 1;
+    let minionRank = 2;
     while (candidates.length > 0) {
 	// Choose the next minion to add to the Chain of Command.
 	const numMinionsLeftToChoose = Math.min(
 	    metadata[minionRank].count - minions.length,
 	    candidates.length);
 	const maxChildren = LimitMaxChildren(numMinionsLeftToChoose, bosses);
-	let eligibleCandidates = candidates;
-	if (minionRank < 2) {
-	    eligibleCandidates = CopyAndFilter(candidates, termLimited);
-	}
-	const pair = SelectBestMatch(bosses, eligibleCandidates, timeMatrix, chain, maxChildren);
+	const pair = SelectBestMatch(bosses, candidates, timeMatrix, chain, maxChildren);
 	const boss = chain[pair.bossID];
 	const minion = chain[pair.minionID];
-	if (!minion) {
-	    console.log('Eligible candidates:', eligibleCandidates, candidates);
-	}
 	minion.rank = minionRank;
 	minions.push(minion);
 	RemoveByValue(candidates, minion.id);

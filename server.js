@@ -19,6 +19,7 @@ const timeTogetherStream = new TimeTogetherStream(new Clock());
 
 // Stores who is Mr. President right now.
 let mrPresident;
+let mrVicePresident;
 
 // The current chain of command. It's a dict of user info keyed by commissar ID.
 // The elements form an implcit tree.
@@ -181,10 +182,10 @@ async function UpdateChainOfCommandForCandidates(candidateIds) {
 	throw 'No Mr. President selected yet. This shouldn\'t happen.';
     }
     const relationships = await DB.GetTimeMatrix();
-    // User 7 (Jeff) can't be President or VP any more. Voluntary term limit.
-    // TODO: replace this with a column in the users table of the database to avoid hardcoding.
-    const termLimited = [7];
-    const newChainOfCommand = ChainOfCommand.CalculateChainOfCommand(mrPresident.commissar_id, candidateIds, relationships, termLimited);
+    const newChainOfCommand = ChainOfCommand.CalculateChainOfCommand(mrPresident.commissar_id,
+								     mrVicePresident.commissar_id,
+								     candidateIds,
+								     relationships);
     if (deepEqual(newChainOfCommand, chainOfCommand)) {
 	// Bail if there are no changes to the chain of command.
 	return;
@@ -217,7 +218,12 @@ async function ElectMrPresident() {
 	throw 'Failed to find a best candidate for Mr. President!';
     }
     await mrPresident.setRank(0);
-    console.log(`Elected ${mrPresident.nickname}`);
+    mrVicePresident = topTwo[1];
+    if (!mrVicePresident) {
+	throw 'Failed to elect Mr. Vice President!';
+    }
+    await mrVicePresident.setRank(1);
+    console.log(`Elected Mr. President ${mrPresident.nickname} and Mr. Vice President ${mrVicePresident.nickname}.`);
 }
 
 async function UpdateHarmonicCentrality() {
