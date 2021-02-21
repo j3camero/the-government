@@ -13,14 +13,25 @@ function FilterUsername(username) {
 	'Ａ': 'A',
 	'ŕ': 'r',
 	'Ｋ': 'K',
+	'𝘉': 'B',
+	'𝘶': 'u',
+	'𝘯': 'n',
+	'𝘪': 'i',
+	'𝘊': 'C',
+	'𝘩': 'h',
+	'𝘢': 'a',
+	'𝘰': 'o',
+	'𝘴': 's',
+	'♡': 'x',
     };
+    for (const [before, after] of Object.entries(substitutions)) {
+	username = username.split(before).join(after);
+    }
     let s = '';
     for (let i = 0; i < username.length; i++) {
 	const c = username.charAt(i);
 	if (allowedChars.indexOf(c) >= 0) {
 	    s += c;
-	} else if (c in substitutions) {
-	    s += substitutions[c];
 	}
     }
     const maxNameLength = 18;
