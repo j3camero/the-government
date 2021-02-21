@@ -18,6 +18,88 @@ async function HandlePingPublicChatCommand(discordMessage) {
     await DiscordUtil.MessagePublicChatChannel('Pong!');
 }
 
+// A message that starts with !howhigh
+async function HandleHowHighCommand(discordMessage) {
+    const funnyResponses = [
+	'So high.',
+	'You wanna get high?',
+	'I have no idea what is going on.',
+	'You\'re a towel!',
+	'That\'s it! That\'s the melody to Funkytown.',
+	'Wut?',
+	'I haven\'t been high since Wednesday. Oh, oh it is Wednesday?',
+    ];
+    const randomFunnyResponse = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 7) {
+	await discordMessage.channel.send(randomFunnyResponse);
+	return;
+    }
+    let tx;
+    let ty;
+    let tz;
+    let fx;
+    let fy;
+    let fz;
+    try {
+	tx = parseFloat(tokens[1]);
+	ty = parseFloat(tokens[2]);
+	tz = parseFloat(tokens[3]);
+	fx = parseFloat(tokens[4]);
+	fy = parseFloat(tokens[5]);
+	fz = parseFloat(tokens[6]);
+    } catch (error) {
+	await discordMessage.channel.send(randomFunnyResponse);
+	return;
+    }
+    const dx = tx - fx;
+    const dy = ty - fy;
+    const dz = tz - fz;
+    if (Math.abs(dy) > 100) {
+	await discordMessage.channel.send('No firing solution. Excessive vertical separation.');
+	return;
+    }
+    const dh = Math.sqrt(dx * dx + dz * dz);
+    if (dh < 20) {
+	await discordMessage.channel.send('No firing solution. Target too close.');
+	return;
+    }
+    if (dh > 200) {
+	await discordMessage.channel.send('No firing solution. Target too far.');
+	console.log('dh', dh);
+	return;
+    }
+    const i = -0.00379;
+    const j = 0.0000934;
+    const k = -0.00377;
+    const q = k * dh * dh;
+    const r = dh * (dh * j + 1);
+    const c = 0.897;
+    const s = i * dh * dh + c - dy;
+    if (Math.abs(q) < 0.00001) {
+	await discordMessage.channel.send('No firing solution. q parameter error.');
+	return;
+    }
+    if (r * r - 4 * q * s < 0) {
+	await discordMessage.channel.send('No firing solution. Negative discriminant.');
+	return;
+    }
+    const b = (Math.sqrt(r * r - 4 * q * s) - r) / (2 * q);
+    const a = k * b * b + j * b + i;
+    const elevationAngleDegrees = Math.atan(b) * 180 / Math.PI;
+    const elevationAngleWindow = Math.round(100 * (elevationAngleDegrees - 4) / (33.4248394153579 - 4));
+    if (elevationAngleWindow < 0) {
+	await discordMessage.channel.send('No firing solution. Target too close.');
+	return;
+    }
+    if (elevationAngleWindow > 100) {
+	await discordMessage.channel.send('No firing solution. Target too far.');
+	return;
+    }
+    const elevationAngleString = elevationAngleWindow.toString().padStart(2, '0');
+    await discordMessage.channel.send('Elevation Angle ' + elevationAngleString);
+}
+
 // A message that starts with !gender.
 async function HandleGenderCommand(discordMessage) {
     const discordId = discordMessage.author.id;
@@ -172,6 +254,8 @@ async function Dispatch(discordMessage) {
 	await HandleBanCommand(discordMessage);
     } else if (command === '!gender') {
 	await HandleGenderCommand(discordMessage);
+    } else if (command === '!howhigh') {
+	await HandleHowHighCommand(discordMessage);
     } else if (command === '!ping') {
 	await HandlePingCommand(discordMessage);
     } else if (command === '!pingpublic') {
