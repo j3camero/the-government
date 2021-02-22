@@ -1,5 +1,7 @@
 // Routines for handling bot commands like !ping and !ban.
+const Canvas = require('canvas');
 const DiscordUtil = require('./discord-util');
+const fs = require('fs');
 const UserCache = require('./user-cache');
 
 // The given Discord message is already verified to start with the !ping prefix.
@@ -97,7 +99,18 @@ async function HandleHowHighCommand(discordMessage) {
 	return;
     }
     const elevationAngleString = elevationAngleWindow.toString().padStart(2, '0');
-    await discordMessage.channel.send('Elevation Angle ' + elevationAngleString);
+    const image = await Canvas.loadImage('window.png');
+    const canvas = new Canvas.Canvas(image.width, image.height);
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0, image.width, image.height);
+    const buf = canvas.toBuffer();
+    await fs.writeFileSync('elevation.png', buf);
+    await discordMessage.channel.send('Elevation ' + elevationAngleString + '%', {
+	files: [{
+	    attachment: 'elevation.png',
+	    name: 'elevation.png'
+	}]
+    });
 }
 
 // A message that starts with !gender.
