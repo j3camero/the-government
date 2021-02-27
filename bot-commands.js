@@ -89,20 +89,35 @@ async function HandleHowHighCommand(discordMessage) {
     const b = (Math.sqrt(r * r - 4 * q * s) - r) / (2 * q);
     const a = k * b * b + j * b + i;
     const elevationAngleDegrees = Math.atan(b) * 180 / Math.PI;
-    const elevationAngleWindow = Math.round(100 * (elevationAngleDegrees - 4) / (33.4248394153579 - 4));
+    const elevationAngleWindow = (elevationAngleDegrees - 4) / (33.4248394153579 - 4);
     if (elevationAngleWindow < 0) {
 	await discordMessage.channel.send('No firing solution. Target too close.');
 	return;
     }
-    if (elevationAngleWindow > 100) {
+    if (elevationAngleWindow > 1) {
 	await discordMessage.channel.send('No firing solution. Target too far.');
 	return;
     }
-    const elevationAngleString = elevationAngleWindow.toString().padStart(2, '0');
+    const elevationAngleString = Math.round(100 * elevationAngleWindow).toString().padStart(2, '0');
+    const elevationPixels = Math.round(189 + (1 - elevationAngleWindow) * (599 - 189));
     const image = await Canvas.loadImage('window.png');
     const canvas = new Canvas.Canvas(image.width, image.height);
     const context = canvas.getContext('2d');
     context.drawImage(image, 0, 0, image.width, image.height);
+    context.lineWidth = 3;
+
+    function lineAt(y, strokeStyle) {
+	context.strokeStyle = strokeStyle;
+	context.beginPath();
+	context.moveTo(442, y);
+	context.lineTo(962, y);
+	context.stroke();
+    }
+
+    lineAt(elevationPixels, 'rgba(0, 255, 0, 0.1)');
+    lineAt(elevationPixels - 12, 'rgba(255, 0, 0, 0.3)');
+    lineAt(elevationPixels + 12, 'rgba(255, 0, 0, 0.3)');
+
     const buf = canvas.toBuffer();
     await fs.writeFileSync('elevation.png', buf);
     await discordMessage.channel.send('Elevation ' + elevationAngleString + '%', {
