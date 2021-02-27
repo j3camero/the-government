@@ -350,7 +350,7 @@ async function CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, 
 }
 
 async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild) {
-    const roomName = 'Chill';
+    const roomName = cu.getNicknameWithInsignia();
     const voice = await RateLimit.Run(async () => {
 	if (cu.friend_voice_room_id) {
 	    return await guild.channels.resolve(cu.friend_voice_room_id);
