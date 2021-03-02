@@ -20,7 +20,10 @@ class CommissarUser {
         friend_role_id,
         friend_category_id,
         friend_text_chat_id,
-        friend_voice_room_id) {
+        friend_voice_room_id,
+        ban_vote_end_time,
+        ban_vote_chatroom,
+        ban_vote_message) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -35,6 +38,9 @@ class CommissarUser {
 	this.friend_category_id = friend_category_id;
 	this.friend_text_chat_id = friend_text_chat_id;
 	this.friend_voice_room_id = friend_voice_room_id;
+	this.ban_vote_end_time = ban_vote_end_time;
+	this.ban_vote_chatroom = ban_vote_chatroom;
+	this.ban_vote_message = ban_vote_message;
     }
 
     async setDiscordId(discord_id) {
@@ -148,6 +154,30 @@ class CommissarUser {
 	}
 	this.friend_voice_room_id = friend_voice_room_id;
 	await this.updateFieldInDatabase('friend_voice_room_id', this.friend_voice_room_id);
+    }
+
+    async setBanVoteEndTime(ban_vote_end_time) {
+	if (ban_vote_end_time === this.ban_vote_end_time) {
+	    return;
+	}
+	this.ban_vote_end_time = ban_vote_end_time;
+	await this.updateFieldInDatabase('ban_vote_end_time', this.ban_vote_end_time);
+    }
+
+    async setBanVoteChatroom(ban_vote_chatroom) {
+	if (ban_vote_chatroom === this.ban_vote_chatroom) {
+	    return;
+	}
+	this.ban_vote_chatroom = ban_vote_chatroom;
+	await this.updateFieldInDatabase('ban_vote_chatroom', this.ban_vote_chatroom);
+    }
+
+    async setBanVoteMessage(ban_vote_message) {
+	if (ban_vote_message === this.ban_vote_message) {
+	    return;
+	}
+	this.ban_vote_message = ban_vote_message;
+	await this.updateFieldInDatabase('ban_vote_message', this.ban_vote_message);
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {
