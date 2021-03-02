@@ -42,7 +42,6 @@ async function HandleGenderCommand(discordMessage) {
 }
 
 // The given Discord message is already verified to start with the !ban prefix.
-// Now authenticate and implement it.
 async function HandleBanCommand(discordMessage) {
     const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
@@ -55,6 +54,21 @@ async function HandleBanCommand(discordMessage) {
     }
     const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
     await discordMessage.channel.send(`Test ban ${mentioned.getNicknameWithInsignia()}!`);
+}
+
+// The given Discord message is already verified to start with the !pardon prefix.
+async function HandlePardonCommand(discordMessage) {
+    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send(
+	    'Error: `!pardon` one person at a time.\n' +
+	    'Example: `!pardon @nickname`\n' +
+	    'Example: `!pardon 987654321098765432`'
+	);
+	return;
+    }
+    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    await discordMessage.channel.send(`Programmer pardon ${mentioned.getNicknameWithInsignia()}!`);
 }
 
 async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
@@ -189,6 +203,8 @@ async function Dispatch(discordMessage) {
 	await HandleGenderCommand(discordMessage);
     } else if (command === '!artillery' || command === '!art' || command === '!howhigh') {
 	await Artillery(discordMessage);
+    } else if (command === '!pardon') {
+	await HandlePardonCommand(discordMessage);
     } else if (command === '!ping') {
 	await HandlePingCommand(discordMessage);
     } else if (command === '!pingpublic') {
