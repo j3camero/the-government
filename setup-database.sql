@@ -24,6 +24,9 @@ CREATE TABLE users
     friend_category_id VARCHAR(32),  -- ID of the Discord category/section for a user's friends.
     friend_text_chat_id VARCHAR(32),  -- ID of the private Discord text chatroom for a user's friends.
     friend_voice_room_id VARCHAR(32),  -- ID of the private Discord voice room for a user's friends.
+    ban_vote_end_time TIMESTAMP,  -- Time when the vote to ban this user closes.
+    ban_vote_chatroom VARCHAR(32),  -- ID of the Discord text chat room used for a vote to ban this user.
+    ban_vote_message VARCHAR(32),  -- ID of the Discord chat message used for a vote to ban this user.
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );
