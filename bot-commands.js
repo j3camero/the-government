@@ -44,14 +44,17 @@ async function HandleGenderCommand(discordMessage) {
 // The given Discord message is already verified to start with the !ban prefix.
 // Now authenticate and implement it.
 async function HandleBanCommand(discordMessage) {
-    if (discordMessage.mentions.members.size === 1) {
-	const banMember = discordMessage.mentions.members.first();
-	await discordMessage.channel.send(`Test ban ${banMember.nickname}!`);
-    } else if (discordMessage.mentions.members.size < 1) {
-	await discordMessage.channel.send('Ban who? Example: !ban @nickname');
-    } else if (discordMessage.mentions.members.size > 1) {
-	await discordMessage.channel.send('Must ban exactly one username at a time. Example: !ban @nickname');
+    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send(
+	    'Error: `!ban` one person at a time.\n' +
+	    'Example: `!ban @nickname`\n' +
+	    'Example: `!ban 987654321098765432`'
+	);
+	return;
     }
+    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    await discordMessage.channel.send(`Test ban ${mentioned.getNicknameWithInsignia()}!`);
 }
 
 async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
