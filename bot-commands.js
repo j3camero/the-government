@@ -67,8 +67,6 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
     } else if (discordMessage.mentions.members.size === 1) {
 	return discordMessage.mentions.members.first();
     } else if (discordMessage.mentions.members.size > 1) {
-	await discordMessage.channel.send(
-	    'Error: !friend one person at a time. Example: !friend @nickname');
 	return null;
     }
     // Second, check for mentions by full Discord user ID. This will usually be a long
@@ -80,27 +78,20 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
 	const isNumber = /^\d+$/.test(token);
 	if (token.length > 5 && isNumber) {
 	    if (mentionedMember) {
-		await discordMessage.channel.send(
-		    'Error: !friend one person at a time. Example: !friend 987654321098765432');
 		return null;
 	    }
 	    try {
 		const guild = await DiscordUtil.GetMainDiscordGuild();
 		mentionedMember = await guild.members.fetch(token);
 	    } catch (error) {
-		await discordMessage.channel.send(
-		    `Error: invalid Discord user ID ${token}. Right-click the person you want and select Copy ID.`);
 		return null;
 	    }
 	} else {
-	    await discordMessage.channel.send(
-		`Error: invalid Discord user ID ${token}. Right-click the person you want and select Copy ID.`);
 	    return null;
 	}
     }
     // We might get this far and find no member mentioned by @ or by ID.
     if (!mentionedMember) {
-	await discordMessage.channel.send('Example: !friend @nickname');
 	return null;
     }
     // If we get this far, it means we found exactly one member mentioned,
@@ -127,10 +118,20 @@ async function HandleFriendCommand(discordMessage) {
     }
     const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
+	await discordMessage.channel.send(
+	    'Error: `!friend` one person at a time.\n' +
+	    'Example: `!friend @nickname`\n' +
+	    'Example: `!friend 987654321098765432`'
+	);
 	return;
     }
     console.log(`ADD FRIEND: ${discordMessage.author.username} adds ${mentionedMember.nickname}`);
-    DiscordUtil.AddRole(mentionedMember, friendRole);
+    await DiscordUtil.AddRole(mentionedMember, friendRole);
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    await discordMessage.channel.send(
+	`${author.getNicknameWithInsignia()} added ${mentioned.getNicknameWithInsignia()} to ${author.getPossessivePronoun()} friend list.`
+    );
 }
 
 // The given Discord message is already verified to start with the !unfriend prefix.
@@ -141,10 +142,20 @@ async function HandleUnfriendCommand(discordMessage) {
     }
     const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
+	await discordMessage.channel.send(
+	    'Error: `!unfriend` one person at a time.\n' +
+	    'Example: `!unfriend @nickname`\n' +
+	    'Example: `!unfriend 987654321098765432`'
+	);
 	return;
     }
     console.log(`UN FRIEND: ${discordMessage.author.username} unfriends ${mentionedMember.nickname}`);
-    DiscordUtil.RemoveRole(mentionedMember, friendRole);
+    await DiscordUtil.RemoveRole(mentionedMember, friendRole);
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    await discordMessage.channel.send(
+	`${author.getNicknameWithInsignia()} removed ${mentioned.getNicknameWithInsignia()} from ${author.getPossessivePronoun()} friend list.`
+    );
 }
 
 // Handle any unrecognized commands, possibly replying with an error message.

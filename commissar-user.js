@@ -230,6 +230,16 @@ class CommissarUser {
 	const insignia = this.getInsignia();
 	return `${name} ${insignia}`;
     }
+
+    getPossessivePronoun() {
+	if (this.gender === 'M') {
+	    return 'his';
+	} else if (this.gender === 'F') {
+	    return 'her';
+	} else {
+	    return 'their';
+	}
+    }
 }
 
 module.exports = CommissarUser;
