@@ -1,6 +1,7 @@
 // Routines for handling bot commands like !ping and !ban.
 const Artillery = require('./artillery');
 const DiscordUtil = require('./discord-util');
+const RandomPin = require('./random-pin');
 const UserCache = require('./user-cache');
 
 // The given Discord message is already verified to start with the !ping prefix.
@@ -17,6 +18,12 @@ async function HandlePingPublicChatCommand(discordMessage) {
     // TODO: add permissions so only high ranking people can use
     // this command.
     await DiscordUtil.MessagePublicChatChannel('Pong!');
+}
+
+// A message that starts with !code.
+async function HandleCodeCommand(discordMessage) {
+    const pin = RandomPin();
+    await discordMessage.channel.send(pin);
 }
 
 // A message that starts with !gender.
@@ -199,6 +206,8 @@ async function Dispatch(discordMessage) {
     const command = tokens[0];
     if (command === '!ban') {
 	await HandleBanCommand(discordMessage);
+    } else if (command === '!code') {
+	await HandleCodeCommand(discordMessage);
     } else if (command === '!gender') {
 	await HandleGenderCommand(discordMessage);
     } else if (command === '!artillery' || command === '!art' || command === '!howhigh') {
