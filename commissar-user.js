@@ -17,7 +17,6 @@ class CommissarUser {
 	peak_rank,
 	gender,
 	citizen,
-        friend_role_id,
         friend_category_id,
         friend_text_chat_id,
         friend_voice_room_id,
@@ -34,7 +33,6 @@ class CommissarUser {
 	this.peak_rank = peak_rank;
 	this.gender = gender;
 	this.citizen = citizen;
-	this.friend_role_id = friend_role_id;
 	this.friend_category_id = friend_category_id;
 	this.friend_text_chat_id = friend_text_chat_id;
 	this.friend_voice_room_id = friend_voice_room_id;
@@ -122,14 +120,6 @@ class CommissarUser {
 	}
 	this.citizen = is_citizen;
 	await this.updateFieldInDatabase('citizen', this.citizen);
-    }
-
-    async setFriendRoleId(friend_role_id) {
-	if (friend_role_id === this.friend_role_id) {
-	    return;
-	}
-	this.friend_role_id = friend_role_id;
-	await this.updateFieldInDatabase('friend_role_id', this.friend_role_id);
     }
 
     async setFriendCategorityId(friend_category_id) {

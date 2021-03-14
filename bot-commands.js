@@ -132,22 +132,14 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
     return mentionedMember;
 }
 
-async function GetAuthorFriendRole(discordMessage) {
-    const cu = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!cu || !cu.friend_role_id) {
-	console.log(`Author ${discordMessage.author.username} lacks friend role.`);
-	return null;
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const friendRole = await guild.roles.resolve(cu.friend_role_id);
-    return friendRole;
-}
-
 // The given Discord message is already verified to start with the !friend prefix.
 async function HandleFriendCommand(discordMessage) {
-    const friendRole = await GetAuthorFriendRole(discordMessage);
-    if (!friendRole) {
-	return;
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author.friend_category_id) {
+	await discordMessage.channel.send(
+	    'You are not high-ranking enough to use this command.'
+	);
+	return;	
     }
     const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
@@ -158,10 +150,14 @@ async function HandleFriendCommand(discordMessage) {
 	);
 	return;
     }
-    console.log(`ADD FRIEND: ${discordMessage.author.username} adds ${mentionedMember.nickname}`);
-    await DiscordUtil.AddRole(mentionedMember, friendRole);
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const friendCategory = await guild.channels.resolve(author.friend_category_id);
+    const newPermissions = {
+	'CONNECT': true,
+	'VIEW_CHANNEL': true,
+    };
+    await friendCategory.createOverwrite(mentioned.discord_id, newPermissions);
     await discordMessage.channel.send(
 	`${author.getNicknameWithInsignia()} added ${mentioned.getNicknameWithInsignia()} to ${author.getPossessivePronoun()} friend list.`
     );
@@ -169,9 +165,10 @@ async function HandleFriendCommand(discordMessage) {
 
 // The given Discord message is already verified to start with the !unfriend prefix.
 async function HandleUnfriendCommand(discordMessage) {
-    const friendRole = await GetAuthorFriendRole(discordMessage);
-    if (!friendRole) {
-	return;
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author.friend_category_id) {
+	await discordMessage.channel.send('You are not high-ranking enough to use this command.');
+	return;	
     }
     const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
@@ -182,10 +179,15 @@ async function HandleUnfriendCommand(discordMessage) {
 	);
 	return;
     }
-    console.log(`UN FRIEND: ${discordMessage.author.username} unfriends ${mentionedMember.nickname}`);
-    await DiscordUtil.RemoveRole(mentionedMember, friendRole);
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    if (author.commissar_id === mentioned.commissar_id) {
+	await discordMessage.channel.send('You can\'t `!unfriend` yourself.');
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const friendCategory = await guild.channels.resolve(author.friend_category_id);
+    const noPermissions = {};
+    await friendCategory.createOverwrite(mentioned.discord_id, noPermissions);
     await discordMessage.channel.send(
 	`${author.getNicknameWithInsignia()} removed ${mentioned.getNicknameWithInsignia()} from ${author.getPossessivePronoun()} friend list.`
     );

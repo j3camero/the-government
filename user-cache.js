@@ -24,7 +24,6 @@ async function LoadAllUsersFromDatabase() {
 	    row.peak_rank,
 	    row.gender,
 	    row.citizen,
-	    row.friend_role_id,
 	    row.friend_category_id,
 	    row.friend_text_chat_id,
 	    row.friend_voice_room_id,

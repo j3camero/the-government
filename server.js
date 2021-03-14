@@ -260,40 +260,7 @@ async function UpdateAllCitizens() {
     });
 }
 
-// Returns the created or updated role object.
-async function CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild) {
-    const roleName = cu.getNicknameWithInsignia();
-    const role = await RateLimit.Run(async () => {
-	if (cu.friend_role_id) {
-	    return await guild.roles.fetch(cu.friend_role_id);
-	} else {
-	    const armyGreen = '#86a70b';
-	    const navyBlue = '#2d9085';
-	    const airForceOrange = '#e77c1b';
-	    const marinePurple = '#8e6495';
-	    const secondaryPalette = [armyGreen, navyBlue, airForceOrange, marinePurple];
-	    const randomColorIndex = Math.floor(Math.random() * secondaryPalette.length);
-	    const randomColor = secondaryPalette[randomColorIndex];
-	    console.log(`Creating new friend role: ${roleName}`);
-	    return await guild.roles.create({
-		data: {
-		    name: roleName,
-		    color: randomColor,
-		    hoist: false,
-		    mentionable: false,
-		},
-	    });
-	}
-    });
-    await cu.setFriendRoleId(role.id);
-    if (role.name !== roleName) {
-	console.log(`Changing friend role name from ${role.name} to ${roleName}.`);
-	await role.setName(roleName);
-    }
-    return role;
-}
-
-async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild) {
+async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, guild) {
     const sectionName = cu.getNicknameWithInsignia();
     const section = await RateLimit.Run(async () => {
 	if (cu.friend_category_id) {
@@ -372,28 +339,13 @@ async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section,
     return voice;
 }
 
-async function ListFriendRoleMembers(role, section) {
-    console.log('Friends of', role.name);
-    for (const [id, member] of role.members) {
-	console.log('  *', member.nickname);
-	section.createOverwrite(member, {
-	    'CONNECT': true,
-	    'VIEW_CHANNEL': true,
-	});
-    }
-}
-
 async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
-    if (!cu.friend_role_id && cu.rank > 9) {
+    if (!cu.friend_category_id && cu.rank > 9) {
 	return;
     }
-    const friendRole = await CreateOrUpdateDiscordFriendRoleForCommissarUser(cu, guild);
-    const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole, guild);
+    const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, guild);
     await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
     await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
-    const member = await guild.members.fetch(cu.discord_id);
-    await DiscordUtil.AddRole(member, friendRole);
-    await ListFriendRoleMembers(friendRole, section);
 }
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
