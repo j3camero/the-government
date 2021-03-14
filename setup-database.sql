@@ -20,7 +20,6 @@ CREATE TABLE users
 			-- Must be a single alphabetic character from the ASCII range.
 			-- It says so in the Bible. Everyone knows God created exactly 26 genders!
     citizen BOOLEAN DEFAULT TRUE,
-    friend_role_id VARCHAR(32),  -- ID of the Discord role used to mark this user's friends.
     friend_category_id VARCHAR(32),  -- ID of the Discord category/section for a user's friends.
     friend_text_chat_id VARCHAR(32),  -- ID of the private Discord text chatroom for a user's friends.
     friend_voice_room_id VARCHAR(32),  -- ID of the private Discord voice room for a user's friends.
@@ -60,19 +59,6 @@ CREATE TABLE battlemetrics_sessions
     UNIQUE bmid_unique (battlemetrics_id),
     INDEX server_index (server_id, start_time, stop_time),
     INDEX player_index (player_id, start_time, stop_time)
-);
-
-CREATE TABLE trials
-(
-    trial_id INT NOT NULL AUTO_INCREMENT,
-    defendant_id INT NOT NULL,
-    accuser_id INT NOT NULL,
-    active BOOLEAN DEFAULT TRUE,
-    end_time TIMESTAMP,
-    defendant_role_id VARCHAR(32),
-    chatroom_id VARCHAR(32),
-    vote_message_id VARCHAR(32),
-    PRIMARY KEY(trial_id)
 );
 
 CREATE TABLE trial_votes
