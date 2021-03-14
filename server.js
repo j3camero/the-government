@@ -294,7 +294,7 @@ async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, guild) {
 }
 
 async function CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild) {
-    const roomName = 'chat';
+    const roomName = cu.nickname;
     const chatroom = await RateLimit.Run(async () => {
 	if (cu.friend_text_chat_id) {
 	    return await guild.channels.resolve(cu.friend_text_chat_id);
