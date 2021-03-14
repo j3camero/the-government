@@ -309,7 +309,7 @@ async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, friendRole
 		    },
 		    {
 			allow: ['CONNECT', 'VIEW_CHANNEL'],
-			id: friendRole.id,
+			id: cu.discord_id,
 		    },
 		    {
 			allow: ['CONNECT', 'VIEW_CHANNEL'],
@@ -372,6 +372,17 @@ async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section,
     return voice;
 }
 
+async function ListFriendRoleMembers(role, section) {
+    console.log('Friends of', role.name);
+    for (const [id, member] of role.members) {
+	console.log('  *', member.nickname);
+	section.createOverwrite(member, {
+	    'CONNECT': true,
+	    'VIEW_CHANNEL': true,
+	});
+    }
+}
+
 async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
     if (!cu.friend_role_id && cu.rank > 9) {
 	return;
@@ -381,7 +392,8 @@ async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
     await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
     await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
     const member = await guild.members.fetch(cu.discord_id);
-    DiscordUtil.AddRole(member, friendRole);
+    await DiscordUtil.AddRole(member, friendRole);
+    await ListFriendRoleMembers(friendRole, section);
 }
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
