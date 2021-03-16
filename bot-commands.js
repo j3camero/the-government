@@ -204,6 +204,19 @@ async function HandleUnknownCommand(discordMessage) {
 // This function analyzes a Discord message to see if it contains a bot command.
 // If so, control is dispatched to the appropriate command-specific handler function.
 async function Dispatch(discordMessage) {
+    const handlers = {
+	'!ban': HandleBanCommand,
+	'!code': HandleCodeCommand,
+	'!gender': HandleGenderCommand,
+	'!art': Artillery,
+	'!artillery': Artillery,
+	'!howhigh': Artillery,
+	'!pardon': HandlePardonCommand,
+	'!ping': HandlePingCommand,
+	'!pingpublic': HandlePingPublicChatCommand,
+	'!friend': HandleFriendCommand,
+	'!unfriend': HandleUnfriendCommand,
+    };
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;
     }
@@ -215,24 +228,9 @@ async function Dispatch(discordMessage) {
 	return;
     }
     const command = tokens[0];
-    if (command === '!ban') {
-	await HandleBanCommand(discordMessage);
-    } else if (command === '!code') {
-	await HandleCodeCommand(discordMessage);
-    } else if (command === '!gender') {
-	await HandleGenderCommand(discordMessage);
-    } else if (command === '!artillery' || command === '!art' || command === '!howhigh') {
-	await Artillery(discordMessage);
-    } else if (command === '!pardon') {
-	await HandlePardonCommand(discordMessage);
-    } else if (command === '!ping') {
-	await HandlePingCommand(discordMessage);
-    } else if (command === '!pingpublic') {
-	await HandlePingPublicChatCommand(discordMessage);
-    } else if (command === '!friend') {
-	await HandleFriendCommand(discordMessage);
-    } else if (command === '!unfriend') {
-	await HandleUnfriendCommand(discordMessage);
+    if (command in handlers) {
+	const handler = handlers[command];
+	await handler(discordMessage);
     } else {
 	await HandleUnknownCommand(discordMessage);
     }
