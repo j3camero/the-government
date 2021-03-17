@@ -77,8 +77,14 @@ async function HandleBanCommand(discordMessage) {
     await discordMessage.channel.send(`Test ban ${mentionedUser.getNicknameWithInsignia()}!`);
     const sevenDays = moment().add(7, 'days').format();
     await mentionedUser.setBanVoteEndTime(sevenDays);
-    const banCourtCategory = DiscordUtil.GetBanCourtCategoryChannel();
-    console.log('banCourtCategory:', banCourtCategory);
+    const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const roomName = mentionedUser.nickname;
+    const channel = await guild.channels.create(roomName, { type: 'text' });
+    await mentionedUser.setBanVoteChatroom(channel.id);
+    await channel.setParent(banCourtCategory);
+    const message = await channel.send('```The People v Jeff```');
+    await mentionedUser.setBanVoteMessage(message.id);
 }
 
 // The given Discord message is already verified to start with the !pardon prefix.
@@ -96,8 +102,9 @@ async function HandlePardonCommand(discordMessage) {
     if (mentionedUser.ban_vote_end_time) {
 	await mentionedUser.setBanVoteEndTime(null);
     }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
     if (mentionedUser.ban_vote_chatroom) {
-	const channel = await guild.channels.fetch(mentionedUser.ban_vote_chatroom);
+	const channel = await guild.channels.resolve(mentionedUser.ban_vote_chatroom);
 	await channel.delete();
 	await mentionedUser.setBanVoteChatroom(null);
     }
