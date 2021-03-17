@@ -1,6 +1,7 @@
 // Routines for handling bot commands like !ping and !ban.
 const Artillery = require('./artillery');
 const DiscordUtil = require('./discord-util');
+const moment = require('moment');
 const RandomPin = require('./random-pin');
 const UserCache = require('./user-cache');
 
@@ -68,8 +69,16 @@ async function HandleBanCommand(discordMessage) {
 	);
 	return;
     }
-    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
-    await discordMessage.channel.send(`Test ban ${mentioned.getNicknameWithInsignia()}!`);
+    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    if (mentionedUser.ban_vote_end_time) {
+	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial.`);
+	return;
+    }
+    await discordMessage.channel.send(`Test ban ${mentionedUser.getNicknameWithInsignia()}!`);
+    const sevenDays = moment().add(7, 'days').format();
+    await mentionedUser.setBanVoteEndTime(sevenDays);
+    const banCourtCategory = DiscordUtil.GetBanCourtCategoryChannel();
+    console.log('banCourtCategory:', banCourtCategory);
 }
 
 // The given Discord message is already verified to start with the !pardon prefix.
@@ -83,8 +92,19 @@ async function HandlePardonCommand(discordMessage) {
 	);
 	return;
     }
-    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
-    await discordMessage.channel.send(`Programmer pardon ${mentioned.getNicknameWithInsignia()}!`);
+    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    if (mentionedUser.ban_vote_end_time) {
+	await mentionedUser.setBanVoteEndTime(null);
+    }
+    if (mentionedUser.ban_vote_chatroom) {
+	const channel = await guild.channels.fetch(mentionedUser.ban_vote_chatroom);
+	await channel.delete();
+	await mentionedUser.setBanVoteChatroom(null);
+    }
+    if (mentionedUser.ban_vote_message) {
+	await mentionedUser.setBanVoteMessage(null);
+    }
+    await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameWithInsignia()}!`);
 }
 
 async function ParseExactlyOneMentionedDiscordMember(discordMessage) {

@@ -68,6 +68,20 @@ function RemoveRole(member, role) {
     });
 }
 
+async function GetCategoryChannelByName(channelName) {
+    const guild = await GetMainDiscordGuild();
+    for (const [id, channel] of guild.channels.cache) {
+	if (channel.name === channelName && channel.type === 'category') {
+	    return channel;
+	}
+    }
+    return null;
+}
+
+async function GetBanCourtCategoryChannel() {
+    return await GetCategoryChannelByName('Ban Court');
+}
+
 // Returns a list of text channels with names that match channelName.
 function GetAllMatchingTextChannels(guild, channelName) {
   const matchingChannels = [];
@@ -163,6 +177,8 @@ module.exports = {
     AddRole,
     Connect,
     GetAllMatchingTextChannels,
+    GetBanCourtCategoryChannel,
+    GetCategoryChannelByName,
     GetPublicChatChannel,
     GetMainDiscordGuild,
     GetRoleByName,

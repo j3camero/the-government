@@ -203,7 +203,7 @@ class CommissarUser {
 
     getInsignia() {
 	if (this.commissar_id === 6) {
-	    // Brobob memorial insignia: President for Life.
+	    // Brobob memorial insignia: Eternal Leader.
 	    return '★★★★★';
 	}
 	const rankData = ChainOfCommand.metadata[this.rank];
