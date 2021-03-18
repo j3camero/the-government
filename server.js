@@ -9,7 +9,6 @@ const HarmonicCentrality = require('./harmonic-centrality');
 const MiniClans = require('./mini-clans');
 const moment = require('moment');
 const RateLimit = require('./rate-limit');
-const RenderChainOfCommand = require('./render-chain-of-command');
 const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
@@ -193,11 +192,11 @@ async function UpdateChainOfCommandForCandidates(candidateIds) {
     console.log('About to update the chain of command');
     // Pass this point only if there is a change to the chain of command.
     chainOfCommand = newChainOfCommand;
-    const nicknames = await UserCache.GetAllNicknames();
+    //const nicknames = await UserCache.GetAllNicknames();
     // Generate and post an updated image of the chain of command.
-    const canvas = RenderChainOfCommand(chainOfCommand, nicknames);
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
+    //const canvas = RenderChainOfCommand(chainOfCommand, nicknames);
+    //const guild = await DiscordUtil.GetMainDiscordGuild();
+    //DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
     // Update the people's ranks.
     Object.values(chainOfCommand).forEach(async (user) => {
 	const cu = UserCache.GetCachedUserByCommissarId(user.id);
@@ -270,7 +269,6 @@ async function DestroyFriendSectionForCommissarUser(cu, guild) {
 	return;
     }
     const section = await guild.channels.resolve(cu.friend_category_id);
-    //await section.delete();
     await cu.setFriendCategorityId(null);
     await cu.setFriendTextChatId(null);
     await cu.setFriendVoiceRoomId(null);
