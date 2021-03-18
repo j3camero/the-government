@@ -39,7 +39,7 @@ async function UpdateClanExecutives(chainOfCommand, userCache) {
 	ForEach = f => Object.values(userCache).forEach(f);
     }
     // Dismiss executives who don't match any more.
-    await ForEach((user) => {
+    await ForEach(async (user) => {
 	if (!user.office) {
 	    return;
 	}
@@ -47,13 +47,13 @@ async function UpdateClanExecutives(chainOfCommand, userCache) {
 	const chainUser = chainOfCommand[user.commissar_id];
 	if ((user.office in filledPositions) || !chainUser || (chainUser.rank !== jobDescription.rank)) {
 	    // Do not await to avoid creating a race condition.
-	    user.setOffice(null);
+	    await user.setOffice(null);
 	} else {
 	    filledPositions[user.office] = true;
 	}
     });
     // Attempt to fill all empty executive roles.
-    Object.keys(jobDescriptions).forEach((jobID) => {
+    for (const jobID of Object.keys(jobDescriptions)) {
 	const jobDescription = jobDescriptions[jobID];
 	if (jobID in filledPositions) {
 	    return;
@@ -61,9 +61,9 @@ async function UpdateClanExecutives(chainOfCommand, userCache) {
 	const appointee = FindUnassignedUser(jobDescription.rank, chainOfCommand, userCache);
 	if (appointee) {
 	    // Do not await to avoid creating race condition.
-	    appointee.setOffice(jobID);
+	    await appointee.setOffice(jobID);
 	}
-    });
+    }
 }
 
 // Calls an inner function for each executive with role. Typically 3-star Generals

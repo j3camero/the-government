@@ -110,7 +110,11 @@ async function GetAllNicknames() {
 // [(commissar_id, centrality), ...]
 async function GetMostCentralUsers(topN) {
     const flat = [];
-    await ForEach(user => flat.push(user));
+    await ForEach((user) => {
+	if (user.citizen) {
+	    flat.push(user);
+	}
+    });
     flat.sort((a, b) => {
 	return b.harmonic_centrality - a.harmonic_centrality;
     });
