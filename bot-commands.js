@@ -241,8 +241,9 @@ async function Dispatch(discordMessage) {
 	'!pardon': HandlePardonCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
-	'!friend': HandleFriendCommand,
-	'!unfriend': HandleUnfriendCommand,
+	// Uncomment the 2 lines below to re-enable the !friend commands.
+	//'!friend': HandleFriendCommand,
+	//'!unfriend': HandleUnfriendCommand,
     };
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;

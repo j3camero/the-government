@@ -255,38 +255,56 @@ async function UpdateAllCitizens() {
 	    }
 	    await user.setCitizen(true);
 	    await user.setNickname(discordMember.user.username);
-	    await UpdateDiscordFriendZoneForCommissarUser(user, guild);
+	    const friendsEnabled = false;
+	    if (friendsEnabled) {
+		await UpdateDiscordFriendZoneForCommissarUser(user, guild);
+	    } else {
+		await DestroyFriendSectionForCommissarUser(user, guild);
+	    }
 	}
     });
 }
 
+async function DestroyFriendSectionForCommissarUser(cu, guild) {
+    if (!cu.friend_category_id) {
+	return;
+    }
+    const section = await guild.channels.resolve(cu.friend_category_id);
+    //await section.delete();
+    await cu.setFriendCategorityId(null);
+    await cu.setFriendTextChatId(null);
+    await cu.setFriendVoiceRoomId(null);
+}
+
 async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, guild) {
+    const permissionOverwrites = [
+	{
+	    deny: ['CONNECT', 'VIEW_CHANNEL'],
+	    id: guild.roles.everyone.id,
+	},
+	{
+		allow: ['CONNECT', 'VIEW_CHANNEL'],
+		id: cu.discord_id,
+	},
+	{
+		allow: ['CONNECT', 'VIEW_CHANNEL'],
+		id: botsRole.id,
+	},
+    ];
     const sectionName = cu.getNicknameWithInsignia();
     const section = await RateLimit.Run(async () => {
+	const botsRole = await DiscordUtil.GetRoleByName(guild, 'Bots');
 	if (cu.friend_category_id) {
 	    return await guild.channels.resolve(cu.friend_category_id);
 	} else {
-	    const botsRole = await DiscordUtil.GetRoleByName(guild, 'Bots');
 	    return await guild.channels.create(sectionName, {
 		type: 'category',
-		permissionOverwrites: [
-		    {
-			deny: ['CONNECT', 'VIEW_CHANNEL'],
-			id: guild.roles.everyone.id,
-		    },
-		    {
-			allow: ['CONNECT', 'VIEW_CHANNEL'],
-			id: cu.discord_id,
-		    },
-		    {
-			allow: ['CONNECT', 'VIEW_CHANNEL'],
-			id: botsRole.id,
-		    },
-		],
+		permissionOverwrites,
 	    });
 	}
     });
     await cu.setFriendCategorityId(section.id);
+    await section.overwritePermissions(permissionOverwrites);
     if (section.name !== sectionName) {
 	await section.setName(sectionName);
     }
