@@ -119,7 +119,7 @@ async function UpdateVoiceActiveMembersForOneGuild(guild) {
 	if (channel.type === 'voice') {
 	    const channelActive = [];
 	    for (const [memberId, member] of channel.members) {
-		if (member.mute) {
+		if (member.voice.mute || member.voice.deaf || member.voice.streaming) {
 		    continue;
 		}
 		const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
@@ -232,7 +232,7 @@ async function UpdateHarmonicCentrality() {
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    const mostCentral = await UserCache.GetMostCentralUsers(5);
+    const mostCentral = await UserCache.GetMostCentralUsers(17);
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
