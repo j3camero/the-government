@@ -1,7 +1,7 @@
 // Routines for handling bot commands like !ping and !ban.
 const Artillery = require('./artillery');
+const Ban = require('./ban');
 const DiscordUtil = require('./discord-util');
-const moment = require('moment');
 const RandomPin = require('./random-pin');
 const UserCache = require('./user-cache');
 
@@ -58,107 +58,6 @@ async function HandleGenderCommand(discordMessage) {
     await discordMessage.channel.send(`Gender changed to ${genderString}.`);
 }
 
-// The given Discord message is already verified to start with the !ban prefix.
-async function HandleBanCommand(discordMessage) {
-    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(
-	    'Error: `!ban` one person at a time.\n' +
-	    'Example: `!ban @nickname`\n' +
-	    'Example: `!ban 987654321098765432`'
-	);
-	return;
-    }
-    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
-    if (mentionedUser.ban_vote_end_time) {
-	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial.`);
-	return;
-    }
-    await discordMessage.channel.send(`Test ban ${mentionedUser.getNicknameWithInsignia()}!`);
-    const sevenDays = moment().add(7, 'days').format();
-    await mentionedUser.setBanVoteEndTime(sevenDays);
-    const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const roomName = mentionedUser.nickname;
-    const channel = await guild.channels.create(roomName, { type: 'text' });
-    await mentionedUser.setBanVoteChatroom(channel.id);
-    await channel.setParent(banCourtCategory);
-    const message = await channel.send('```The People v Jeff```');
-    await mentionedUser.setBanVoteMessage(message.id);
-}
-
-// The given Discord message is already verified to start with the !pardon prefix.
-async function HandlePardonCommand(discordMessage) {
-    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(
-	    'Error: `!pardon` one person at a time.\n' +
-	    'Example: `!pardon @nickname`\n' +
-	    'Example: `!pardon 987654321098765432`'
-	);
-	return;
-    }
-    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
-    if (mentionedUser.ban_vote_end_time) {
-	await mentionedUser.setBanVoteEndTime(null);
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    if (mentionedUser.ban_vote_chatroom) {
-	const channel = await guild.channels.resolve(mentionedUser.ban_vote_chatroom);
-	await channel.delete();
-	await mentionedUser.setBanVoteChatroom(null);
-    }
-    if (mentionedUser.ban_vote_message) {
-	await mentionedUser.setBanVoteMessage(null);
-    }
-    await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameWithInsignia()}!`);
-}
-
-async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
-    // Look for exactly one member being mentioned.
-    let mentionedMember;
-    // First, check for explicit @mentions. There must be at most 1 or it's an error.
-    if (!discordMessage ||
-	!discordMessage.mentions ||
-	!discordMessage.mentions.members ||
-	discordMessage.mentions.members.size < 1) {
-	// No members mentioned using @mention. Do nothing. A member might be mentioned
-	// in another way, such as by Discord ID.
-    } else if (discordMessage.mentions.members.size === 1) {
-	return discordMessage.mentions.members.first();
-    } else if (discordMessage.mentions.members.size > 1) {
-	return null;
-    }
-    // Second, check for mentions by full Discord user ID. This will usually be a long
-    // sequence of digits. Still, finding more than 1 mentioned member is an error.
-    const tokens = discordMessage.content.split(' ');
-    // Throw out the first token, which we know is the command itself. Keep only the arguments.
-    tokens.shift();
-    for (const token of tokens) {
-	const isNumber = /^\d+$/.test(token);
-	if (token.length > 5 && isNumber) {
-	    if (mentionedMember) {
-		return null;
-	    }
-	    try {
-		const guild = await DiscordUtil.GetMainDiscordGuild();
-		mentionedMember = await guild.members.fetch(token);
-	    } catch (error) {
-		return null;
-	    }
-	} else {
-	    return null;
-	}
-    }
-    // We might get this far and find no member mentioned by @ or by ID.
-    if (!mentionedMember) {
-	return null;
-    }
-    // If we get this far, it means we found exactly one member mentioned,
-    // whether by @mention or by user ID.
-    return mentionedMember;
-}
-
 // The given Discord message is already verified to start with the !friend prefix.
 async function HandleFriendCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
@@ -168,7 +67,7 @@ async function HandleFriendCommand(discordMessage) {
 	);
 	return;	
     }
-    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
 	await discordMessage.channel.send(
 	    'Error: `!friend` one person at a time.\n' +
@@ -197,7 +96,7 @@ async function HandleUnfriendCommand(discordMessage) {
 	await discordMessage.channel.send('You are not high-ranking enough to use this command.');
 	return;	
     }
-    const mentionedMember = await ParseExactlyOneMentionedDiscordMember(discordMessage);
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
 	await discordMessage.channel.send(
 	    'Error: `!unfriend` one person at a time.\n' +
@@ -232,13 +131,13 @@ async function HandleUnknownCommand(discordMessage) {
 // If so, control is dispatched to the appropriate command-specific handler function.
 async function Dispatch(discordMessage) {
     const handlers = {
-	'!ban': HandleBanCommand,
+	'!ban': Ban.HandleBanCommand,
 	'!code': HandleCodeCommand,
 	'!gender': HandleGenderCommand,
 	'!art': Artillery,
 	'!artillery': Artillery,
 	'!howhigh': Artillery,
-	'!pardon': HandlePardonCommand,
+	'!pardon': Ban.HandlePardonCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
 	// Uncomment the 2 lines below to re-enable the !friend commands.

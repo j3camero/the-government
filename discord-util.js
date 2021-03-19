@@ -169,6 +169,51 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     await channel.send(message);
 }
 
+async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
+    // Look for exactly one member being mentioned.
+    let mentionedMember;
+    // First, check for explicit @mentions. There must be at most 1 or it's an error.
+    if (!discordMessage ||
+	!discordMessage.mentions ||
+	!discordMessage.mentions.members ||
+	discordMessage.mentions.members.size < 1) {
+	// No members mentioned using @mention. Do nothing. A member might be mentioned
+	// in another way, such as by Discord ID.
+    } else if (discordMessage.mentions.members.size === 1) {
+	return discordMessage.mentions.members.first();
+    } else if (discordMessage.mentions.members.size > 1) {
+	return null;
+    }
+    // Second, check for mentions by full Discord user ID. This will usually be a long
+    // sequence of digits. Still, finding more than 1 mentioned member is an error.
+    const tokens = discordMessage.content.split(' ');
+    // Throw out the first token, which we know is the command itself. Keep only the arguments.
+    tokens.shift();
+    for (const token of tokens) {
+	const isNumber = /^\d+$/.test(token);
+	if (token.length > 5 && isNumber) {
+	    if (mentionedMember) {
+		return null;
+	    }
+	    try {
+		const guild = await DiscordUtil.GetMainDiscordGuild();
+		mentionedMember = await guild.members.fetch(token);
+	    } catch (error) {
+		return null;
+	    }
+	} else {
+	    return null;
+	}
+    }
+    // We might get this far and find no member mentioned by @ or by ID.
+    if (!mentionedMember) {
+	return null;
+    }
+    // If we get this far, it means we found exactly one member mentioned,
+    // whether by @mention or by user ID.
+    return mentionedMember;
+}
+
 module.exports = {
     AddRole,
     Connect,
@@ -180,6 +225,7 @@ module.exports = {
     GetRoleByName,
     GuildMemberHasRole,
     MessagePublicChatChannel,
+    ParseExactlyOneMentionedDiscordMember,
     RemoveRole,
     UpdateChainOfCommandChatChannel,
     UpdateHarmonicCentralityChatChannel,
