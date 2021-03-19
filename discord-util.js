@@ -155,15 +155,14 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     // Bulk delete messages
     await channel.bulkDelete(3);
     const threeBackticks = '\`\`\`';
-    let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
-		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
-		   'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
+    let message = ('Harmonic Centrality is a math formula that calculates \'influence\' in a ' +
+		   'social network. It is impartial and fair. Anyone can become become a General.\n' + threeBackticks);
     for (let i = 0; i < mostCentralUsers.length; ++i) {
 	const cu = mostCentralUsers[i];
 	const scoreString = Math.round(cu.harmonic_centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 	const margin = cu.harmonic_centrality / mostCentralUsers[0].harmonic_centrality - 1;
 	const marginString = Math.round(100 * margin);
-	message += `${i + 1} ${cu.getNicknameOrTitleWithInsignia()} (\$${scoreString})\n`;
+	message += `$${scoreString} ${cu.getNicknameOrTitleWithInsignia()}\n`;
     }
     message += threeBackticks;
     await channel.send(message);
