@@ -26,11 +26,14 @@ async function UpdateBanTrial(cu) {
 	    return await channel.messages.fetch(cu.ban_vote_message);
 	} else {
 	    const newMessage = await channel.send('Welcome to the Ban Court');
+	    await newMessage.react('✅');
+	    await newMessage.react('❌');
 	    await newMessage.pin();
 	    return newMessage;
 	}
     });
     await cu.setBanVoteMessage(message.id);
+    console.log(message.reactions.cache['✅']);
 }
 
 // The given Discord message is already verified to start with the !ban prefix.
