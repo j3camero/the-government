@@ -1,3 +1,4 @@
+const Ban = require('./ban');
 const BotCommands = require('./bot-commands');
 const ChainOfCommand = require('./chain-of-command');
 const Clock = require('./clock');
@@ -493,10 +494,9 @@ async function Start() {
 	    'messageReactionAdd',
 	    user.username,
 	    messageReaction.emoji.name,
-	    messageReaction.count);
-	//if (user.username.startsWith('Jeff')) {
-	//    await messageReaction.users.remove(user);
-	//}
+	    messageReaction.count
+	);
+	await Ban.HandlePossibleReaction(messageReaction, user, true);
     });
 
     discordClient.on('messageReactionRemove', async (messageReaction, user) => {
@@ -504,7 +504,9 @@ async function Start() {
 	    'messageReactionRemove',
 	    user.username,
 	    messageReaction.emoji.name,
-	    messageReaction.count);
+	    messageReaction.count
+	);
+	await Ban.HandlePossibleReaction(messageReaction, user, false);
     });
 
     // Set up heartbeat events. These run at fixed intervals of time.

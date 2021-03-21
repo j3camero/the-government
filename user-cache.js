@@ -144,12 +144,22 @@ async function GetAllCitizenCommissarIds() {
     return ids;
 }
 
+function GetCachedUserByBanVoteMessageId(messageId) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.ban_vote_message === messageId) {
+	    return user;
+	}
+    }
+    return null;
+}
+
 module.exports = {
     BulkCentralityUpdate,
     CreateNewDatabaseUser,
     ForEach,
     GetAllCitizenCommissarIds,
     GetAllNicknames,
+    GetCachedUserByBanVoteMessageId,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     GetMostCentralUsers,
