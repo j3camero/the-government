@@ -35,8 +35,12 @@ async function UpdateBanTrial(cu) {
 	}
     });
     await cu.setBanVoteMessage(message.id);
+    // Count up all the votes. Remove any unauthorized votes.
     for (const [reactionId, reaction] of message.reactions.cache) {
 	console.log(reaction.emoji.name, reaction.count);
+	for (const [jurorId, juror] of reaction.users.cache) {
+	    console.log(juror.username);
+	}
     }
 }
 
@@ -67,6 +71,41 @@ async function HandleBanCommand(discordMessage) {
     await UpdateBanTrial(mentionedUser);
 }
 
+// A list of commisar IDs that are waiting to have their ban votes updated in Discord.
+// This will stop the update operation from being swamped by people spamming the
+// voting buttons. The channel will still update within a few seconds, but multiple
+// spammed updates will be grouped.
+const updateQueue = [];
+
+// Enqueue an update for a user's ban vote chatroom in Discord.
+function QueueUpdate(commissar_id) {
+    if (!updateQueue.includes(commissar_id)) {
+	updateQueue.push(commissar_id);
+    }
+}
+
+// A helper function that processes one item of the update queue then goes back to sleep.
+async function ProcessQueue() {
+    if (updateQueue.length === 0) {
+	// Short delay whenever no items are processed. This makes the queue more responsive
+	// than a fixed-delay loop.
+	setTimeout(ProcessQueue, 1000);
+	return;
+    }
+    const commissar_id = updateQueue.shift();
+    const defendant = await UserCache.GetCachedUserByCommissarId(commissar_id);
+    if (!defendant) {
+	// Shouldn't happen. Bail.
+	return;
+    }
+    await UpdateBanTrial(defendant);
+    // Long delay after successfully processing an item. It needs time to comfortably finish.
+    setTimeout(ProcessQueue, 10 * 1000);
+}
+
+// Kick off the processing of the queue.
+setTimeout(ProcessQueue, 1000);
+
 // Handle all incoming Discord reactions. Not all may be votes.
 // Some are regular message reactions in ordinary Discord chats.
 // So this routine has to decide for itself which are relevant.
@@ -75,6 +114,10 @@ async function HandleBanCommand(discordMessage) {
 //   clearConflictingReactions - whether to remove other reactions
 //                               from the same user automatically.
 async function HandlePossibleReaction(reaction, discordUser, clearConflictingReactions) {
+    if (discordUser.bot) {
+	// Ignore reactions made by bots.
+	return;
+    }
     const defendant = UserCache.GetCachedUserByBanVoteMessageId(reaction.message.id);
     if (!defendant) {
 	// This reaction is not related to a ban vote. Bail.
@@ -98,7 +141,9 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 	    }
 	}
     }
-    await UpdateBanTrial(defendant);
+    // Queue an update for the Discord chatroom. This stops people flooding
+    // the bot with spam votes.
+    QueueUpdate(defendant.commissar_id);    
 }
 
 // The given Discord message is already verified to start with the !pardon prefix.
