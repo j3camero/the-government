@@ -298,6 +298,7 @@ async function HandlePardonCommand(discordMessage) {
     } catch (error) {
 	// In case the command was issued inside the courtroom, which no longer exists.
     }
+    RemoveDefendantRole(guild, mentionedMember);
 }
 
 module.exports = {

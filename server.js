@@ -470,6 +470,9 @@ async function Start() {
 	}
 	await cu.setCitizen(true);
 	await cu.seenNow();
+	if (cu.good_standing === false) {
+	    await newVoiceState.member.voice.kick();
+	}
     });
 
     // When a user changes their username or other user details.
