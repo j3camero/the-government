@@ -35,13 +35,99 @@ async function UpdateBanTrial(cu) {
 	}
     });
     await cu.setBanVoteMessage(message.id);
+    const noVotes = [];
+    const yesVotes = [];
     // Count up all the votes. Remove any unauthorized votes.
     for (const [reactionId, reaction] of message.reactions.cache) {
-	console.log(reaction.emoji.name, reaction.count);
-	for (const [jurorId, juror] of reaction.users.cache) {
-	    console.log(juror.username);
+	for (const [jurorId, juror] of await reaction.users.fetch()) {
+	    if (juror.bot) {
+		continue;
+	    }
+	    const jurorUser = await UserCache.GetCachedUserByDiscordId(juror.id);
+	    if (!jurorUser || jurorUser.rank > 5) {
+		// Remove unauthorized vote. This check will catch unauthorized votes that
+		// made it through the initial filter because the bot was not running.
+		await reaction.users.remove(juror);
+	    }
+	    // Tally one reaction-vote.
+	    const emoji = reaction.emoji.name;
+	    if (emoji === '✅') {
+		yesVotes.push({
+		    score: jurorUser.harmonic_centrality,
+		    name: jurorUser.getNicknameOrTitleWithInsignia(),
+		});
+	    } else if (emoji === '❌') {
+		noVotes.push({
+		    score: jurorUser.harmonic_centrality,
+		    name: jurorUser.getNicknameOrTitleWithInsignia(),
+		});
+	    }
 	}
     }
+    noVotes.sort((a, b) => b.score - a.score);
+    yesVotes.sort((a, b) => b.score - a.score);
+    const none = '\nNone';
+    let noVoteNames = '';
+    for (const vote of noVotes) {
+	noVoteNames += '\n' + vote.name;
+    }
+    if (noVoteNames === '') {
+	noVoteNames = none;
+    }
+    let yesVoteNames = '';
+    for (const vote of yesVotes) {
+	yesVoteNames += '\n' + vote.name;
+    }
+    if (yesVoteNames === '') {
+	yesVoteNames = none;
+    }
+    const yesVoteCount = yesVotes.length;
+    const noVoteCount = noVotes.length;
+    const guilty = VoteOutcome(yesVoteCount, noVoteCount);
+    let nextStateChangeMessage = `${cu.getNicknameWithInsignia()} is currently `;
+    if (guilty) {
+	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
+	nextStateChangeMessage += `banned. ${n} more NO votes to unban.`;
+    } else {
+	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
+	nextStateChangeMessage += `NOT GUILTY. ${n} more YES votes to ban.`;
+    }
+    const threeTicks = '```';
+    const trialMessage = `${threeTicks}SECRET CLAN v ${cu.getNicknameWithInsignia()}\n\nVoting YES to ban\n-----------------${yesVoteNames}\n\nVoting NO against the ban\n-------------------------${noVoteNames}\n\n${nextStateChangeMessage}${threeTicks}`;
+    await message.edit(trialMessage);
+}
+
+function VoteOutcome(yes, no) {
+    if (yes === 0) {
+	return false;
+    }
+    const voteRatio = yes / (no + yes);
+    const threshold = 2 / 3;
+    return voteRatio >= threshold;
+}
+
+// How many more no votes needed to overturn a conviction?
+function HowManyMoreNo(yes, no) {
+    const n = 5 * (yes + no) + 10;
+    for (let i = 0; i < n; ++i) {
+	if (!VoteOutcome(yes, no + i)) {
+	    return i;
+	}
+    }
+    // Shouldn't get here.
+    return 0;
+}
+
+// How many more yes votes needed to secure a conviction?
+function HowManyMoreYes(yes, no) {
+    const n = yes + no + 2;
+    for (let i = 0; i < n; ++i) {
+	if (VoteOutcome(yes + i, no)) {
+	    return i;
+	}
+    }
+    // Shouldn't get here.
+    return 0;
 }
 
 // The given Discord message is already verified to start with the !ban prefix.
@@ -68,7 +154,7 @@ async function HandleBanCommand(discordMessage) {
     await discordMessage.channel.send(`Test ban ${mentionedUser.getNicknameWithInsignia()}!`);
     const sevenDays = moment().add(7, 'days').format();
     await mentionedUser.setBanVoteEndTime(sevenDays);
-    await UpdateBanTrial(mentionedUser);
+    QueueUpdate(mentionedUser.commissar_id);
 }
 
 // A list of commisar IDs that are waiting to have their ban votes updated in Discord.
@@ -186,5 +272,4 @@ module.exports = {
     HandleBanCommand,
     HandlePardonCommand,
     HandlePossibleReaction,
-    UpdateBanTrial,
 };
