@@ -17,6 +17,7 @@ class CommissarUser {
 	peak_rank,
 	gender,
 	citizen,
+	good_standing,
         friend_category_id,
         friend_text_chat_id,
         friend_voice_room_id,
@@ -33,6 +34,7 @@ class CommissarUser {
 	this.peak_rank = peak_rank;
 	this.gender = gender;
 	this.citizen = citizen;
+	this.good_standing = good_standing;
 	this.friend_category_id = friend_category_id;
 	this.friend_text_chat_id = friend_text_chat_id;
 	this.friend_voice_room_id = friend_voice_room_id;
@@ -120,6 +122,18 @@ class CommissarUser {
 	}
 	this.citizen = is_citizen;
 	await this.updateFieldInDatabase('citizen', this.citizen);
+    }
+
+    // True or false value. Represents whether or not this user is in good standing.
+    // Most users are in good standing. Bad standing means the user is losing a
+    // pending ban-vote. They are quanrantined while the ban-vote is ongoing and
+    // not going their way.
+    async setGoodStanding(good_standing) {
+	if ((good_standing && this.good_standing) || (!good_standing && !this.good_standing)) {
+	    return;
+	}
+	this.good_standing = good_standing;
+	await this.updateFieldInDatabase('good_standing', this.good_standing);
     }
 
     async setFriendCategorityId(friend_category_id) {

@@ -26,13 +26,11 @@ let mrVicePresident;
 let chainOfCommand = {};
 
 // Updates a guild member's color.
-async function UpdateMemberRankRoles(member, rankName) {
-    // Look up the IDs of the 4 big categories.
+async function UpdateMemberRankRoles(member, rankName, goodStanding) {
     const grunts = await DiscordUtil.GetRoleByName(member.guild, 'Grunt');
     const officers = await DiscordUtil.GetRoleByName(member.guild, 'Officer');
     const generals = await DiscordUtil.GetRoleByName(member.guild, 'General');
     const marshals = await DiscordUtil.GetRoleByName(member.guild, 'Marshal');
-    // Work out which roles are being added and which removed.
     let addThisRole;
     let removeTheseRoles;
     switch (rankName) {
@@ -55,9 +53,11 @@ async function UpdateMemberRankRoles(member, rankName) {
     default:
 	throw `Invalid rank category name: ${rankName}`;
     };
-    // Add role.
-    DiscordUtil.AddRole(member, addThisRole);
-    // Remove roles.
+    if (goodStanding) {
+	DiscordUtil.AddRole(member, addThisRole);
+    } else {
+	removeTheseRoles = [grunts, officers, generals, marshals];
+    }
     removeTheseRoles.forEach((roleToRemove) => {
 	DiscordUtil.RemoveRole(member, roleToRemove);
     });
@@ -93,7 +93,7 @@ async function UpdateMemberAppearance(member) {
 	member.setNickname(displayName);
     }
     // Update role (including rank color).
-    UpdateMemberRankRoles(member, rankData.role);
+    UpdateMemberRankRoles(member, rankData.role, cu.good_standing);
 }
 
 // Updates people's rank and nickname-based insignia (dots, stars) in Discord.
@@ -424,6 +424,7 @@ async function Start() {
 	    await UserCache.CreateNewDatabaseUser(member);
 	    return;
 	}
+	await cu.setCitizen(true);
     });
 
     // Emitted whenever a member leaves a guild, or is kicked.
@@ -453,7 +454,7 @@ async function Start() {
 	    // Shouldn't happen. Bail and hope for recovery.
 	    return;
 	}
-	// TODO: update citizen here, consider if the message is in ban court or not.
+	await cu.setCitizen(true);
 	await BotCommands.Dispatch(message);
     });
 
@@ -467,6 +468,7 @@ async function Start() {
 	    // Shouldn't happen. Bail and hope for recovery.
 	    return;
 	}
+	await cu.setCitizen(true);
 	await cu.seenNow();
     });
 
@@ -486,6 +488,7 @@ async function Start() {
 	    return;
 	}
 	await cu.setNickname(newMember.user.username);
+	await cu.setCitizen(true);
     });
 
     discordClient.on('messageReactionAdd', async (messageReaction, user) => {
@@ -495,6 +498,12 @@ async function Start() {
 	    messageReaction.emoji.name,
 	    messageReaction.count
 	);
+	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
+	if (!cu) {
+	    // This shouldn't happen but ignore and hope for recovery.
+	    return;
+	}
+	await cu.setCitizen(true);
 	await Ban.HandlePossibleReaction(messageReaction, user, true);
     });
 
@@ -505,6 +514,12 @@ async function Start() {
 	    messageReaction.emoji.name,
 	    messageReaction.count
 	);
+	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
+	if (!cu) {
+	    // This shouldn't happen but ignore and hope for recovery.
+	    return;
+	}
+	await cu.setCitizen(true);
 	await Ban.HandlePossibleReaction(messageReaction, user, false);
     });
 

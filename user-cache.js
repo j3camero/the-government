@@ -24,6 +24,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.peak_rank,
 	    row.gender,
 	    row.citizen,
+	    row.good_standing,
 	    row.friend_category_id,
 	    row.friend_text_chat_id,
 	    row.friend_voice_room_id,
@@ -92,7 +93,8 @@ async function CreateNewDatabaseUser(discordMember) {
 	rank,
 	last_seen,
 	office,
-	0, 12, null, true,
+	0, 12, null,
+	true, true,
 	null, null, null,
 	null, null, null
     );

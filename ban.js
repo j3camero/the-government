@@ -93,13 +93,13 @@ async function UpdateBanTrial(cu) {
     if (guilty) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
 	nextStateChangeMessage += `banned. ${n} more NO votes to unban.`;
-	await cu.setCitizen(false);
+	await cu.setGoodStanding(false);
 	await AddDefendantRole(guild, member);
 	await member.voice.kick();
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
 	nextStateChangeMessage += `NOT GUILTY. ${n} more YES votes to ban.`;
-	await cu.setCitizen(true);
+	await cu.setGoodStanding(true);
 	await RemoveDefendantRole(guild, member);
     }
     const threeTicks = '```';
@@ -292,7 +292,7 @@ async function HandlePardonCommand(discordMessage) {
 	await mentionedUser.setBanVoteChatroom(null);
     }
     await mentionedUser.setBanVoteMessage(null);
-    await mentionedUser.setCitizen(true);
+    await mentionedUser.setGoodStanding(true);
     try {
 	await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameWithInsignia()}!`);
     } catch (error) {
