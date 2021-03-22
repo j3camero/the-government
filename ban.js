@@ -291,9 +291,8 @@ async function HandlePardonCommand(discordMessage) {
 	await channel.delete();
 	await mentionedUser.setBanVoteChatroom(null);
     }
-    if (mentionedUser.ban_vote_message) {
-	await mentionedUser.setBanVoteMessage(null);
-    }
+    await mentionedUser.setBanVoteMessage(null);
+    await mentionedUser.setCitizen(true);
     try {
 	await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameWithInsignia()}!`);
     } catch (error) {
