@@ -263,6 +263,7 @@ async function UpdateAllCitizens() {
 	    } else {
 		await DestroyFriendSectionForCommissarUser(user, guild);
 	    }
+	    await Ban.UpdateTrial(user);
 	}
     });
 }
@@ -487,7 +488,6 @@ async function Start() {
 	console.log('guildMemberUpdate', newMember.user.username);
 	const cu = await UserCache.GetCachedUserByDiscordId(newMember.user.id);
 	if (!cu) {
-	    // This shouldn't happen but ignore and hope for recovery.
 	    return;
 	}
 	await cu.setNickname(newMember.user.username);
@@ -495,15 +495,9 @@ async function Start() {
     });
 
     discordClient.on('messageReactionAdd', async (messageReaction, user) => {
-	console.log(
-	    'messageReactionAdd',
-	    user.username,
-	    messageReaction.emoji.name,
-	    messageReaction.count
-	);
+	console.log('react', user.username, messageReaction.emoji.name);
 	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
 	if (!cu) {
-	    // This shouldn't happen but ignore and hope for recovery.
 	    return;
 	}
 	await cu.setCitizen(true);
@@ -511,15 +505,9 @@ async function Start() {
     });
 
     discordClient.on('messageReactionRemove', async (messageReaction, user) => {
-	console.log(
-	    'messageReactionRemove',
-	    user.username,
-	    messageReaction.emoji.name,
-	    messageReaction.count
-	);
+	console.log('unreact', user.username, messageReaction.emoji.name);
 	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
 	if (!cu) {
-	    // This shouldn't happen but ignore and hope for recovery.
 	    return;
 	}
 	await cu.setCitizen(true);

@@ -3,7 +3,7 @@ const moment = require('moment');
 const RateLimit = require('./rate-limit');
 const UserCache = require('./user-cache');
 
-async function UpdateBanTrial(cu) {
+async function UpdateTrial(cu) {
     if (!cu.ban_vote_end_time) {
 	// No trial to update.
 	return;
@@ -92,18 +92,21 @@ async function UpdateBanTrial(cu) {
     let nextStateChangeMessage = `${cu.getNicknameWithInsignia()} is currently `;
     if (guilty) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
-	nextStateChangeMessage += `banned. ${n} more NO votes to unban.`;
+	nextStateChangeMessage += `banned. ${n} more NO votes to unban`;
 	await cu.setGoodStanding(false);
 	await AddDefendantRole(guild, member);
 	await member.voice.kick();
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
-	nextStateChangeMessage += `NOT GUILTY. ${n} more YES votes to ban.`;
+	nextStateChangeMessage += `NOT GUILTY. ${n} more YES votes to ban`;
 	await cu.setGoodStanding(true);
 	await RemoveDefendantRole(guild, member);
     }
+    const timeRemaining = moment(cu.ban_vote_end_time).fromNow();
+    const caseTitle = `SECRET CLAN v ${cu.getNicknameWithInsignia()}`;
+    const underline = new Array(caseTitle.length + 1).join('-');
     const threeTicks = '```';
-    const trialMessage = `${threeTicks}SECRET CLAN v ${cu.nickname}\n\nVoting YES to ban\n-----------------${yesVoteNames}\n\nVoting NO against the ban\n-------------------------${noVoteNames}\n\n${nextStateChangeMessage}${threeTicks}`;
+    const trialMessage = `${threeTicks}${caseTitle}\n${underline}\n\nVoting YES to ban:${yesVoteNames}\n\nVoting NO against the ban:${noVoteNames}\n\n${nextStateChangeMessage}. The vote ends ${timeRemaining}.${threeTicks}`;
     await message.edit(trialMessage);
 }
 
@@ -216,7 +219,7 @@ async function ProcessQueue() {
 	// Shouldn't happen. Bail.
 	return;
     }
-    await UpdateBanTrial(defendant);
+    await UpdateTrial(defendant);
     // Long delay after successfully processing an item. It needs time to comfortably finish.
     setTimeout(ProcessQueue, 10 * 1000);
 }
@@ -305,4 +308,5 @@ module.exports = {
     HandleBanCommand,
     HandlePardonCommand,
     HandlePossibleReaction,
+    UpdateTrial,
 };
