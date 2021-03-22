@@ -9,6 +9,7 @@ async function UpdateBanTrial(cu) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
+    const member = await guild.members.fetch(cu.discord_id);
     const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
     const roomName = cu.nickname;
     // Update or create the courtroom: a text chat room under the Ban Court category.
@@ -18,6 +19,10 @@ async function UpdateBanTrial(cu) {
 	} else {
 	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
 	    await newChannel.setParent(banCourtCategory);
+	    await newChannel.createOverwrite(member, {
+		'CONNECT': true,
+		'VIEW_CHANNEL': true,
+	    });
 	    return newChannel;
 	}
     });
@@ -88,9 +93,12 @@ async function UpdateBanTrial(cu) {
     if (guilty) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
 	nextStateChangeMessage += `banned. ${n} more NO votes to unban.`;
+	await AddDefendantRole(guild, member);
+	await member.voice.kick();
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
 	nextStateChangeMessage += `NOT GUILTY. ${n} more YES votes to ban.`;
+	await RemoveDefendantRole(guild, member);
     }
     const threeTicks = '```';
     const trialMessage = `${threeTicks}SECRET CLAN v ${cu.getNicknameWithInsignia()}\n\nVoting YES to ban\n-----------------${yesVoteNames}\n\nVoting NO against the ban\n-------------------------${noVoteNames}\n\n${nextStateChangeMessage}${threeTicks}`;
@@ -128,6 +136,20 @@ function HowManyMoreYes(yes, no) {
     }
     // Shouldn't get here.
     return 0;
+}
+
+async function AddDefendantRole(guild, member) {
+    const defendantRole = await DiscordUtil.GetRoleByName(guild, 'Defendant');
+    const notGuiltyRole = await DiscordUtil.GetRoleByName(guild, 'Not Guilty');
+    DiscordUtil.AddRole(member, defendantRole);
+    DiscordUtil.RemoveRole(member, notGuiltyRole);
+}
+
+async function RemoveDefendantRole(guild, member) {
+    const defendantRole = await DiscordUtil.GetRoleByName(guild, 'Defendant');
+    const notGuiltyRole = await DiscordUtil.GetRoleByName(guild, 'Not Guilty');
+    DiscordUtil.RemoveRole(member, defendantRole);
+    DiscordUtil.AddRole(member, notGuiltyRole);
 }
 
 // The given Discord message is already verified to start with the !ban prefix.
