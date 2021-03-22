@@ -75,6 +75,9 @@ async function UpdateMemberAppearance(member) {
 	console.log('Unknown user detected!');
 	return;
     }
+    if (!cu.citizen) {
+	return;
+    }
     if (!cu.rank && cu.rank !== 0) {
 	// The user has not been assigned a rank yet. Bail.
 	return;
@@ -253,7 +256,6 @@ async function UpdateAllCitizens() {
 		await user.setCitizen(false);
 		return;
 	    }
-	    await user.setCitizen(true);
 	    await user.setNickname(discordMember.user.username);
 	    const friendsEnabled = false;
 	    if (friendsEnabled) {
@@ -422,7 +424,6 @@ async function Start() {
 	    await UserCache.CreateNewDatabaseUser(member);
 	    return;
 	}
-	await cu.setCitizen(true);
     });
 
     // Emitted whenever a member leaves a guild, or is kicked.
@@ -452,7 +453,7 @@ async function Start() {
 	    // Shouldn't happen. Bail and hope for recovery.
 	    return;
 	}
-	await cu.setCitizen(true);
+	// TODO: update citizen here, consider if the message is in ban court or not.
 	await BotCommands.Dispatch(message);
     });
 
@@ -466,7 +467,6 @@ async function Start() {
 	    // Shouldn't happen. Bail and hope for recovery.
 	    return;
 	}
-	await cu.setCitizen(true);
 	await cu.seenNow();
     });
 
@@ -486,7 +486,6 @@ async function Start() {
 	    return;
 	}
 	await cu.setNickname(newMember.user.username);
-	await cu.setCitizen(true);
     });
 
     discordClient.on('messageReactionAdd', async (messageReaction, user) => {

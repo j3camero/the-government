@@ -91,7 +91,10 @@ async function CreateNewDatabaseUser(discordMember) {
 	nickname,
 	rank,
 	last_seen,
-	office
+	office,
+	0, 12, null, true,
+	null, null, null,
+	null, null, null
     );
     commissarUserCache[commissar_id] = newUser;
     return newUser;

@@ -206,6 +206,9 @@ class CommissarUser {
 	    // Brobob memorial insignia: Eternal Leader.
 	    return '★★★★★';
 	}
+	if (!this.citizen) {
+	    return '●';
+	}
 	const rankData = ChainOfCommand.metadata[this.rank];
 	return rankData.insignia;
     }

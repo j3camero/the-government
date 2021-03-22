@@ -93,15 +93,17 @@ async function UpdateBanTrial(cu) {
     if (guilty) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
 	nextStateChangeMessage += `banned. ${n} more NO votes to unban.`;
+	await cu.setCitizen(false);
 	await AddDefendantRole(guild, member);
 	await member.voice.kick();
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
 	nextStateChangeMessage += `NOT GUILTY. ${n} more YES votes to ban.`;
+	await cu.setCitizen(true);
 	await RemoveDefendantRole(guild, member);
     }
     const threeTicks = '```';
-    const trialMessage = `${threeTicks}SECRET CLAN v ${cu.getNicknameWithInsignia()}\n\nVoting YES to ban\n-----------------${yesVoteNames}\n\nVoting NO against the ban\n-------------------------${noVoteNames}\n\n${nextStateChangeMessage}${threeTicks}`;
+    const trialMessage = `${threeTicks}SECRET CLAN v ${cu.nickname}\n\nVoting YES to ban\n-----------------${yesVoteNames}\n\nVoting NO against the ban\n-------------------------${noVoteNames}\n\n${nextStateChangeMessage}${threeTicks}`;
     await message.edit(trialMessage);
 }
 
@@ -139,17 +141,25 @@ function HowManyMoreYes(yes, no) {
 }
 
 async function AddDefendantRole(guild, member) {
-    const defendantRole = await DiscordUtil.GetRoleByName(guild, 'Defendant');
-    const notGuiltyRole = await DiscordUtil.GetRoleByName(guild, 'Not Guilty');
-    DiscordUtil.AddRole(member, defendantRole);
-    DiscordUtil.RemoveRole(member, notGuiltyRole);
+    const defendant = await DiscordUtil.GetRoleByName(guild, 'Defendant');
+    const notGuilty = await DiscordUtil.GetRoleByName(guild, 'Not Guilty');
+    const marshal = await DiscordUtil.GetRoleByName(guild, 'Marshal');
+    const general = await DiscordUtil.GetRoleByName(guild, 'General');
+    const officer = await DiscordUtil.GetRoleByName(guild, 'Officer');
+    const grunt = await DiscordUtil.GetRoleByName(guild, 'Grunt');
+    DiscordUtil.AddRole(member, defendant);
+    DiscordUtil.RemoveRole(member, notGuilty);
+    DiscordUtil.RemoveRole(member, marshal);
+    DiscordUtil.RemoveRole(member, general);
+    DiscordUtil.RemoveRole(member, officer);
+    DiscordUtil.RemoveRole(member, grunt);
 }
 
 async function RemoveDefendantRole(guild, member) {
-    const defendantRole = await DiscordUtil.GetRoleByName(guild, 'Defendant');
-    const notGuiltyRole = await DiscordUtil.GetRoleByName(guild, 'Not Guilty');
-    DiscordUtil.RemoveRole(member, defendantRole);
-    DiscordUtil.AddRole(member, notGuiltyRole);
+    const defendant = await DiscordUtil.GetRoleByName(guild, 'Defendant');
+    const notGuilty = await DiscordUtil.GetRoleByName(guild, 'Not Guilty');
+    DiscordUtil.RemoveRole(member, defendant);
+    DiscordUtil.AddRole(member, notGuilty);
 }
 
 // The given Discord message is already verified to start with the !ban prefix.
@@ -256,6 +266,7 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 
 // The given Discord message is already verified to start with the !pardon prefix.
 async function HandlePardonCommand(discordMessage) {
+    console.log('PARDON COMMAND');
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
 	// Auth: this command for developer use only.
