@@ -1,31 +1,19 @@
 const Ban = require('./ban');
 const BotCommands = require('./bot-commands');
-const ChainOfCommand = require('./chain-of-command');
 const Clock = require('./clock');
 const DB = require('./database');
 const deepEqual = require('deep-equal');
 const DiscordUtil = require('./discord-util');
-const Executives = require('./executive-offices');
 const HarmonicCentrality = require('./harmonic-centrality');
-const MiniClans = require('./mini-clans');
 const moment = require('moment');
 const Rank = require('./rank');
 const RankMetadata = require('./rank-definitions');
 const RateLimit = require('./rate-limit');
-const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
 
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
-
-// Stores who is Mr. President right now.
-let mrPresident;
-let mrVicePresident;
-
-// The current chain of command. It's a dict of user info keyed by commissar ID.
-// The elements form an implcit tree.
-let chainOfCommand = {};
 
 // Updates a guild member's color.
 async function UpdateMemberRankRoles(member, rankName, goodStanding) {
@@ -145,100 +133,14 @@ async function UpdateVoiceActiveMembersForOneGuild(guild) {
     timeTogetherStream.seenTogether(listOfLists);
 }
 
-// Announce a promotion in #public chat, if applicable.
-//
-// nickname - a string of the user's filtered nickname, without insignia.
-// oldRank - integer rank index of the user's old rank.
-// newRank - integer rank index of the user's new rank.
-async function AnnounceIfPromotion(nickname, oldRank, newRank) {
-    if (oldRank === undefined || oldRank === null ||
-	newRank === undefined || newRank === null ||
-	!Number.isInteger(oldRank) || !Number.isInteger(newRank) ||
-	newRank >= oldRank) {
-	// No promotion detected. Bail.
-	return;
-    }
-    // If we get past here, a promotion has been detected.
-    // Announce it in main chat.
-    const oldMeta = RankMetadata[oldRank];
-    const newMeta = RankMetadata[newRank];
-    const message = `${nickname} ${newMeta.insignia} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
-    console.log(message);
-    // Delay for a few seconds to spread out the promotion messages and
-    // also achieve a crude non-guaranteed sorting by rank.
-    const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
-    await Sleep(delayMillis);
-    await DiscordUtil.MessagePublicChatChannel(message);
-}
-
-// Calculates the chain of command. If there are changes, the update is made.
-// Only affects the main Discord guild.
-async function UpdateChainOfCommandForMainDiscordGuild() {
-    const candidateIds = await UserCache.GetAllCitizenCommissarIds();
-    UpdateChainOfCommandForCandidates(candidateIds);
-}
-
-// Calculates the chain of command. If there are changes, the update is made.
-//
-// candidateIds - Only these Commissar IDs are eligible to be in the chain-of-command.
-//                Removes bots and the like.
-async function UpdateChainOfCommandForCandidates(candidateIds) {
-    if (!mrPresident) {
-	throw 'No Mr. President selected yet. This shouldn\'t happen.';
-    }
-    const relationships = await DB.GetTimeMatrix();
-    const newChainOfCommand = ChainOfCommand.CalculateChainOfCommand(mrPresident.commissar_id,
-								     mrVicePresident.commissar_id,
-								     candidateIds,
-								     relationships);
-    if (deepEqual(newChainOfCommand, chainOfCommand)) {
-	// Bail if there are no changes to the chain of command.
-	return;
-    }
-    console.log('About to update the chain of command');
-    // Pass this point only if there is a change to the chain of command.
-    chainOfCommand = newChainOfCommand;
-    //const nicknames = await UserCache.GetAllNicknames();
-    // Generate and post an updated image of the chain of command.
-    //const canvas = RenderChainOfCommand(chainOfCommand, nicknames);
-    //const guild = await DiscordUtil.GetMainDiscordGuild();
-    //DiscordUtil.UpdateChainOfCommandChatChannel(guild, canvas);
-    // Update the people's ranks.
-    Object.values(chainOfCommand).forEach(async (user) => {
-	const cu = UserCache.GetCachedUserByCommissarId(user.id);
-	// Only announce promotions if the user has been active recently.
-	if (cu && cu.last_seen && moment().diff(cu.last_seen, 'seconds') < 2 * 24 * 3600) {
-	    await AnnounceIfPromotion(cu.nickname, cu.rank, user.rank);
-	}
-	await cu.setRank(user.rank);
-    });
-    console.log('Chain of command updated.');
-}
-
-async function ElectMrPresident() {
-    console.log('Electing Mr. President.');
-    const topTwo = await UserCache.GetMostCentralUsers(2);
-    mrPresident = topTwo[0];
-    if (!mrPresident) {
-	throw 'Failed to find a best candidate for Mr. President!';
-    }
-    await mrPresident.setRank(0);
-    mrVicePresident = topTwo[1];
-    if (!mrVicePresident) {
-	throw 'Failed to elect Mr. Vice President!';
-    }
-    await mrVicePresident.setRank(1);
-    console.log(`Elected Mr. President ${mrPresident.nickname} and Mr. Vice President ${mrVicePresident.nickname}.`);
-}
-
 async function UpdateHarmonicCentrality() {
     const candidates = await UserCache.GetAllCitizenCommissarIds();
     if (candidates.length === 0) {
-	throw 'ERROR: zero candidates for the #chain-of-command!';
+	throw 'ERROR: zero candidates.';
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    const mostCentral = await UserCache.GetMostCentralUsers(17);
+    const mostCentral = await UserCache.GetMostCentralUsers(23);
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
@@ -259,12 +161,7 @@ async function UpdateAllCitizens() {
 		return;
 	    }
 	    await user.setNickname(discordMember.user.username);
-	    const friendsEnabled = false;
-	    if (friendsEnabled) {
-		await UpdateDiscordFriendZoneForCommissarUser(user, guild);
-	    } else {
-		await DestroyFriendSectionForCommissarUser(user, guild);
-	    }
+	    await DestroyFriendSectionForCommissarUser(user, guild);
 	    await Ban.UpdateTrial(user);
 	}
     });
@@ -280,114 +177,15 @@ async function DestroyFriendSectionForCommissarUser(cu, guild) {
     await cu.setFriendVoiceRoomId(null);
 }
 
-async function CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, guild) {
-    const permissionOverwrites = [
-	{
-	    deny: ['CONNECT', 'VIEW_CHANNEL'],
-	    id: guild.roles.everyone.id,
-	},
-	{
-		allow: ['CONNECT', 'VIEW_CHANNEL'],
-		id: cu.discord_id,
-	},
-	{
-		allow: ['CONNECT', 'VIEW_CHANNEL'],
-		id: botsRole.id,
-	},
-    ];
-    const sectionName = cu.getNicknameWithInsignia();
-    const section = await RateLimit.Run(async () => {
-	const botsRole = await DiscordUtil.GetRoleByName(guild, 'Bots');
-	if (cu.friend_category_id) {
-	    return await guild.channels.resolve(cu.friend_category_id);
-	} else {
-	    return await guild.channels.create(sectionName, {
-		type: 'category',
-		permissionOverwrites,
-	    });
-	}
-    });
-    await cu.setFriendCategorityId(section.id);
-    await section.overwritePermissions(permissionOverwrites);
-    if (section.name !== sectionName) {
-	await section.setName(sectionName);
-    }
-    return section;
-}
-
-async function CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild) {
-    const roomName = cu.nickname;
-    const chatroom = await RateLimit.Run(async () => {
-	if (cu.friend_text_chat_id) {
-	    return await guild.channels.resolve(cu.friend_text_chat_id);
-	} else {
-	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
-	    await RateLimit.Run(async () => {
-		await newChannel.setParent(section.id);
-	    });
-	    await RateLimit.Run(async () => {
-		await newChannel.lockPermissions();
-	    });
-	    return newChannel;
-	}
-    });
-    await cu.setFriendTextChatId(chatroom.id);
-    if (chatroom.name !== roomName) {
-	await chatroom.setName(roomName);
-    }
-    return chatroom;
-}
-
-async function CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild) {
-    const roomName = cu.getNicknameWithInsignia();
-    const voice = await RateLimit.Run(async () => {
-	if (cu.friend_voice_room_id) {
-	    return await guild.channels.resolve(cu.friend_voice_room_id);
-	} else {
-	    const newChannel = await guild.channels.create(roomName, { type: 'voice' });
-	    await RateLimit.Run(async () => {
-		await newChannel.setParent(section.id);
-	    });
-	    await RateLimit.Run(async () => {
-		await newChannel.lockPermissions();
-	    });
-	    return newChannel;
-	}
-    });
-    await cu.setFriendVoiceRoomId(voice.id);
-    if (voice.name !== roomName) {
-	await voice.setName(roomName);
-    }
-    return voice;
-}
-
-async function UpdateDiscordFriendZoneForCommissarUser(cu, guild) {
-    if (!cu.friend_category_id && cu.rank > 9) {
-	return;
-    }
-    const section = await CreateOrUpdateDiscordFriendSectionForCommissarUser(cu, guild);
-    await CreateOrUpdateDiscordFriendChatroomForCommissarUser(cu, section, guild);
-    await CreateOrUpdateDiscordFriendVoiceRoomForCommissarUser(cu, section, guild);
-}
-
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 async function MinuteHeartbeat() {
     if (RateLimit.Busy()) {
 	return;
     }
     console.log('Minute heartbeat');
-    // Update clan executive roles.
-    //await Executives.UpdateClanExecutives(chainOfCommand);
-    // Update mini-clans.
-    //await MiniClans.UpdateRolesForMainDiscordGuild(chainOfCommand);
-    // Update the chain of command.
     await UpdateHarmonicCentrality();
-    await ElectMrPresident();
-    await UpdateChainOfCommandForMainDiscordGuild();
     await Rank.UpdateUserRanks();
-    // Update the nickname, insignia, and roles of the members of the Discord channel.
     await UpdateAllDiscordMemberAppearances();
-    // Update time matrix and sync to database.
     await UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     await DB.WriteTimeTogetherRecords(recordsToSync);
@@ -523,9 +321,6 @@ async function Start() {
     // Set up the hour and minute heartbeat routines to run on autopilot.
     setInterval(HourlyHeartbeat, oneHour);
     setInterval(MinuteHeartbeat, oneMinute);
-    // Run the hourly and minute heartbeat routines once each to fully prime
-    // the bot rather than waiting until an hour or a minute has passed.
-    //await HourlyHeartbeat();
     await MinuteHeartbeat();
 }
 

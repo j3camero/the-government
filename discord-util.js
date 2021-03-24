@@ -120,31 +120,6 @@ async function MessagePublicChatChannel(discordMessage) {
     channel.send(discordMessage);
 }
 
-async function UpdateChainOfCommandChatChannel(guild, canvas) {
-    const mainMessage = (
-	'The Chain of Command auto updates based on who you spend time with in Discord. ' +
-	    'Anyone can become Mr. President because of the impartial AI algorithm.');
-    const footerMessage = (
-	'Most clans have some kind of President-for-life or other fixed leadership ' +
-	    'positions. Not us. That is what makes our clan totally unique.');
-    const channels = GetAllMatchingTextChannels(guild, 'chain-of-command');
-    if (channels.length === 0) {
-	throw new Error('Could not find #chain-of-command chat channel.');
-    }
-    const channel = channels[0];
-    // Bulk delete messages
-    await channel.bulkDelete(3);
-    const buf = canvas.toBuffer();
-    fs.writeFileSync('live-chain-of-command.png', buf);
-    await channel.send(mainMessage, {
-	files: [{
-	    attachment: 'live-chain-of-command.png',
-	    name: 'chain-of-command.png'
-	}]
-    });
-    channel.send(footerMessage);
-}
-
 async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     const guild = await GetMainDiscordGuild();
     const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
@@ -226,6 +201,5 @@ module.exports = {
     MessagePublicChatChannel,
     ParseExactlyOneMentionedDiscordMember,
     RemoveRole,
-    UpdateChainOfCommandChatChannel,
     UpdateHarmonicCentralityChatChannel,
 };
