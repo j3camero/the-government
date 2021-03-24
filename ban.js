@@ -121,7 +121,7 @@ function VoteOutcome(yes, no) {
 
 // How many more no votes needed to overturn a conviction?
 function HowManyMoreNo(yes, no) {
-    const n = 5 * (yes + no) + 10;
+    const n = 42;
     for (let i = 0; i < n; ++i) {
 	if (!VoteOutcome(yes, no + i)) {
 	    return i;
@@ -133,7 +133,7 @@ function HowManyMoreNo(yes, no) {
 
 // How many more yes votes needed to secure a conviction?
 function HowManyMoreYes(yes, no) {
-    const n = yes + no + 2;
+    const n = 42;
     for (let i = 0; i < n; ++i) {
 	if (VoteOutcome(yes + i, no)) {
 	    return i;
