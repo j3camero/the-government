@@ -9,6 +9,8 @@ const Executives = require('./executive-offices');
 const HarmonicCentrality = require('./harmonic-centrality');
 const MiniClans = require('./mini-clans');
 const moment = require('moment');
+const Rank = require('./rank');
+const RankMetadata = require('./rank-definitions');
 const RateLimit = require('./rate-limit');
 const Sleep = require('./sleep');
 const TimeTogetherStream = require('./time-together-stream');
@@ -82,7 +84,7 @@ async function UpdateMemberAppearance(member) {
 	// The user has not been assigned a rank yet. Bail.
 	return;
     }
-    const rankData = ChainOfCommand.metadata[cu.rank];
+    const rankData = RankMetadata[cu.rank];
     if (!rankData) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
@@ -158,8 +160,8 @@ async function AnnounceIfPromotion(nickname, oldRank, newRank) {
     }
     // If we get past here, a promotion has been detected.
     // Announce it in main chat.
-    const oldMeta = ChainOfCommand.metadata[oldRank];
-    const newMeta = ChainOfCommand.metadata[newRank];
+    const oldMeta = RankMetadata[oldRank];
+    const newMeta = RankMetadata[newRank];
     const message = `${nickname} ${newMeta.insignia} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
     console.log(message);
     // Delay for a few seconds to spread out the promotion messages and
@@ -375,11 +377,14 @@ async function MinuteHeartbeat() {
     }
     console.log('Minute heartbeat');
     // Update clan executive roles.
-    await Executives.UpdateClanExecutives(chainOfCommand);
+    //await Executives.UpdateClanExecutives(chainOfCommand);
     // Update mini-clans.
-    await MiniClans.UpdateRolesForMainDiscordGuild(chainOfCommand);
+    //await MiniClans.UpdateRolesForMainDiscordGuild(chainOfCommand);
     // Update the chain of command.
+    await UpdateHarmonicCentrality();
+    await ElectMrPresident();
     await UpdateChainOfCommandForMainDiscordGuild();
+    await Rank.UpdateUserRanks();
     // Update the nickname, insignia, and roles of the members of the Discord channel.
     await UpdateAllDiscordMemberAppearances();
     // Update time matrix and sync to database.
@@ -393,9 +398,6 @@ async function HourlyHeartbeat() {
     console.log('Hourly heartbeat');
     console.log('Consolidating the time matrix.');
     await DB.ConsolidateTimeMatrix();
-    console.log('Update harmonic centrality.');
-    await UpdateHarmonicCentrality();
-    await ElectMrPresident();
     await UpdateAllCitizens();
 }
 
@@ -523,7 +525,7 @@ async function Start() {
     setInterval(MinuteHeartbeat, oneMinute);
     // Run the hourly and minute heartbeat routines once each to fully prime
     // the bot rather than waiting until an hour or a minute has passed.
-    await HourlyHeartbeat();
+    //await HourlyHeartbeat();
     await MinuteHeartbeat();
 }
 

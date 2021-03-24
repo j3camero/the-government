@@ -1,84 +1,5 @@
 // Code for calculating the Chain of Command.
-const metadata = [
-    {
-	count: 1,
-	insignia: '⚑',
-	role: 'Marshal',
-	title: 'President',
-    },
-    {
-	count: 1,
-	insignia: '⚑',
-	role: 'Marshal',
-	title: 'Vice President',
-    },
-    {
-	count: 2,
-	insignia: '★★★★',
-	role: 'General',
-	title: 'General',
-    },
-    {
-	count: 4,
-	insignia: '★★★',
-	role: 'General',
-	title: 'General',
-    },
-    {
-	count: 5,
-	insignia: '★★',
-	role: 'General',
-	title: 'General',
-    },
-    {
-	count: 6,
-	insignia: '★',
-	role: 'General',
-	title: 'General',
-    },
-    {
-	count: 7,
-	insignia: '●●●●',
-	role: 'Officer',
-	title: 'Colonel',
-    },
-    {
-	count: 9,
-	insignia: '●●●',
-	role: 'Officer',
-	title: 'Major',
-    },
-    {
-	count: 11,
-	insignia: '●●',
-	role: 'Officer',
-	title: 'Captain',
-    },
-    {
-	count: 13,
-	insignia: '●',
-	role: 'Officer',
-	title: 'Lieutenant',
-    },
-    {
-	count: 26,
-	insignia: '●●●',
-	role: 'Grunt',
-	title: 'Sergeant',
-    },
-    {
-	count: 52,
-	insignia: '●●',
-	role: 'Grunt',
-	title: 'Corporal',
-    },
-    {
-	count: 9999,
-	insignia: '●',
-	role: 'Grunt',
-	title: 'Recruit',
-    },
-];
+const RankMetadata = require('./rank-definitions');
 
 // Remove a value from an array by value.
 // Modifies the original array in-place and also returns it.
@@ -292,7 +213,7 @@ function CalculateChainOfCommand(presidentID, vicePresidentID, candidates, relat
     while (candidates.length > 0) {
 	// Choose the next minion to add to the Chain of Command.
 	const numMinionsLeftToChoose = Math.min(
-	    metadata[minionRank].count - minions.length,
+	    RankMetadata[minionRank].count - minions.length,
 	    candidates.length);
 	const maxChildren = LimitMaxChildren(numMinionsLeftToChoose, bosses);
 	const pair = SelectBestMatch(bosses, candidates, timeMatrix, chain, maxChildren);
@@ -309,11 +230,11 @@ function CalculateChainOfCommand(presidentID, vicePresidentID, candidates, relat
 	boss.children.push(minion.id);
 	boss.children.sort();
 	// If the minion rank has been filled, then the minions become the new bosses.
-	if (minions.length >= metadata[minionRank].count) {
+	if (minions.length >= RankMetadata[minionRank].count) {
 	    bosses = minions;
 	    minions = [];
 	    minionRank += 1;
-	    if (minionRank >= metadata.length) {
+	    if (minionRank >= RankMetadata.length) {
 		throw new Error('Not enough ranks for everyone! ' +
 				'Add more space in the rank structure.');
 	    }
@@ -341,7 +262,6 @@ module.exports = {
     GetSubordinates,
     GetSuperiorIDs,
     LimitMaxChildren,
-    metadata,
     RemoveByValue,
     SelectBestMatch,
 };

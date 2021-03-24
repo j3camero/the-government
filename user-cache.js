@@ -1,4 +1,4 @@
-const ChainOfCommand = require('./chain-of-command');
+const RankMetadata = require('./rank-definitions');
 const CommissarUser = require('./commissar-user');
 const DB = require('./database');
 const FilterUsername = require('./filter-username');
@@ -80,7 +80,7 @@ async function CreateNewDatabaseUser(discordMember) {
     const discord_id = discordMember.user.id;
     const nickname = FilterUsername(discordMember.user.username);
     console.log(`Create a new DB user for ${nickname}`);
-    const rank = ChainOfCommand.metadata.length - 1;
+    const rank = RankMetadata.length - 1;
     const last_seen = moment().format();
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};
@@ -111,15 +111,20 @@ async function GetAllNicknames() {
     return nicknames;
 }
 
-// Get the N top users by Harmonic Centrality. Returns a list of pairs:
-// [(commissar_id, centrality), ...]
-async function GetMostCentralUsers(topN) {
+// Get the N top users by Harmonic Centrality.
+//
+// topN - the number of top most central users to return. Omit this
+//        to return all citizens sorted by centrality.
+//
+// Returns a list of pairs:
+//   [(commissar_id, centrality), ...]
+function GetMostCentralUsers(topN) {
     const flat = [];
-    await ForEach((user) => {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
 	if (user.citizen) {
 	    flat.push(user);
 	}
-    });
+    }
     flat.sort((a, b) => {
 	return b.harmonic_centrality - a.harmonic_centrality;
     });

@@ -1,0 +1,80 @@
+module.exports = [
+    {
+	count: 1,
+	insignia: '⚑',
+	role: 'Marshal',
+	title: 'President',
+    },
+    {
+	count: 1,
+	insignia: '⚑',
+	role: 'Marshal',
+	title: 'Vice President',
+    },
+    {
+	count: 2,
+	insignia: '★★★★',
+	role: 'General',
+	title: 'General',
+    },
+    {
+	count: 4,
+	insignia: '★★★',
+	role: 'General',
+	title: 'General',
+    },
+    {
+	count: 5,
+	insignia: '★★',
+	role: 'General',
+	title: 'General',
+    },
+    {
+	count: 6,
+	insignia: '★',
+	role: 'General',
+	title: 'General',
+    },
+    {
+	count: 7,
+	insignia: '●●●●',
+	role: 'Officer',
+	title: 'Colonel',
+    },
+    {
+	count: 9,
+	insignia: '●●●',
+	role: 'Officer',
+	title: 'Major',
+    },
+    {
+	count: 11,
+	insignia: '●●',
+	role: 'Officer',
+	title: 'Captain',
+    },
+    {
+	count: 13,
+	insignia: '●',
+	role: 'Officer',
+	title: 'Lieutenant',
+    },
+    {
+	count: 26,
+	insignia: '●●●',
+	role: 'Grunt',
+	title: 'Sergeant',
+    },
+    {
+	count: 52,
+	insignia: '●●',
+	role: 'Grunt',
+	title: 'Corporal',
+    },
+    {
+	count: 1000 * 1000,
+	insignia: '●',
+	role: 'Grunt',
+	title: 'Recruit',
+    },
+];

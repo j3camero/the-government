@@ -1,4 +1,4 @@
-const ChainOfCommand = require('./chain-of-command');
+const RankMetadata = require('./rank-definitions');
 const DB = require('./database');
 const jobDescriptions = require('./executive-config');
 const FilterUsername = require('./filter-username');
@@ -223,7 +223,7 @@ class CommissarUser {
 	if (!this.citizen) {
 	    return '●';
 	}
-	const rankData = ChainOfCommand.metadata[this.rank];
+	const rankData = RankMetadata[this.rank];
 	return rankData.insignia;
     }
 
