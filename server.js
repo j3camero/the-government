@@ -44,12 +44,12 @@ async function UpdateMemberRankRoles(member, rankName, goodStanding) {
 	throw `Invalid rank category name: ${rankName}`;
     };
     if (goodStanding) {
-	DiscordUtil.AddRole(member, addThisRole);
+	await DiscordUtil.AddRole(member, addThisRole);
     } else {
 	removeTheseRoles = [grunts, officers, generals, marshals];
     }
     removeTheseRoles.forEach((roleToRemove) => {
-	DiscordUtil.RemoveRole(member, roleToRemove);
+	await DiscordUtil.RemoveRole(member, roleToRemove);
     });
 }
 

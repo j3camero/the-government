@@ -150,19 +150,19 @@ async function AddDefendantRole(guild, member) {
     const general = await DiscordUtil.GetRoleByName(guild, 'General');
     const officer = await DiscordUtil.GetRoleByName(guild, 'Officer');
     const grunt = await DiscordUtil.GetRoleByName(guild, 'Grunt');
-    DiscordUtil.AddRole(member, defendant);
-    DiscordUtil.RemoveRole(member, notGuilty);
-    DiscordUtil.RemoveRole(member, marshal);
-    DiscordUtil.RemoveRole(member, general);
-    DiscordUtil.RemoveRole(member, officer);
-    DiscordUtil.RemoveRole(member, grunt);
+    await DiscordUtil.AddRole(member, defendant);
+    await DiscordUtil.RemoveRole(member, notGuilty);
+    await DiscordUtil.RemoveRole(member, marshal);
+    await DiscordUtil.RemoveRole(member, general);
+    await DiscordUtil.RemoveRole(member, officer);
+    await DiscordUtil.RemoveRole(member, grunt);
 }
 
 async function RemoveDefendantRole(guild, member) {
     const defendant = await DiscordUtil.GetRoleByName(guild, 'Defendant');
     const notGuilty = await DiscordUtil.GetRoleByName(guild, 'Not Guilty');
-    DiscordUtil.RemoveRole(member, defendant);
-    DiscordUtil.AddRole(member, notGuilty);
+    await DiscordUtil.RemoveRole(member, defendant);
+    await DiscordUtil.AddRole(member, notGuilty);
 }
 
 // The given Discord message is already verified to start with the !ban prefix.

@@ -45,26 +45,26 @@ function GuildMemberHasRole(member, targetRole) {
 // Adds a role to a GuildMember.
 //
 // Tries to be efficient by checking if the member already has the role.
-function AddRole(member, role) {
+async function AddRole(member, role) {
     if (!role || GuildMemberHasRole(member, role)) {
 	return;
     }
-    RateLimit.Run(() => {
+    await RateLimit.Run(async () => {
 	console.log('Adding role', role.name, 'to', member.nickname);
-	member.roles.add(role);
+	await member.roles.add(role);
     });
 }
 
 // Removes a role from a GuildMember.
 //
 // Tries to be efficient by checking if the member already has the role.
-function RemoveRole(member, role) {
+async function RemoveRole(member, role) {
     if (!role || !GuildMemberHasRole(member, role)) {
 	return;
     }
-    RateLimit.Run(() => {
+    await RateLimit.Run(async () => {
 	console.log('Removing role', role.name, 'from', member.nickname);
-	member.roles.remove(role);
+	await member.roles.remove(role);
     });
 }
 
