@@ -122,7 +122,7 @@ async function MessagePublicChatChannel(discordMessage) {
 
 async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     const guild = await GetMainDiscordGuild();
-    const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
+    const channels = GetAllMatchingTextChannels(guild, 'ranks');
     if (channels.length === 0) {
 	throw new Error('Could not find #harmonic-centrality chat channel.');
     }
