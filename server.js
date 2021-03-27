@@ -16,14 +16,14 @@ const UserCache = require('./user-cache');
 const timeTogetherStream = new TimeTogetherStream(new Clock());
 
 // Updates a guild member's color.
-async function UpdateMemberRankRoles(member, rankName, goodStanding) {
+async function UpdateMemberRankRoles(member, rankData, goodStanding) {
     const grunts = await DiscordUtil.GetRoleByName(member.guild, 'Grunt');
     const officers = await DiscordUtil.GetRoleByName(member.guild, 'Officer');
     const generals = await DiscordUtil.GetRoleByName(member.guild, 'General');
     const marshals = await DiscordUtil.GetRoleByName(member.guild, 'Marshal');
     let addThisRole;
     let removeTheseRoles;
-    switch (rankName) {
+    switch (rankData.role) {
     case 'Grunt':
 	addThisRole = grunts;
 	removeTheseRoles = [officers, generals, marshals];
@@ -41,16 +41,24 @@ async function UpdateMemberRankRoles(member, rankName, goodStanding) {
 	removeTheseRoles = [grunts, officers, generals];
 	break;
     default:
-	throw `Invalid rank category name: ${rankName}`;
+	throw `Invalid rank category name: ${rankData.role}`;
     };
     if (goodStanding) {
 	await DiscordUtil.AddRole(member, addThisRole);
     } else {
 	removeTheseRoles = [grunts, officers, generals, marshals];
     }
-    removeTheseRoles.forEach((roleToRemove) => {
+    for (const roleToRemove of removeTheseRoles) {
 	await DiscordUtil.RemoveRole(member, roleToRemove);
-    });
+    }
+    for (const jobDescription of RankMetadata) {
+	const jobRankRole = await DiscordUtil.GetRoleByName(member.guild, jobDescription.rankRole);
+	if (jobDescription.rankRole === rankData.rankRole) {
+	    await DiscordUtil.AddRole(member, jobRankRole);
+	} else {
+	    await DiscordUtil.RemoveRole(member, jobRankRole);
+	}
+    }
 }
 
 // Update the rank insignia, nickname, and roles of a Discord guild
@@ -83,7 +91,7 @@ async function UpdateMemberAppearance(member) {
 	member.setNickname(displayName);
     }
     // Update role (including rank color).
-    UpdateMemberRankRoles(member, rankData.role, cu.good_standing);
+    UpdateMemberRankRoles(member, rankData, cu.good_standing);
 }
 
 // Updates people's rank and nickname-based insignia (dots, stars) in Discord.
