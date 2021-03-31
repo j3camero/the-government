@@ -89,25 +89,63 @@ async function UpdateTrial(cu) {
     const yesVoteCount = yesVotes.length;
     const noVoteCount = noVotes.length;
     const guilty = VoteOutcome(yesVoteCount, noVoteCount);
-    let nextStateChangeMessage = `${cu.getNicknameWithInsignia()} is currently `;
+    const outcomeString = guilty ? 'banned' : 'NOT GUILTY';
+    const caseTitle = `SECRET CLAN v ${cu.getNicknameWithInsignia()}`;
+    const underline = new Array(caseTitle.length + 1).join('-');
+    const threeTicks = '```';
+    const currentTime = moment();
+    const endTime = moment(cu.ban_vote_end_time);
+    let nextStateChangeMessage;
     if (guilty) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
-	nextStateChangeMessage += `banned. ${n} more NO votes to unban`;
+	nextStateChangeMessage = `${n} more NO votes to unban`;
 	await cu.setGoodStanding(false);
 	await AddDefendantRole(guild, member);
 	await member.voice.kick();
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
-	nextStateChangeMessage += `NOT GUILTY. ${n} more YES votes to ban`;
+	nextStateChangeMessage = `${n} more YES votes to ban`;
 	await cu.setGoodStanding(true);
 	await RemoveDefendantRole(guild, member);
     }
-    const timeRemaining = moment(cu.ban_vote_end_time).fromNow();
-    const caseTitle = `SECRET CLAN v ${cu.getNicknameWithInsignia()}`;
-    const underline = new Array(caseTitle.length + 1).join('-');
-    const threeTicks = '```';
-    const trialMessage = `${threeTicks}${caseTitle}\n${underline}\n\nVoting YES to ban:${yesVoteNames}\n\nVoting NO against the ban:${noVoteNames}\n\n${nextStateChangeMessage}. The vote ends ${timeRemaining}.${threeTicks}`;
-    await message.edit(trialMessage);
+    if (currentTime.isAfter(endTime)) {
+	// Ban trial is over. End it and clean it up.
+	const caseNumber = Math.floor(Math.random() * 10 * 1000 * 1000);
+	const caseNumberString = caseNumber.toString().padStart(8, '0');
+	const dateString = moment().format('MMM D, YYYY');
+	const trialMessage = (
+	    `${threeTicks}` +
+	    `${caseTitle}\n` +
+	    `${underline}\n\n` +
+	    `Voting YES to ban:${yesVoteNames}\n\n` +
+	    `Voting NO against the ban:${noVoteNames}\n\n` +
+	    `${cu.getNicknameWithInsignia()} is ${outcomeString}.\n\n` +
+	    `Case #${caseNumberString} ${dateString}` +
+	    `${threeTicks}`
+	);
+	await message.edit(trialMessage);
+	await channel.send(trialMessage);
+	const caseFiles = await DiscordUtil.GetCategoryChannelByName('Case Files');
+	await channel.setParent(caseFiles);
+	await channel.lockPermissions();
+	await cu.setBanVoteEndTime(null);
+	await cu.setBanVoteChatroom(null);
+	await cu.setBanVoteMessage(null);
+    } else {
+	// Ban trial is still underway. Update it.
+	const timeRemaining = endTime.fromNow();
+	const trialMessage = (
+	    `${threeTicks}` +
+	    `${caseTitle}\n` +
+	    `${underline}\n\n` +
+	    `Voting YES to ban:${yesVoteNames}\n\n` +
+	    `Voting NO against the ban:${noVoteNames}\n\n` +
+	    `${cu.getNicknameWithInsignia()} is currently ${outcomeString}. ` +
+	    `${nextStateChangeMessage}. The vote ends ${timeRemaining}.` +
+	    `${threeTicks}`
+	);
+	await message.edit(trialMessage);
+    }
 }
 
 function VoteOutcome(yes, no) {
