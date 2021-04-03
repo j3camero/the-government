@@ -70,7 +70,7 @@ async function UpdateMemberAppearance(member) {
     }
     const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
     if (!cu) {
-	console.log('Unknown user detected!');
+	console.log('Unknown user detected! username:', member.user.username);
 	return;
     }
     if (!cu.citizen) {
