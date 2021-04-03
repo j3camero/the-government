@@ -134,10 +134,11 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
 		   'social network. It is impartial and fair. Anyone can become become a General.\n' + threeBackticks);
     for (let i = 0; i < mostCentralUsers.length; ++i) {
 	const cu = mostCentralUsers[i];
-	const scoreString = Math.round(cu.harmonic_centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-	const margin = cu.harmonic_centrality / mostCentralUsers[0].harmonic_centrality - 1;
-	const marginString = Math.round(100 * margin);
-	message += `$${scoreString} ${cu.getNicknameOrTitleWithInsignia()}\n`;
+	const score = cu.harmonic_centrality / 1000;
+	const scoreString = Math.round(score).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	const dollarAmount = '$' + scoreString;
+	const paddedDollarAmount = dollarAmount.padStart(6, ' ');
+	message += `${paddedDollarAmount} ${cu.getNicknameOrTitleWithInsignia()}\n`;
     }
     message += threeBackticks;
     await channel.send(message);
