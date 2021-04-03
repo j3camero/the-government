@@ -84,7 +84,6 @@ async function UpdateMemberAppearance(member) {
     if (!rankData) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
-    // Nickname override for special titles like 'Mr. President'.
     const displayName = cu.getNicknameOrTitleWithInsignia();
     if (member.nickname !== displayName && member.user.id !== member.guild.ownerID) {
 	console.log(`Updating nickname ${displayName}.`);
@@ -148,7 +147,7 @@ async function UpdateHarmonicCentrality() {
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    const mostCentral = await UserCache.GetMostCentralUsers(59);
+    const mostCentral = await UserCache.GetMostCentralUsers(74);
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
@@ -330,6 +329,7 @@ async function Start() {
     setInterval(HourlyHeartbeat, oneHour);
     setInterval(MinuteHeartbeat, oneMinute);
     await MinuteHeartbeat();
+    await HourlyHeartbeat();
 }
 
 Start();

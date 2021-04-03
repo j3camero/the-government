@@ -1,4 +1,5 @@
 const DiscordUtil = require('./discord-util');
+const moment = require('moment');
 const RankMetadata = require('./rank-definitions');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
@@ -32,6 +33,14 @@ async function AnnounceIfPromotion(user, newRank) {
 	!Number.isInteger(user.rank) || !Number.isInteger(newRank) ||
 	newRank >= user.rank) {
 	// No promotion detected. Bail.
+	return;
+    }
+    if (!user.last_seen) {
+	return;
+    }
+    const lastSeen = moment(user.last_seen);
+    if (moment().subtract(24, 'hours').isAfter(lastSeen)) {
+	// No announcements for people who are invactive the last 24 hours.
 	return;
     }
     // If we get past here, a promotion has been detected.

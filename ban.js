@@ -194,6 +194,23 @@ async function AddDefendantRole(guild, member) {
     await DiscordUtil.RemoveRole(member, general);
     await DiscordUtil.RemoveRole(member, officer);
     await DiscordUtil.RemoveRole(member, grunt);
+    const rankRoles = [
+	'General ★★★★',
+	'General ★★★',
+	'General ★★',
+	'General ★',
+	'Colonel',
+	'Major',
+	'Captain',
+	'Lieutenant',
+	'Sergeant',
+	'Corporal',
+	'Recruit',
+    ];
+    for (const roleName of rankRoles) {
+	const role = await DiscordUtil.GetRoleByName(guild, roleName);
+	await DiscordUtil.RemoveRole(member, role);
+    }
 }
 
 async function RemoveDefendantRole(guild, member) {
@@ -224,7 +241,7 @@ async function HandleBanCommand(discordMessage) {
 	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial.`);
 	return;
     }
-    await discordMessage.channel.send(`Test ban ${mentionedUser.getNicknameWithInsignia()}!`);
+    await discordMessage.channel.send(`${mentionedUser.getNicknameWithInsignia()} has been sent to Ban Court!`);
     const sevenDays = moment().add(7, 'days').format();
     await mentionedUser.setBanVoteEndTime(sevenDays);
     QueueUpdate(mentionedUser.commissar_id);
