@@ -317,7 +317,6 @@ async function Start() {
 	if (!cu) {
 	    return;
 	}
-	await cu.setCitizen(true);
 	await Ban.HandlePossibleReaction(messageReaction, user, false);
     });
 

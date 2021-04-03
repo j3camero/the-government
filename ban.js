@@ -49,7 +49,7 @@ async function UpdateTrial(cu) {
 		continue;
 	    }
 	    const jurorUser = await UserCache.GetCachedUserByDiscordId(juror.id);
-	    if (!jurorUser || jurorUser.rank > 5) {
+	    if (!jurorUser || !jurorUser.citizen || jurorUser.rank > 5) {
 		// Remove unauthorized vote. This check will catch unauthorized votes that
 		// made it through the initial filter because the bot was not running.
 		await reaction.users.remove(juror);
