@@ -18,8 +18,8 @@ const timeTogetherStream = new TimeTogetherStream(new Clock());
 
 // Updates a guild member's color.
 async function UpdateMemberRankRoles(member, rankData, goodStanding) {
-    const rolesToAdd = rankData.roles;
-    const rolesToRemove = [];
+    let rolesToAdd = rankData.roles;
+    let rolesToRemove = [];
     for (const rank of RankMetadata) {
 	for (const role of rank.roles) {
 	    if (!rolesToAdd.includes(role)) {
@@ -28,8 +28,8 @@ async function UpdateMemberRankRoles(member, rankData, goodStanding) {
 	}
     }
     if (!goodStanding) {
-	rolesToRemove.concat(rolesToAdd);
-	rolesToAdd.length = 0;
+	rolesToRemove = rolesToRemove.concat(rolesToAdd);
+	rolesToAdd = [];
     }
     for (const role of rolesToAdd) {
 	await DiscordUtil.AddRole(member, role);
