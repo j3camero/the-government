@@ -100,13 +100,11 @@ async function UpdateTrial(cu) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more NO votes to unban`;
 	await cu.setGoodStanding(false);
-	await AddDefendantRole(guild, member);
 	await member.voice.kick();
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more YES votes to ban`;
 	await cu.setGoodStanding(true);
-	await RemoveDefendantRole(guild, member);
     }
     if (currentTime.isAfter(endTime)) {
 	// Ban trial is over. End it and clean it up.
@@ -179,41 +177,6 @@ function HowManyMoreYes(yes, no) {
     }
     // Shouldn't get here.
     return 0;
-}
-
-async function AddDefendantRole(guild, member) {
-    const defendant = await DiscordUtil.GetRoleByName(guild, 'Defendant');
-    const marshal = await DiscordUtil.GetRoleByName(guild, 'Marshal');
-    const general = await DiscordUtil.GetRoleByName(guild, 'General');
-    const officer = await DiscordUtil.GetRoleByName(guild, 'Officer');
-    const grunt = await DiscordUtil.GetRoleByName(guild, 'Grunt');
-    await DiscordUtil.AddRole(member, defendant);
-    await DiscordUtil.RemoveRole(member, marshal);
-    await DiscordUtil.RemoveRole(member, general);
-    await DiscordUtil.RemoveRole(member, officer);
-    await DiscordUtil.RemoveRole(member, grunt);
-    const rankRoles = [
-	'General ★★★★',
-	'General ★★★',
-	'General ★★',
-	'General ★',
-	'Colonel',
-	'Major',
-	'Captain',
-	'Lieutenant',
-	'Sergeant',
-	'Corporal',
-	'Recruit',
-    ];
-    for (const roleName of rankRoles) {
-	const role = await DiscordUtil.GetRoleByName(guild, roleName);
-	await DiscordUtil.RemoveRole(member, role);
-    }
-}
-
-async function RemoveDefendantRole(guild, member) {
-    const defendant = await DiscordUtil.GetRoleByName(guild, 'Defendant');
-    await DiscordUtil.RemoveRole(member, defendant);
 }
 
 // The given Discord message is already verified to start with the !ban prefix.
@@ -352,7 +315,6 @@ async function HandlePardonCommand(discordMessage) {
     } catch (error) {
 	// In case the command was issued inside the courtroom, which no longer exists.
     }
-    RemoveDefendantRole(guild, mentionedMember);
 }
 
 module.exports = {
