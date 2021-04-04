@@ -7,18 +7,18 @@ const UserCache = require('./user-cache');
 // Update the ranks of all users.
 async function UpdateUserRanks() {
     const users = UserCache.GetMostCentralUsers();
-    let rank = 2;  // Start at 4-star General (rank 2) as a cheap hack to disable the Marshal ranks (ranks 0 and 1).
+    let rank = 0;
     let usersAtRank = 0;
     for (const user of users) {
+	while (usersAtRank >= RankMetadata[rank].count) {
+	    rank++;
+	    usersAtRank = 0;
+	}
 	// When we run out of ranks, this line defaults to the last/least rank.
 	rank = Math.max(0, Math.min(RankMetadata.length - 1, rank));
 	await AnnounceIfPromotion(user, rank);
 	await user.setRank(rank);
 	usersAtRank++;
-	if (usersAtRank >= RankMetadata[rank].count) {
-	    rank++;
-	    usersAtRank = 0;
-	}
     }
 }
 

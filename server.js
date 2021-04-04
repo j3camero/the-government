@@ -17,47 +17,24 @@ const timeTogetherStream = new TimeTogetherStream(new Clock());
 
 // Updates a guild member's color.
 async function UpdateMemberRankRoles(member, rankData, goodStanding) {
-    const grunts = await DiscordUtil.GetRoleByName(member.guild, 'Grunt');
-    const officers = await DiscordUtil.GetRoleByName(member.guild, 'Officer');
-    const generals = await DiscordUtil.GetRoleByName(member.guild, 'General');
-    const marshals = await DiscordUtil.GetRoleByName(member.guild, 'Marshal');
-    let addThisRole;
-    let removeTheseRoles;
-    switch (rankData.role) {
-    case 'Grunt':
-	addThisRole = grunts;
-	removeTheseRoles = [officers, generals, marshals];
-	break;
-    case 'Officer':
-	addThisRole = officers;
-	removeTheseRoles = [grunts, generals, marshals];
-	break;
-    case 'General':
-	addThisRole = generals;
-	removeTheseRoles = [grunts, officers, marshals];
-	break;
-    case 'Marshal':
-	addThisRole = marshals;
-	removeTheseRoles = [grunts, officers, generals];
-	break;
-    default:
-	throw `Invalid rank category name: ${rankData.role}`;
-    };
-    if (goodStanding) {
-	await DiscordUtil.AddRole(member, addThisRole);
-    } else {
-	removeTheseRoles = [grunts, officers, generals, marshals];
-    }
-    for (const roleToRemove of removeTheseRoles) {
-	await DiscordUtil.RemoveRole(member, roleToRemove);
-    }
-    for (const jobDescription of RankMetadata) {
-	const jobRankRole = await DiscordUtil.GetRoleByName(member.guild, jobDescription.rankRole);
-	if (jobDescription.rankRole === rankData.rankRole) {
-	    await DiscordUtil.AddRole(member, jobRankRole);
-	} else {
-	    await DiscordUtil.RemoveRole(member, jobRankRole);
+    const rolesToAdd = rankData.roles;
+    const rolesToRemove = [];
+    for (const rank of RankMetadata) {
+	for (const role of rank.roles) {
+	    if (!rolesToAdd.includes(role)) {
+		rolesToRemove.push(role);
+	    }
 	}
+    }
+    if (!goodStanding) {
+	rolesToRemove.concat(rolesToAdd);
+	rolesToAdd.length = 0;
+    }
+    for (const role of rolesToAdd) {
+	await DiscordUtil.AddRole(member, role);
+    }
+    for (const role of rolesToRemove) {
+	await DiscordUtil.RemoveRole(member, role);
     }
 }
 
