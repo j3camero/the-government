@@ -9,6 +9,7 @@ const moment = require('moment');
 const Rank = require('./rank');
 const RankMetadata = require('./rank-definitions');
 const RateLimit = require('./rate-limit');
+const RoleID = require('./role-id');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
 
@@ -68,6 +69,11 @@ async function UpdateMemberAppearance(member) {
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData, cu.good_standing);
+    if (rankData.banPower) {
+	await DiscordUtil.AddRole(member, RoleID.BanPower);
+    } else {
+	await DiscordUtil.RemoveRole(member, RoleID.BanPower);
+    }
 }
 
 // Updates people's rank and nickname-based insignia (dots, stars) in Discord.
