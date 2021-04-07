@@ -3,23 +3,27 @@ const RoleID = require('./role-id');
 module.exports = [
     {
 	banPower: true,
-	count: 0,
+	count: 1,
 	insignia: '⚑',
 	roles: [
+	    RoleID.Marshal,
 	    RoleID.MrPresident,
 	    RoleID.Admin,
 	],
 	title: 'President',
+	titleOverride: true,
     },
     {
 	banPower: true,
-	count: 0,
+	count: 1,
 	insignia: '⚑',
 	roles: [
+	    RoleID.Marshal,
 	    RoleID.MrVicePresident,
 	    RoleID.Admin,
 	],
 	title: 'Vice President',
+	titleOverride: true,
     },
     {
 	banPower: true,
@@ -30,7 +34,7 @@ module.exports = [
     },
     {
 	banPower: true,
-	count: 2,
+	count: 3,
 	insignia: '★★★',
 	roles: [RoleID.General, RoleID.Admin],
 	title: 'General',
@@ -44,7 +48,7 @@ module.exports = [
     },
     {
 	banPower: true,
-	count: 8,
+	count: 5,
 	insignia: '★',
 	roles: [RoleID.General, RoleID.Admin],
 	title: 'General',

@@ -1,6 +1,5 @@
 const RankMetadata = require('./rank-definitions');
 const DB = require('./database');
-const jobDescriptions = require('./executive-config');
 const FilterUsername = require('./filter-username');
 const moment = require('moment');
 
@@ -203,11 +202,8 @@ class CommissarUser {
     }
 
     getNicknameOrTitle() {
-	if (!this.office) {
-	    return this.nickname;
-	}
-	const job = jobDescriptions[this.office];
-	if (job.title) {
+	const job = RankMetadata[this.rank];
+	if (job.titleOverride) {
 	    const prefix = this.getGenderPrefix();
 	    return `${prefix} ${job.title}`;
 	} else {
