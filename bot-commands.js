@@ -25,29 +25,19 @@ async function HandlePingPublicChatCommand(discordMessage) {
 async function HandleCodeCommand(discordMessage) {
     const pin = RandomPin();
     const message = await discordMessage.channel.send(pin);
-    // TODO: offer to update the user's secret pinned code.
-    //const cu = UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    //if (!cu) {
-    //	return;
-    //}
-    //if (discordMessage.channel.id === cu.friend_text_chat_id) {
-    //	const pinnedMessages = await discordMessage.channel.messages.fetchPinned();
-    //	await message.pin();
-    //}
 }
 
 // A message that starts with !gender.
 async function HandleGenderCommand(discordMessage) {
     const discordId = discordMessage.author.id;
-    const cu = UserCache.GetCachedUserByDiscordId(discordId);
+    const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+    if (!cu) {
+	throw 'Message author not found in database.';
+    }
     const tokens = discordMessage.content.split(' ');
     if (tokens.length !== 2) {
 	await discordMessage.channel.send('Error: wrong number of parameters. Example: `!gender F`');
 	return;
-    }
-    if (tokens[0] !== '!gender') {
-	// This should never happen, but just in case...
-	throw 'Handler only handles the !gender function. Possible dispatch error.';
     }
     const genderString = tokens[1].toUpperCase();
     if (genderString.length !== 1 || !genderString.match(/[A-Z]/i)) {
