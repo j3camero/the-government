@@ -302,8 +302,10 @@ async function HandlePardonCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     if (mentionedUser.ban_vote_chatroom) {
 	const channel = await guild.channels.resolve(mentionedUser.ban_vote_chatroom);
-	await channel.delete();
-	await mentionedUser.setBanVoteChatroom(null);
+	if (channel) {
+	    await channel.delete();
+	    await mentionedUser.setBanVoteChatroom(null);
+	}
     }
     await mentionedUser.setBanVoteMessage(null);
     await mentionedUser.setGoodStanding(true);
