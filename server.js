@@ -103,7 +103,7 @@ async function UpdateVoiceActiveMembersForOneGuild(guild) {
 	if (channel.type === 'voice') {
 	    const channelActive = [];
 	    for (const [memberId, member] of channel.members) {
-		if (member.voice.mute || member.voice.deaf || member.voice.streaming) {
+		if (member.voice.mute || member.voice.deaf) {
 		    continue;
 		}
 		const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
