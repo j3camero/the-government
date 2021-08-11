@@ -23,6 +23,13 @@ function FilterUsername(username) {
 	'𝘰': 'o',
 	'𝘴': 's',
 	'♡': 'x',
+	'𝙋': 'P',
+	'𝘼': 'A',
+	'𝙄': 'I',
+	'乃': 'B',
+	'ㄥ': 'L',
+	'ㄩ': 'U',
+	'尺': 'R',
     };
     for (const [before, after] of Object.entries(substitutions)) {
 	username = username.split(before).join(after);
@@ -37,7 +44,7 @@ function FilterUsername(username) {
     const maxNameLength = 18;
     s = s.trim().slice(0, maxNameLength).trim();
     if (s.length === 0) {
-	s = '???';
+	s = 'John Doe';
     }
     return s;
 }

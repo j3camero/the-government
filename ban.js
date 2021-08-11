@@ -9,20 +9,32 @@ async function UpdateTrial(cu) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const member = await guild.members.fetch(cu.discord_id);
+    let member;
+    try {
+	member = await guild.members.fetch(cu.discord_id);
+    } catch (error) {
+	member = null;
+    }
     const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
     const roomName = cu.nickname;
     // Update or create the courtroom: a text chat room under the Ban Court category.
     const channel = await RateLimit.Run(async () => {
 	if (cu.ban_vote_chatroom) {
+	    console.log('Finding ban court chatroom', roomName, cu.ban_vote_chatroom);
 	    return await guild.channels.resolve(cu.ban_vote_chatroom);
 	} else {
+	    console.log('Creating ban court chatroom', roomName);
 	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
 	    await newChannel.setParent(banCourtCategory);
-	    await newChannel.createOverwrite(member, { 'SEND_MESSAGES': true });
+	    if (member) {
+		await newChannel.createOverwrite(member, { 'SEND_MESSAGES': true });
+	    }
 	    return newChannel;
 	}
     });
+    if (!channel) {
+	console.log('Failed to find or create ban court channel', roomName);
+    }
     await cu.setBanVoteChatroom(channel.id);
     // Update or create the ban vote message itself. The votes are reactions to this message.
     const message = await RateLimit.Run(async () => {
@@ -41,7 +53,14 @@ async function UpdateTrial(cu) {
     const yesVotes = [];
     // Count up all the votes. Remove any unauthorized votes.
     for (const [reactionId, reaction] of message.reactions.cache) {
-	for (const [jurorId, juror] of await reaction.users.fetch()) {
+	let reactions;
+	try {
+	    reactions = await reaction.users.fetch();
+	} catch (error) {
+	    console.log('Warning: problem fetching ban votes!');
+	    reactions = [];
+	}
+	for (const [jurorId, juror] of reactions) {
 	    if (juror.bot) {
 		continue;
 	    }
@@ -97,7 +116,9 @@ async function UpdateTrial(cu) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more NO votes to unban`;
 	await cu.setGoodStanding(false);
-	await member.voice.kick();
+	if (member) {
+	    await member.voice.kick();
+	}
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more YES votes to ban`;
