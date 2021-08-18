@@ -20,10 +20,8 @@ async function UpdateTrial(cu) {
     // Update or create the courtroom: a text chat room under the Ban Court category.
     const channel = await RateLimit.Run(async () => {
 	if (cu.ban_vote_chatroom) {
-	    console.log('Finding ban court chatroom', roomName, cu.ban_vote_chatroom);
 	    return await guild.channels.resolve(cu.ban_vote_chatroom);
 	} else {
-	    console.log('Creating ban court chatroom', roomName);
 	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
 	    await newChannel.setParent(banCourtCategory);
 	    if (member) {
@@ -126,27 +124,23 @@ async function UpdateTrial(cu) {
     }
     if (currentTime.isAfter(endTime)) {
 	// Ban trial is over. End it and clean it up.
-	const caseNumber = Math.floor(Math.random() * 10 * 1000 * 1000);
-	const caseNumberString = caseNumber.toString().padStart(8, '0');
-	const dateString = moment().format('MMM D, YYYY');
-	const trialMessage = (
-	    `${threeTicks}` +
-	    `${caseTitle}\n` +
-	    `${underline}\n\n` +
-	    `Voting YES to ban:${yesVoteNames}\n\n` +
-	    `Voting NO against the ban:${noVoteNames}\n\n` +
-	    `${cu.getNicknameWithInsignia()} is ${outcomeString}.\n\n` +
-	    `Case #${caseNumberString} ${dateString}` +
-	    `${threeTicks}`
-	);
-	await message.edit(trialMessage);
-	await channel.send(trialMessage);
-	const caseFiles = await DiscordUtil.GetCategoryChannelByName('Case Files');
-	await channel.setParent(caseFiles);
-	await channel.lockPermissions();
+	console.log('Trial ended. Cleaning up.');
+	if (guilty) {
+	    console.log('About to ban a guild member.');
+	    // This line of code actually bans a member of the guild. Test carefully!
+	    await member.ban({
+		days: 0,  // The number of days of message history to delete, not the length of the ban.
+		reason: 'Ban Court',
+	    });
+	    console.log('Ban implemented.');
+	} else {
+	    console.log('Not guilty y\'all got to feel me!');
+	}
+	await channel.delete();
 	await cu.setBanVoteEndTime(null);
 	await cu.setBanVoteChatroom(null);
 	await cu.setBanVoteMessage(null);
+	console.log('Trial cleanup done. Justice prevails!');
     } else {
 	// Ban trial is still underway. Update it.
 	const timeRemaining = endTime.fromNow();
