@@ -212,6 +212,10 @@ class CommissarUser {
     }
 
     getInsignia() {
+	if (this.commissar_id === 6) {
+	    // Brobob memorial insignia: Eternal Leader.
+	    return '★★★★★';
+	}
 	if (!this.citizen) {
 	    return '●';
 	}
