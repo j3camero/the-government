@@ -6,6 +6,8 @@ const UserCache = require('./user-cache');
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_end_time) {
 	// No trial to update.
+	await cu.setBanVoteChatroom(null);
+	await cu.setBanVoteMessage(null);
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
@@ -125,7 +127,11 @@ async function UpdateTrial(cu) {
     if (currentTime.isAfter(endTime)) {
 	// Ban trial is over. End it and clean it up.
 	console.log('Trial ended. Cleaning up.');
-	if (guilty) {
+	console.log(currentTime, 'is after', endTime);
+	if (!member) {
+	    console.log('Trying to ban an invalid member. Bad sign...');
+	}
+	if (guilty && member != null) {
 	    console.log('About to ban a guild member.');
 	    // This line of code actually bans a member of the guild. Test carefully!
 	    await member.ban({

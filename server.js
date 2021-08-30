@@ -152,8 +152,9 @@ async function UpdateAllCitizens() {
 	    }
 	    await user.setNickname(discordMember.user.username);
 	    await DestroyFriendSectionForCommissarUser(user, guild);
-	    await Ban.UpdateTrial(user);
 	}
+	// Update ban trial even if the defendant leaves the guild.
+	await Ban.UpdateTrial(user);
     });
 }
 
