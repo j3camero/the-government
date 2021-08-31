@@ -30,6 +30,9 @@ function FilterUsername(username) {
 	'ㄥ': 'L',
 	'ㄩ': 'U',
 	'尺': 'R',
+	'î': 'i',
+	'ł': 'l',
+	'ø': 'o',
     };
     for (const [before, after] of Object.entries(substitutions)) {
 	username = username.split(before).join(after);
