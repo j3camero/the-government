@@ -9,7 +9,7 @@ const channelNames = {
     3: 'Trio Room',
     4: 'Quad Room',
     6: 'Six Pack',
-    8: 'Eight Pack',
+    8: 'Squad',
 };
 
 function GetAllMatchingVoiceChannels(guild, userLimit) {
