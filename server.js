@@ -266,6 +266,7 @@ async function Start() {
 	if (cu.good_standing === false) {
 	    await newVoiceState.member.voice.kick();
 	}
+	await huddles.Update();
     });
 
     // When a user changes their username or other user details.

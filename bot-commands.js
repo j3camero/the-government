@@ -2,7 +2,6 @@
 const Artillery = require('./artillery');
 const Ban = require('./ban');
 const DiscordUtil = require('./discord-util');
-const huddles = require('./huddles');
 const RandomPin = require('./random-pin');
 const UserCache = require('./user-cache');
 
@@ -110,10 +109,6 @@ async function HandleUnfriendCommand(discordMessage) {
     );
 }
 
-async function UpdateHuddles() {
-    await huddles.Update();
-}
-
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -135,7 +130,6 @@ async function Dispatch(discordMessage) {
 	'!pardon': Ban.HandlePardonCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
-	'!updatehuddles': UpdateHuddles,
 	// Uncomment the 2 lines below to re-enable the !friend commands.
 	//'!friend': HandleFriendCommand,
 	//'!unfriend': HandleUnfriendCommand,
