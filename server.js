@@ -5,6 +5,7 @@ const DB = require('./database');
 const deepEqual = require('deep-equal');
 const DiscordUtil = require('./discord-util');
 const HarmonicCentrality = require('./harmonic-centrality');
+const huddles = require('./huddles');
 const moment = require('moment');
 const Rank = require('./rank');
 const RankMetadata = require('./rank-definitions');
