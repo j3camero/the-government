@@ -27,6 +27,47 @@ function GetAllMatchingVoiceChannels(guild, userLimit) {
     return matchingChannels;
 }
 
+async function CreateNewVoiceChannel(guild, userLimit) {
+    const channelName = channelNames[userLimit];
+    const parent = await DiscordUtil.GetCategoryChannelByName('Public');
+    const options = {
+	parent,
+	position: 1000 * userLimit,
+	type: 'voice',
+	userLimit,
+    };
+    console.log('Creating channel.');
+    await guild.channels.create(channelName, options);
+    console.log('Done');
+}
+
+function GetMostRecentlyCreatedVoiceChannel(channels) {
+    let mostRecentChannel;
+    for (const channel of channels) {
+	if (!mostRecentChannel || channel.createdTimestamp > mostRecentChannel.createdTimestamp) {
+	    mostRecentChannel = channel;
+	}
+    }
+    return mostRecentChannel;    
+}
+
+async function DeleteMostRecentlyCreatedVoiceChannel(channels) {
+    const channel = GetMostRecentlyCreatedVoiceChannel(channels);
+    console.log('Deleting channel');
+    await channel.delete();
+    console.log('Done');
+}
+
+function GetMinimumPositionOfVoiceChannels(channels) {
+    let minPos;
+    for (const channel of channels) {
+	if (!minPos || channel.position < minPos) {
+	    minPos = channel.position;
+	}
+    }
+    return minPos;
+}
+
 async function UpdateVoiceChannelsForOneUserLimit(guild, userLimit) {
     const matchingChannels = GetAllMatchingVoiceChannels(guild, userLimit);
     if (matchingChannels.length === 0) {
@@ -34,6 +75,15 @@ async function UpdateVoiceChannelsForOneUserLimit(guild, userLimit) {
 	return;
     }
     console.log('Found', matchingChannels.length, 'matching channels.');
+    const emptyChannels = matchingChannels.filter(ch => ch.members.size === 0);
+    console.log(emptyChannels.length, 'empty channels of this type.');
+    if (emptyChannels.length === 0) {
+	await CreateNewVoiceChannel(guild, userLimit);
+    } else if (emptyChannels.length >= 2) {
+	await DeleteMostRecentlyCreatedVoiceChannel(emptyChannels);
+    } else {
+	// There is exactly 1 empty channel. Do nothing.
+    }
 }
 
 async function Update() {
