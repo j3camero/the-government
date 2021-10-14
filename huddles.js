@@ -4,41 +4,51 @@
 
 const DiscordUtil = require('./discord-util');
 
-const channelNames = {
-    2: 'Duo Room',
-    3: 'Trio Room',
-    4: 'Quad Room',
-    6: 'Six Pack',
-    8: 'Squad',
-};
+const huddles = [
+    { name: 'Lobby', userLimit: 99, position: 1000 },
+    { name: 'Duo Room', userLimit: 2, position: 2000 },
+    { name: 'Trio Room', userLimit: 3, position: 3000 },
+    { name: 'Quad Room', userLimit: 4, position: 4000 },
+    { name: 'Six Pack', userLimit: 6, position: 6000 },
+    { name: 'Squad', userLimit: 8, position: 8000 },
+];
 
-function GetAllMatchingVoiceChannels(guild, userLimit) {
+function GetAllMatchingVoiceChannels(guild, huddle) {
     const matchingChannels = [];
     // Necessary in case a string key is passed in. Object keys are sometimes showing up as strings.
-    userLimit = parseInt(userLimit);
-    const channelName = channelNames[userLimit];
     for (const [id, channel] of guild.channels.cache) {
 	if (channel.type === 'voice' &&
-	    channel.name === channelName &&
-	    channel.userLimit === userLimit) {
+	    channel.name === huddle.name &&
+	    channel.userLimit === parseInt(huddle.userLimit)) {
 	    matchingChannels.push(channel);
 	}
     }
     return matchingChannels;
 }
 
-async function CreateNewVoiceChannel(guild, userLimit) {
-    const channelName = channelNames[userLimit];
+async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
     const parent = await DiscordUtil.GetCategoryChannelByName('Public');
     const options = {
+	bitrate,
 	parent,
-	position: 1000 * userLimit,
+	position: huddle.position,
 	type: 'voice',
-	userLimit,
+	userLimit: huddle.userLimit,
     };
     console.log('Creating channel.');
-    await guild.channels.create(channelName, options);
+    await guild.channels.create(huddle.name, options);
     console.log('Done');
+}
+
+async function CreateNewVoiceChannel(guild, huddle) {
+    const preferredBitrate = 128000;
+    try {
+	await CreateNewVoiceChannelWithBitrate(guild, huddle, preferredBitrate);
+    } catch (err) {
+	// If channel creation fails, assume that it's because of the bitrate and try again.
+	// This will save us if the server loses Discord Nitro levels.
+	await CreateNewVoiceChannelWithBitrate(guild, huddle);
+    }
 }
 
 function GetMostRecentlyCreatedVoiceChannel(channels) {
@@ -48,7 +58,7 @@ function GetMostRecentlyCreatedVoiceChannel(channels) {
 	    mostRecentChannel = channel;
 	}
     }
-    return mostRecentChannel;    
+    return mostRecentChannel;
 }
 
 async function DeleteMostRecentlyCreatedVoiceChannel(channels) {
@@ -58,27 +68,18 @@ async function DeleteMostRecentlyCreatedVoiceChannel(channels) {
     console.log('Done');
 }
 
-function GetMinimumPositionOfVoiceChannels(channels) {
-    let minPos;
-    for (const channel of channels) {
-	if (!minPos || channel.position < minPos) {
-	    minPos = channel.position;
-	}
-    }
-    return minPos;
-}
-
-async function UpdateVoiceChannelsForOneUserLimit(guild, userLimit) {
-    const matchingChannels = GetAllMatchingVoiceChannels(guild, userLimit);
+async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {
+    const matchingChannels = GetAllMatchingVoiceChannels(guild, huddle);
     if (matchingChannels.length === 0) {
-	console.log('Found no rooms matching', userLimit);
+	console.log('Found no rooms matching', JSON.stringify(huddle));
+	await CreateNewVoiceChannel(guild, huddle);
 	return;
     }
     console.log('Found', matchingChannels.length, 'matching channels.');
     const emptyChannels = matchingChannels.filter(ch => ch.members.size === 0);
     console.log(emptyChannels.length, 'empty channels of this type.');
     if (emptyChannels.length === 0) {
-	await CreateNewVoiceChannel(guild, userLimit);
+	await CreateNewVoiceChannel(guild, huddle);
     } else if (emptyChannels.length >= 2) {
 	await DeleteMostRecentlyCreatedVoiceChannel(emptyChannels);
     } else {
@@ -88,8 +89,8 @@ async function UpdateVoiceChannelsForOneUserLimit(guild, userLimit) {
 
 async function Update() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    for (const userLimit in channelNames) {
-	await UpdateVoiceChannelsForOneUserLimit(guild, userLimit);
+    for (const huddle of huddles) {
+	await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
     }
 }
 
