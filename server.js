@@ -83,9 +83,9 @@ async function UpdateAllDiscordMemberAppearances() {
     console.log('Fetching members to update appearances.');
     const members = await guild.members.fetch();
     console.log('Got members. Updating appearances.');
-    members.forEach((member) => {
-	UpdateMemberAppearance(member);
-    });
+    for (const [memberId, member] of members) {
+	await UpdateMemberAppearance(member);
+    }
 }
 
 // Looks for 2 or more users in voice channels together and credits them.
@@ -135,6 +135,19 @@ async function UpdateHarmonicCentrality() {
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
+async function SetGoodStandingIfVerified(cu, member) {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const role = await DiscordUtil.GetRoleByName(guild, 'Verified');
+    const isVerified = DiscordUtil.GuildMemberHasRole(member, role);
+    if (isVerified) {
+	console.log('Detected Verified role', member.nickname);
+	await cu.setGoodStanding(true);
+	await DiscordUtil.RemoveRole(member, role);
+	await UpdateMemberAppearance(member);
+	console.log('Done verifying', member.nickname);
+    }
+}
+
 async function UpdateAllCitizens() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     await UserCache.ForEach(async (user) => {
@@ -153,6 +166,7 @@ async function UpdateAllCitizens() {
 	    }
 	    await user.setNickname(discordMember.user.username);
 	    await DestroyFriendSectionForCommissarUser(user, guild);
+	    await SetGoodStandingIfVerified(user, discordMember);
 	}
 	// Update ban trial even if the defendant leaves the guild.
 	await Ban.UpdateTrial(user);
@@ -285,6 +299,7 @@ async function Start() {
 	}
 	await cu.setNickname(newMember.user.username);
 	await cu.setCitizen(true);
+	await SetGoodStandingIfVerified(cu, newMember);
     });
 
     discordClient.on('messageReactionAdd', async (messageReaction, user) => {
