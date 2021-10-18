@@ -139,7 +139,8 @@ async function SetGoodStandingIfVerified(cu, member) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const role = await DiscordUtil.GetRoleByName(guild, 'Verified');
     const isVerified = DiscordUtil.GuildMemberHasRole(member, role);
-    if (isVerified) {
+    const isOnTrial = cu.ban_vote_end_time;
+    if (isVerified && !isOnTrial) {
 	console.log('Detected Verified role', member.nickname);
 	await cu.setGoodStanding(true);
 	await DiscordUtil.RemoveRole(member, role);
@@ -279,6 +280,7 @@ async function Start() {
 	await cu.seenNow();
 	if (cu.good_standing === false) {
 	    await newVoiceState.member.voice.kick();
+	    await newVoiceState.member.kick();
 	}
 	await huddles.Update();
     });
