@@ -28,10 +28,8 @@ function GetAllMatchingVoiceChannels(guild, huddle) {
 }
 
 async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
-    const parent = await DiscordUtil.GetCategoryChannelByName('Public');
     const options = {
 	bitrate,
-	parent,
 	position: huddle.position,
 	type: 'voice',
 	userLimit: huddle.userLimit,
