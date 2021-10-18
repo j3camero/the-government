@@ -9,6 +9,7 @@ const huddles = [
     { name: 'Duo Room', userLimit: 2, position: 2000 },
     { name: 'Trio Room', userLimit: 3, position: 3000 },
     { name: 'Quad Room', userLimit: 4, position: 4000 },
+    { name: 'High Five', userLimit: 5, position: 5000 },
     { name: 'Six Pack', userLimit: 6, position: 6000 },
     { name: 'Squad', userLimit: 8, position: 8000 },
 ];
