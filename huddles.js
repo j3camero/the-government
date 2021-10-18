@@ -5,7 +5,7 @@
 const DiscordUtil = require('./discord-util');
 
 const huddles = [
-    { name: 'Lobby', userLimit: 99, position: 1000 },
+    { name: 'Main', userLimit: 99, position: 1000 },
     { name: 'Duo Room', userLimit: 2, position: 2000 },
     { name: 'Trio Room', userLimit: 3, position: 3000 },
     { name: 'Quad Room', userLimit: 4, position: 4000 },
