@@ -144,6 +144,7 @@ async function SetGoodStandingIfVerified(cu, member) {
 	console.log('Detected Verified role', member.nickname);
 	await cu.setGoodStanding(true);
 	await DiscordUtil.RemoveRole(member, role);
+	await DiscordUtil.RemoveRole(member, RoleID.Unverified);
 	await UpdateMemberAppearance(member);
 	console.log('Done verifying', member.nickname);
     }
@@ -226,13 +227,14 @@ async function Start() {
 	const greeting = `Everybody welcome ${member.user.username} to the server!`;
 	await DiscordUtil.MessagePublicChatChannel(greeting);
 	const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
-	if (!cu) {
+	if (cu) {
+	    await cu.setCitizen(true);
+	} else {
 	    // We have no record of this Discord user. Create a new record in the cache.
 	    console.log('New Discord user detected.');
 	    await UserCache.CreateNewDatabaseUser(member);
-	    return;
+	    await DiscordUtil.AddRole(member, RoleID.Unverified);
 	}
-	await cu.setCitizen(true);
     });
 
     // Emitted whenever a member leaves a guild, or is kicked.
