@@ -101,7 +101,7 @@ async function GetTimeMatrix() {
 // pair of two users. Duplicate records are consolidated by adding them together,
 // with the time decay properly factored in.
 async function ConsolidateTimeMatrix() {
-    return QueryFromFile('consolidate-time-matrix.sql');
+    return QueryFromFile('consolidate-time-matrix-older-than-one-week.sql');
 }
 
 // Write some Battlemetrics session records to the database.
