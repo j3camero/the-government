@@ -59,12 +59,12 @@ async function WriteTimeTogetherRecords(records) {
 	return;
     }
     const sqlParts = [];
-    records.forEach((r) => {
+    for (const r of records) {
 	if (!r.durationSeconds || r.durationSeconds <= 0 || !r.dilutedSeconds || r.dilutedSeconds <= 0) {
 	    return;
 	}
 	sqlParts.push(`(${r.loUserId},${r.hiUserId},${r.durationSeconds},${r.dilutedSeconds})`);
-    });
+    }
     const sql = (
 	'INSERT INTO time_together ' +
 	'(lo_user_id, hi_user_id, duration_seconds, diluted_seconds) ' +
@@ -91,6 +91,19 @@ async function QueryFromFile(sqlFilename) {
 // Query the database for the latest time matrix.
 async function GetTimeMatrix() {
     return QueryFromFile('discounted-time-matrix.sql');
+}
+
+// Query the database for the latest time matrix.
+async function GetTimeMatrix24h() {
+    const t = {};
+    const rawRecords = await QueryFromFile('discounted-time-matrix-24h.sql');
+    for (const r of rawRecords) {
+	if (!(r.lo_user_id in t)) {
+	    t[r.lo_user_id] = {};
+	}
+	t[r.lo_user_id][r.hi_user_id] = r.discounted_diluted_seconds;
+    }
+    return t;
 }
 
 // Consolidate the time matrix. The time matrix can have duplicate entries in the
@@ -156,6 +169,7 @@ module.exports = {
     Connect,
     ConsolidateTimeMatrix,
     GetTimeMatrix,
+    GetTimeMatrix24h,
     Query,
     QueryFromFile,
     WriteBattlemetricsSessions,

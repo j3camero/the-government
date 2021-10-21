@@ -185,6 +185,25 @@ async function DestroyFriendSectionForCommissarUser(cu, guild) {
     await cu.setFriendVoiceRoomId(null);
 }
 
+// Enforces a time cap per 24h period between every pair of members. This stops
+// idling in Discord from paying off.
+async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
+    console.log('Enforcing time cap.', timeTogetherRecords.length, 'input records.');
+    const timeMatrix24h = await DB.GetTimeMatrix24h();
+    console.log('Loaded 24h time matrix with', Object.keys(timeMatrix24h).length, 'rows.');
+    const matchingRecords = [];
+    for (const r of timeTogetherRecords) {
+	const timeTogether24h = (timeMatrix24h[r.lo_user_id] || {})[r.lo_user_id] || 0;
+	if (timeTogether24h < 3600) {
+	    matchingRecords.push(r);
+	} else {
+	    console.log('Enforced time cap:', r.lo_user_id, r.hi_user_id);
+	}
+    }
+    console.log('Enforcing time cap.', matchingRecords.length, 'output records.');
+    return matchingRecords;
+}
+
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 async function MinuteHeartbeat() {
     if (RateLimit.Busy()) {
@@ -196,7 +215,8 @@ async function MinuteHeartbeat() {
     await UpdateAllDiscordMemberAppearances();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
-    await DB.WriteTimeTogetherRecords(recordsToSync);
+    const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
+    await DB.WriteTimeTogetherRecords(timeCappedRecords);
 }
 
 // The hourly heartbeat event. Take care of things that need attention once an hour.
