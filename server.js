@@ -302,7 +302,6 @@ async function Start() {
 	await cu.seenNow();
 	if (cu.good_standing === false) {
 	    await newVoiceState.member.voice.kick();
-	    await newVoiceState.member.kick();
 	}
 	await huddles.Update();
     });
