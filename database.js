@@ -98,10 +98,12 @@ async function GetTimeMatrix24h() {
     const t = {};
     const rawRecords = await QueryFromFile('discounted-time-matrix-24h.sql');
     for (const r of rawRecords) {
-	if (!(r.lo_user_id in t)) {
-	    t[r.lo_user_id] = {};
+	const lo = parseInt(r.lo_user_id);
+	const hi = parseInt(r.hi_user_id);
+	if (!(lo in t)) {
+	    t[lo] = {};
 	}
-	t[r.lo_user_id][r.hi_user_id] = r.discounted_diluted_seconds;
+	t[lo][hi] = r.discounted_diluted_seconds;
     }
     return t;
 }

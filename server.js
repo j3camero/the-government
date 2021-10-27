@@ -154,7 +154,8 @@ async function UpdateAllCitizens() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     await UserCache.ForEach(async (user) => {
 	if (user.citizen) {
-	    console.log(`Checking user ${user.nickname} (ID:${user.commissar_id}).`);
+	    console.log(`Checking user ${user.nickname}`,
+			`(ID:${user.commissar_id}).`);
 	    const discordMember = await RateLimit.Run(async () => {
 		try {
 		    return await guild.members.fetch(user.discord_id);
@@ -188,19 +189,23 @@ async function DestroyFriendSectionForCommissarUser(cu, guild) {
 // Enforces a time cap per 24h period between every pair of members. This stops
 // idling in Discord from paying off.
 async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
-    console.log('Enforcing time cap.', timeTogetherRecords.length, 'input records.');
+    console.log('Enforcing time cap.', timeTogetherRecords.length,
+		'input records.');
     const timeMatrix24h = await DB.GetTimeMatrix24h();
-    console.log('Loaded 24h time matrix with', Object.keys(timeMatrix24h).length, 'rows.');
     const matchingRecords = [];
     for (const r of timeTogetherRecords) {
-	const timeTogether24h = (timeMatrix24h[r.lo_user_id] || {})[r.lo_user_id] || 0;
+	let timeTogether24h = 0;
+	if (r.loUserId in timeMatrix24h) {
+	    timeTogether24h = timeMatrix24h[r.loUserId][r.hiUserId] || 0;
+	}
 	if (timeTogether24h < 3600) {
 	    matchingRecords.push(r);
 	} else {
-	    console.log('Enforced time cap:', r.lo_user_id, r.hi_user_id);
+	    console.log('Enforced time cap:', r.loUserId, r.hiUserId);
 	}
     }
-    console.log('Enforcing time cap.', matchingRecords.length, 'output records.');
+    console.log('Enforcing time cap.', matchingRecords.length,
+		'output records.');
     return matchingRecords;
 }
 
