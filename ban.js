@@ -106,7 +106,7 @@ async function UpdateTrial(cu) {
     const noVoteCount = noVotes.length;
     const guilty = VoteOutcome(yesVoteCount, noVoteCount);
     const outcomeString = guilty ? 'banned' : 'NOT GUILTY';
-    const caseTitle = `SECRET CLAN v ${cu.getNicknameWithInsignia()}`;
+    const caseTitle = `THE GOVERNMENT v ${cu.getNicknameWithInsignia()}`;
     const underline = new Array(caseTitle.length + 1).join('-');
     const threeTicks = '```';
     const currentTime = moment();
