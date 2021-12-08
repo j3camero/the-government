@@ -79,12 +79,18 @@ module.exports = [
     },
     {
 	count: 40,
+	insignia: '⦁⦁⦁⦁',
+	roles: [RoleID.StaffSergeant, RoleID.Grunt],
+	title: 'Sergeant',
+    },
+    {
+	count: 60,
 	insignia: '⦁⦁⦁',
 	roles: [RoleID.Sergeant, RoleID.Grunt],
 	title: 'Sergeant',
     },
     {
-	count: 75,
+	count: 90,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
 	title: 'Corporal',

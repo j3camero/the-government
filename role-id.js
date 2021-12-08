@@ -14,6 +14,7 @@ module.exports = {
     Officer: '319300874470162434',
     Recruit: '825491806929027173',
     Sergeant: '825491803071184926',
+    StaffSergeant: '918218594091937792',
     Unverified: '899662939928268851',
     Verified: '898265784005062656',
 };
