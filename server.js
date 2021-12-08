@@ -28,9 +28,11 @@ async function UpdateMemberRankRoles(member, rankData, goodStanding) {
 	    }
 	}
     }
-    if (!goodStanding) {
+    if (goodStanding) {
+	rolesToRemove.push(RoleID.Defendant);
+    } else {
 	rolesToRemove = rolesToRemove.concat(rolesToAdd);
-	rolesToAdd = [];
+	rolesToAdd = [RoleID.Defendant];
     }
     for (const role of rolesToAdd) {
 	await DiscordUtil.AddRole(member, role);

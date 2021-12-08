@@ -27,7 +27,11 @@ async function UpdateTrial(cu) {
 	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
 	    await newChannel.setParent(banCourtCategory);
 	    if (member) {
-		await newChannel.createOverwrite(member, { 'SEND_MESSAGES': true });
+		await newChannel.createOverwrite(member, {
+		    CONNECT: true,
+		    SEND_MESSAGES: true,
+		    VIEW_CHANNEL: true,
+		});
 	    }
 	    return newChannel;
 	}
