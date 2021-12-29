@@ -115,11 +115,18 @@ async function UpdateTrial(cu) {
     const underline = new Array(caseTitle.length + 1).join('-');
     const threeTicks = '```';
     const currentTime = moment();
-    const endTime = moment(cu.ban_vote_end_time);
+    let endTime = moment(cu.ban_vote_end_time);
+    const twentyFourHours = moment().add(24, 'hours');
+    const sevenDays = moment().add(168, 'hours');
     let nextStateChangeMessage;
     if (guilty) {
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more NO votes to unban`;
+	if (cu.good_standing) {
+	    endTime = sevenDays;
+	    console.log('New trial end time:', endTime.format());
+	    await cu.setBanVoteEndTime(endTime.format());
+	}
 	await cu.setGoodStanding(false);
 	if (member) {
 	    await member.voice.kick();
@@ -127,6 +134,11 @@ async function UpdateTrial(cu) {
     } else {
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more YES votes to ban`;
+	if (endTime.isAfter(twentyFourHours)) {
+	    endTime = twentyFourHours;
+	    console.log('New trial end time:', endTime.format());
+	    await cu.setBanVoteEndTime(endTime.format());
+	}
 	await cu.setGoodStanding(true);
     }
     if (currentTime.isAfter(endTime)) {
