@@ -221,6 +221,7 @@ async function MinuteHeartbeat() {
     await Rank.UpdateUserRanks();
     await UpdateAllDiscordMemberAppearances();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
+    await huddles.Update();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
     await DB.WriteTimeTogetherRecords(timeCappedRecords);
