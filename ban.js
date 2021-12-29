@@ -73,6 +73,7 @@ async function UpdateTrial(cu) {
 		// Remove unauthorized vote. This check will catch unauthorized votes that
 		// made it through the initial filter because the bot was not running.
 		await reaction.users.remove(juror);
+		continue;
 	    }
 	    // Tally one reaction-vote.
 	    const emoji = reaction.emoji.name;
