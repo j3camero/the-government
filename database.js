@@ -94,9 +94,9 @@ async function GetTimeMatrix() {
 }
 
 // Query the database for the latest time matrix.
-async function GetTimeMatrix24h() {
+async function GetTimeMatrix16h() {
     const t = {};
-    const rawRecords = await QueryFromFile('discounted-time-matrix-24h.sql');
+    const rawRecords = await QueryFromFile('discounted-time-matrix-16h.sql');
     for (const r of rawRecords) {
 	const lo = parseInt(r.lo_user_id);
 	const hi = parseInt(r.hi_user_id);
@@ -171,7 +171,7 @@ module.exports = {
     Connect,
     ConsolidateTimeMatrix,
     GetTimeMatrix,
-    GetTimeMatrix24h,
+    GetTimeMatrix16h,
     Query,
     QueryFromFile,
     WriteBattlemetricsSessions,

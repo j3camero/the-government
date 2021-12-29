@@ -188,19 +188,19 @@ async function DestroyFriendSectionForCommissarUser(cu, guild) {
     await cu.setFriendVoiceRoomId(null);
 }
 
-// Enforces a time cap per 24h period between every pair of members. This stops
+// Enforces a time cap per 16h period between every pair of members. This stops
 // idling in Discord from paying off.
 async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
     console.log('Enforcing time cap.', timeTogetherRecords.length,
 		'input records.');
-    const timeMatrix24h = await DB.GetTimeMatrix24h();
+    const timeMatrix16h = await DB.GetTimeMatrix16h();
     const matchingRecords = [];
     for (const r of timeTogetherRecords) {
-	let timeTogether24h = 0;
-	if (r.loUserId in timeMatrix24h) {
-	    timeTogether24h = timeMatrix24h[r.loUserId][r.hiUserId] || 0;
+	let timeTogether16h = 0;
+	if (r.loUserId in timeMatrix16h) {
+	    timeTogether16h = timeMatrix16h[r.loUserId][r.hiUserId] || 0;
 	}
-	if (timeTogether24h < 3600) {
+	if (timeTogether16h < 3600) {
 	    matchingRecords.push(r);
 	} else {
 	    console.log('Enforced time cap:', r.loUserId, r.hiUserId);
