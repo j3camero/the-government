@@ -109,6 +109,30 @@ async function HandleUnfriendCommand(discordMessage) {
     );
 }
 
+async function MakeOneServerVoteOption(channel, serverName, battlemetricsLink, peakRank) {
+    const text = `__**${serverName}**__\n${battlemetricsLink}\nPeak rank #${peakRank}`;
+    const message = await channel.send(text);
+    await message.react('👍');
+    await message.react('👎');    
+}
+
+async function HandleServerVoteCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.create('server-vote');
+    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of January.');
+    await message.react('❤️');
+    await MakeOneServerVoteOption(channel, 'Rusty|Vanilla|Long|Monthly', 'https://www.battlemetrics.com/servers/rust/433706', 417);
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 106);
+    await MakeOneServerVoteOption(channel, 'Rustopia US Small', 'https://www.battlemetrics.com/servers/rust/3444203', 248);
+    await MakeOneServerVoteOption(channel, '[US EAST] Facepunch 3', 'https://www.battlemetrics.com/servers/rust/9622793', 313);
+    await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 375);
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -121,15 +145,16 @@ async function HandleUnknownCommand(discordMessage) {
 // If so, control is dispatched to the appropriate command-specific handler function.
 async function Dispatch(discordMessage) {
     const handlers = {
+	'!art': Artillery,
+	'!artillery': Artillery,
 	'!ban': Ban.HandleBanCommand,
 	'!code': HandleCodeCommand,
 	'!gender': HandleGenderCommand,
-	'!art': Artillery,
-	'!artillery': Artillery,
 	'!howhigh': Artillery,
 	'!pardon': Ban.HandlePardonCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
+	'!servervote': HandleServerVoteCommand,
 	// Uncomment the 2 lines below to re-enable the !friend commands.
 	//'!friend': HandleFriendCommand,
 	//'!unfriend': HandleUnfriendCommand,
