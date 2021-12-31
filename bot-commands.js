@@ -3,6 +3,7 @@ const Artillery = require('./artillery');
 const Ban = require('./ban');
 const DiscordUtil = require('./discord-util');
 const RandomPin = require('./random-pin');
+const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
 
 // The given Discord message is already verified to start with the !ping prefix.
@@ -48,67 +49,6 @@ async function HandleGenderCommand(discordMessage) {
     await discordMessage.channel.send(`Gender changed to ${genderString}.`);
 }
 
-// The given Discord message is already verified to start with the !friend prefix.
-async function HandleFriendCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author.friend_category_id) {
-	await discordMessage.channel.send(
-	    'You are not high-ranking enough to use this command.'
-	);
-	return;	
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(
-	    'Error: `!friend` one person at a time.\n' +
-	    'Example: `!friend @nickname`\n' +
-	    'Example: `!friend 987654321098765432`'
-	);
-	return;
-    }
-    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const friendCategory = await guild.channels.resolve(author.friend_category_id);
-    const newPermissions = {
-	'CONNECT': true,
-	'VIEW_CHANNEL': true,
-    };
-    await friendCategory.createOverwrite(mentioned.discord_id, newPermissions);
-    await discordMessage.channel.send(
-	`${author.getNicknameWithInsignia()} added ${mentioned.getNicknameWithInsignia()} to ${author.getPossessivePronoun()} friend list.`
-    );
-}
-
-// The given Discord message is already verified to start with the !unfriend prefix.
-async function HandleUnfriendCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author.friend_category_id) {
-	await discordMessage.channel.send('You are not high-ranking enough to use this command.');
-	return;	
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(
-	    'Error: `!unfriend` one person at a time.\n' +
-	    'Example: `!unfriend @nickname`\n' +
-	    'Example: `!unfriend 987654321098765432`'
-	);
-	return;
-    }
-    const mentioned = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
-    if (author.commissar_id === mentioned.commissar_id) {
-	await discordMessage.channel.send('You can\'t `!unfriend` yourself.');
-	return;
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const friendCategory = await guild.channels.resolve(author.friend_category_id);
-    const noPermissions = {};
-    await friendCategory.createOverwrite(mentioned.discord_id, noPermissions);
-    await discordMessage.channel.send(
-	`${author.getNicknameWithInsignia()} removed ${mentioned.getNicknameWithInsignia()} from ${author.getPossessivePronoun()} friend list.`
-    );
-}
-
 async function MakeOneServerVoteOption(channel, serverName, battlemetricsLink, peakRank) {
     const text = `__**${serverName}**__\n${battlemetricsLink}\nPeak rank #${peakRank}`;
     const message = await channel.send(text);
@@ -133,6 +73,61 @@ async function HandleServerVoteCommand(discordMessage) {
     await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 375);
 }
 
+async function HandleVoiceActiveUsersCommand(discordMessage) {
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length != 2) {
+	await discordMessage.channel.send('Invalid arguments.\nUSAGE: !activeusers daysToLookback');
+	return;
+    }
+    const daysToLookbackAsText = tokens[1];
+    if (isNaN(daysToLookbackAsText)) {
+	await discordMessage.channel.send('Invalid arguments.\nUSAGE: !orders daysToLookback');
+	return;
+    }
+    const daysToLookback = parseInt(daysToLookbackAsText);
+    const voiceActiveUsers = UserCache.CountVoiceActiveUsers(daysToLookback);
+    await discordMessage.channel.send(`${voiceActiveUsers} users active in voice chat in the last ${daysToLookback} days.`);
+}
+
+async function HandleOrdersCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length != 2) {
+	await discordMessage.channel.send('Invalid arguments.\nUSAGE: !orders daysToLookback');
+	return;
+    }
+    const daysToLookbackAsText = tokens[1];
+    if (isNaN(daysToLookbackAsText)) {
+	await discordMessage.channel.send('Invalid arguments.\nUSAGE: !orders daysToLookback');
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const daysToLookback = parseInt(daysToLookbackAsText);
+    const recentActiveUsers = UserCache.GetUsersSortedByLastSeen(daysToLookback);
+    await discordMessage.channel.send(`Sending orders to ${recentActiveUsers.length} members. Restart the bot now if this is not right.`);
+    await Sleep(10 * 1000);
+    for (const user of recentActiveUsers) {
+	const name = user.getNicknameOrTitleWithInsignia();
+	await discordMessage.channel.send(`Sending orders to ${name}`);
+	const rankNameAndInsignia = user.getRankNameAndInsignia();
+	let ordersMessage = `${rankNameAndInsignia},\n\n`;
+	ordersMessage += `These are your secret orders for the month of January.\n\n`;
+	ordersMessage += `Report to the Rust server Rusty|Vanilla|Long|Monthly. Build a compact base. File a #ticket in The Government Discord with your exact base location. Your base will be added to the interactive #map.\n\n`;
+	ordersMessage += '```client.connect 162.248.92.47:25215```\n\n';
+	ordersMessage += `You can build with or near other Government operatives. You can also build alone. The Government uses the #map to avoid raiding its own members.\n\n`;
+	ordersMessage += `Store a kit so you can work security at raids. Learn BPs so you can launch your own raids. Announce your raids as far in advance as possible so that others can work security for you. No sticky fingers: loot goes to whoever farmed the boom.\n\n`;
+	ordersMessage += `Yours truly,\n`;
+	ordersMessage += `The Government`;
+	const discordMember = await guild.members.fetch(user.discord_id);
+	discordMember.send(ordersMessage);
+	await Sleep(5 * 1000);
+    }
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -151,13 +146,12 @@ async function Dispatch(discordMessage) {
 	'!code': HandleCodeCommand,
 	'!gender': HandleGenderCommand,
 	'!howhigh': Artillery,
+	'!orders': HandleOrdersCommand,
 	'!pardon': Ban.HandlePardonCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
 	'!servervote': HandleServerVoteCommand,
-	// Uncomment the 2 lines below to re-enable the !friend commands.
-	//'!friend': HandleFriendCommand,
-	//'!unfriend': HandleUnfriendCommand,
+	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
     };
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;

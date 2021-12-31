@@ -163,8 +163,44 @@ function GetCachedUserByBanVoteMessageId(messageId) {
     return null;
 }
 
+function GetUsersSortedByLastSeen(inactivityLimitInDays) {
+    const users = [];
+    const timeCutoff = moment().subtract(inactivityLimitInDays, 'days');
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	const lastSeen = moment(user.last_seen);
+	if (user.citizen && user.good_standing && lastSeen.isAfter(timeCutoff)) {
+	    users.push(user);
+	}
+    }
+    users.sort((a, b) => {
+	const at = moment(a.last_seen);
+	const bt = moment(b.last_seen);
+	if (at.isBefore(bt)) {
+	    return 1;
+	} else if (at.isAfter(bt)) {
+	    return -1;
+	} else {
+	    return 0;
+	}
+    });
+    return users;
+}
+
+function CountVoiceActiveUsers(inactivityLimitInDays) {
+    let count = 0;
+    const timeCutoff = moment().subtract(inactivityLimitInDays, 'days');
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	const lastSeen = moment(user.last_seen);
+	if (lastSeen.isAfter(timeCutoff)) {
+	    count += 1;
+	}
+    }
+    return count;
+}
+
 module.exports = {
     BulkCentralityUpdate,
+    CountVoiceActiveUsers,
     CreateNewDatabaseUser,
     ForEach,
     GetAllCitizenCommissarIds,
@@ -173,5 +209,6 @@ module.exports = {
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     GetMostCentralUsers,
+    GetUsersSortedByLastSeen,
     LoadAllUsersFromDatabase,
 };

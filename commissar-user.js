@@ -234,6 +234,12 @@ class CommissarUser {
 	return `${name} ${insignia}`;
     }
 
+    getRankNameAndInsignia() {
+	const job = RankMetadata[this.rank];
+	const nameAndInsignia = this.getNicknameOrTitleWithInsignia();
+	return `${job.title} ${nameAndInsignia}`;
+    }
+
     getPossessivePronoun() {
 	if (this.gender === 'M') {
 	    return 'his';
