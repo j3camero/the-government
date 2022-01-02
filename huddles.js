@@ -3,6 +3,7 @@
 //
 
 const DiscordUtil = require('./discord-util');
+const RoleID = require('./role-id');
 
 const huddles = [
     { name: 'Main', userLimit: 99, position: 1000 },
@@ -29,10 +30,17 @@ function GetAllMatchingVoiceChannels(guild, huddle) {
 }
 
 async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
-    const parent = await DiscordUtil.GetCategoryChannelByName('Voice');
+    const perms = ['CONNECT', 'VIEW_CHANNEL'];
     const options = {
 	bitrate,
-	parent,
+	permissionOverwrites: [
+	    { id: guild.roles.everyone, deny: perms },
+	    { id: RoleID.Admin, allow: perms },
+	    { id: RoleID.General, allow: perms },
+	    { id: RoleID.Officer, allow: perms },
+	    { id: RoleID.Grunt, allow: perms },
+	    { id: RoleID.Bots, allow: perms },
+	],
 	position: huddle.position,
 	type: 'voice',
 	userLimit: huddle.userLimit,
@@ -78,6 +86,9 @@ async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {
 	return;
     }
     console.log('Found', matchingChannels.length, 'matching channels.');
+    for (const channel of matchingChannels) {
+	await channel.setPosition(huddle.position);
+    }
     const emptyChannels = matchingChannels.filter(ch => ch.members.size === 0);
     console.log(emptyChannels.length, 'empty channels of this type.');
     if (emptyChannels.length === 0) {
