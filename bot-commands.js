@@ -64,13 +64,13 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
-    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of January.');
+    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of February.');
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rusty|Vanilla|Long|Monthly', 'https://www.battlemetrics.com/servers/rust/433706', 417);
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 106);
-    await MakeOneServerVoteOption(channel, 'Rustopia US Small', 'https://www.battlemetrics.com/servers/rust/3444203', 248);
-    await MakeOneServerVoteOption(channel, '[US EAST] Facepunch 3', 'https://www.battlemetrics.com/servers/rust/9622793', 313);
-    await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 375);
+    await MakeOneServerVoteOption(channel, 'Rusty|Vanilla|Long|Monthly', 'https://www.battlemetrics.com/servers/rust/433706', 377);
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 42);
+    await MakeOneServerVoteOption(channel, 'Rustopia US Small', 'https://www.battlemetrics.com/servers/rust/3444203', 201);
+    await MakeOneServerVoteOption(channel, '[US EAST] Facepunch 3', 'https://www.battlemetrics.com/servers/rust/9622793', 233);
+    await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 432);
 }
 
 async function HandleVoiceActiveUsersCommand(discordMessage) {
@@ -115,16 +115,93 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `These are your secret orders for the month of January.\n\n`;
-	ordersMessage += `Report to the Rust server Rusty|Vanilla|Long|Monthly. Build a compact base. File a #ticket in The Government Discord with your exact base location. Your base will be added to the interactive #map.\n\n`;
+	ordersMessage += `These are your secret orders for the month of February.\n\n`;
+	ordersMessage += `Report to the Rust server Rusty|Vanilla|Long|Monthly. We are building 2 team bases this wipe all together as a team. You can still build your own side base if you want.\n\n`;
 	ordersMessage += '```client.connect 162.248.92.47:25215```\n\n';
-	ordersMessage += `You can build with or near other Government operatives. You can also build alone. The Government uses the #map to avoid raiding its own members.\n\n`;
-	ordersMessage += `Store a kit so you can work security at raids. Learn BPs so you can launch your own raids. Announce your raids as far in advance as possible so that others can work security for you. No sticky fingers: loot goes to whoever farmed the boom.\n\n`;
+	ordersMessage += `Farm scrap and materials into the team base on wipe day. We will learn boom BPs fast as a team.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government`;
 	const discordMember = await guild.members.fetch(user.discord_id);
 	discordMember.send(ordersMessage);
 	await Sleep(5 * 1000);
+    }
+}
+
+async function HandleBadgeCommand(discordMessage) {
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 4) {
+	await discordMessage.channel.send('Invalid arguments. USAGE: !badge give Berry @nickname');
+	return;
+    }
+    const roleName = tokens[2];
+    if (roleName.length <= 1) {
+	await discordMessage.channel.send('Invalid role name ' + roleName);
+	return;
+    }
+    const juniorRoleName = roleName + ' Badge';
+    const seniorRoleName = roleName + ' Committee';
+    const juniorRole = await DiscordUtil.GetRoleByName(discordMessage.guild, juniorRoleName);
+    if (!juniorRole) {
+	await discordMessage.channel.send('No such role ' + juniorRoleName);
+	return;
+    }
+    const seniorRole = await DiscordUtil.GetRoleByName(discordMessage.guild, seniorRoleName);
+    if (!seniorRole) {
+	await discordMessage.channel.send('No such role ' + seniorRoleName);
+	return;
+    }
+    const has = await DiscordUtil.GuildMemberHasRole(discordMessage.member, seniorRole);
+    if (!has) {
+	await discordMessage.channel.send(`Only ${seniorRoleName} members can do that.`);
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (tokens[1] === 'give') {
+	if (!mentionedMember) {
+	    await discordMessage.channel.send('Invalid arguments. USAGE: !badge give Berry @nickname');
+	    return;
+	}
+	const hasJunior = await DiscordUtil.GuildMemberHasRole(mentionedMember, juniorRole);
+	const hasSenior = await DiscordUtil.GuildMemberHasRole(mentionedMember, seniorRole);
+	if (hasJunior || hasSenior) {
+	    await discordMessage.channel.send(`That person already has their ${juniorRoleName}.`);
+	    return;
+	}
+	const mentionedCommissarUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+	if (!mentionedCommissarUser) {
+	    await discordMessage.channel.send('Cannot find mentioned member in the database. Something must be badly fucked up!');
+	    return;
+	}
+	await DiscordUtil.AddRole(mentionedMember, juniorRole);
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	await discordMessage.channel.send(`${name} has been awarded the ${juniorRoleName}.`);
+    } else if (tokens[1] === 'remove') {
+	if (!mentionedMember) {
+	    await discordMessage.channel.send('Invalid arguments. USAGE: !badge remove Berry @nickname');
+	    return;
+	}
+	const hasJunior = await DiscordUtil.GuildMemberHasRole(mentionedMember, juniorRole);
+	if (!hasJunior) {
+	    await discordMessage.channel.send(`That person does not have the ${juniorRoleName}. Cannot remove.`);
+	    return;
+	}
+	const mentionedCommissarUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+	if (!mentionedCommissarUser) {
+	    await discordMessage.channel.send('Cannot find mentioned member in the database. Something must be badly fucked up!');
+	    return;
+	}
+	await DiscordUtil.RemoveRole(mentionedMember, juniorRole);
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	await discordMessage.channel.send(`${juniorRoleName} has been removed from ${name}`);
+    } else if (tokens[1] === 'color') {
+	const colorCode = tokens[3];
+	if (colorCode.length !== 6) {
+	    await discordMessage.channel.send('Invalid arguments. USAGE: !badge color Berry AB0B23');
+	    return;
+	}
+	await juniorRole.setColor(colorCode);
+	await seniorRole.setColor(colorCode);
+	await discordMessage.channel.send(`Badge color updated successfully.`);
     }
 }
 
@@ -142,6 +219,7 @@ async function Dispatch(discordMessage) {
     const handlers = {
 	'!art': Artillery,
 	'!artillery': Artillery,
+	'!badge': HandleBadgeCommand,
 	'!ban': Ban.HandleBanCommand,
 	'!code': HandleCodeCommand,
 	'!gender': HandleGenderCommand,

@@ -140,7 +140,7 @@ async function UpdateHarmonicCentrality() {
 async function SetGoodStandingIfVerified(cu, member) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const role = await DiscordUtil.GetRoleByName(guild, 'Verified');
-    const isVerified = DiscordUtil.GuildMemberHasRole(member, role);
+    const isVerified = await DiscordUtil.GuildMemberHasRole(member, role);
     const isOnTrial = cu.ban_vote_end_time;
     if (isVerified && !isOnTrial) {
 	console.log('Detected Verified role', member.nickname);

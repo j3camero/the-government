@@ -37,7 +37,11 @@ async function GetRoleByName(guild, roleName) {
 }
 
 // Checks if a Discord guild member has a role. The targetRole is a structured Discord Role object.
-function GuildMemberHasRole(member, targetRole) {
+async function GuildMemberHasRole(member, targetRole) {
+    if (!guildRolesCached) {
+	await member.guild.roles.fetch();
+	guildRolesCached = true;
+    }
     const foundRole = member.roles.cache.find(role => (role.id === targetRole.id) || (role.id === targetRole));
     return foundRole ? true : false;
 }
@@ -46,7 +50,8 @@ function GuildMemberHasRole(member, targetRole) {
 //
 // Tries to be efficient by checking if the member already has the role.
 async function AddRole(member, role) {
-    if (!role || GuildMemberHasRole(member, role)) {
+    const has = await GuildMemberHasRole(member, role);
+    if (!role || has) {
 	return;
     }
     await RateLimit.Run(async () => {
@@ -59,7 +64,8 @@ async function AddRole(member, role) {
 //
 // Tries to be efficient by checking if the member already has the role.
 async function RemoveRole(member, role) {
-    if (!role || !GuildMemberHasRole(member, role)) {
+    const has = await GuildMemberHasRole(member, role);
+    if (!role || !has) {
 	return;
     }
     await RateLimit.Run(async () => {
