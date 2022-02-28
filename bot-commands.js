@@ -64,7 +64,7 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
-    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of February.');
+    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of March.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rusty|Vanilla|Long|Monthly', 'https://www.battlemetrics.com/servers/rust/433706', 377);
     await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 42);
@@ -128,6 +128,12 @@ async function HandleOrdersCommand(discordMessage) {
 }
 
 async function HandleBadgeCommand(discordMessage) {
+    const authorMember = discordMessage.member;
+    const authorUser = await UserCache.GetCachedUserByDiscordId(authorMember.id);
+    if (!authorUser) {
+	return;
+    }
+    const authorName = authorUser.getNicknameOrTitleWithInsignia();
     const tokens = discordMessage.content.split(' ');
     if (tokens.length !== 4) {
 	await discordMessage.channel.send('Invalid arguments. USAGE: !badge give Berry @nickname');
@@ -174,7 +180,7 @@ async function HandleBadgeCommand(discordMessage) {
 	}
 	await DiscordUtil.AddRole(mentionedMember, juniorRole);
 	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
-	await discordMessage.channel.send(`${name} has been awarded the ${juniorRoleName}.`);
+	await discordMessage.channel.send(`${name} has been awarded the ${juniorRoleName} by ${authorName}`);
     } else if (tokens[1] === 'remove') {
 	if (!mentionedMember) {
 	    await discordMessage.channel.send('Invalid arguments. USAGE: !badge remove Berry @nickname');
@@ -192,7 +198,7 @@ async function HandleBadgeCommand(discordMessage) {
 	}
 	await DiscordUtil.RemoveRole(mentionedMember, juniorRole);
 	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
-	await discordMessage.channel.send(`${juniorRoleName} has been removed from ${name}`);
+	await discordMessage.channel.send(`${juniorRoleName} has been removed from ${name} by ${authorName}`);
     } else if (tokens[1] === 'color') {
 	const colorCode = tokens[3];
 	if (colorCode.length !== 6) {
