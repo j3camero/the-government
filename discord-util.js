@@ -126,6 +126,8 @@ async function MessagePublicChatChannel(discordMessage) {
     channel.send(discordMessage);
 }
 
+let cachedHarmonicCentralityMessage = "";
+
 async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     const guild = await GetMainDiscordGuild();
     const channels = GetAllMatchingTextChannels(guild, 'ranks');
@@ -147,6 +149,10 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
 	message += `${paddedDollarAmount} ${cu.getNicknameOrTitleWithInsignia()}\n`;
     }
     message += threeBackticks;
+    if (message == cachedHarmonicCentralityMessage) {
+	return;
+    }
+    cachedHarmonicCentralityMessage = message;
     await channel.send(message);
 }
 
