@@ -134,9 +134,6 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     if (channels.length === 0) {
 	throw new Error('Could not find #harmonic-centrality chat channel.');
     }
-    const channel = channels[0];
-    // Bulk delete messages
-    await channel.bulkDelete(3);
     const threeBackticks = '\`\`\`';
     let message = ('Harmonic Centrality is a math formula that calculates \'influence\' in a ' +
 		   'social network. It is impartial and fair. Anyone can become become a General.\n' + threeBackticks);
@@ -149,10 +146,12 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
 	message += `${paddedDollarAmount} ${cu.getNicknameOrTitleWithInsignia()}\n`;
     }
     message += threeBackticks;
-    if (message == cachedHarmonicCentralityMessage) {
+    if (message === cachedHarmonicCentralityMessage) {
 	return;
     }
     cachedHarmonicCentralityMessage = message;
+    const channel = channels[0];
+    await channel.bulkDelete(3);
     await channel.send(message);
 }
 
