@@ -133,7 +133,7 @@ async function UpdateHarmonicCentrality() {
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    const mostCentral = await UserCache.GetMostCentralUsers(74);
+    const mostCentral = await UserCache.GetMostCentralUsers(66);
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
