@@ -115,10 +115,10 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `These are your secret orders for the month of February.\n\n`;
-	ordersMessage += `Report to the Rust server Rusty|Vanilla|Long|Monthly. We are building 2 team bases this wipe all together as a team. You can still build your own side base if you want.\n\n`;
-	ordersMessage += '```client.connect 162.248.92.47:25215```\n\n';
-	ordersMessage += `Farm scrap and materials into the team base on wipe day. We will learn boom BPs fast as a team.\n\n`;
+	ordersMessage += `These are your secret orders for the month of March.\n\n`;
+	ordersMessage += `Report to the Rust server PICKLE VANILLA MONTHLY. We have an OP strategy for surviving.\n\n`;
+	ordersMessage += '```client.connect vanilla.pickleservers.com:28046```\n\n';
+	ordersMessage += `Multiple team members have all blueprints. We will be raiding in no time.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government`;
 	const discordMember = await guild.members.fetch(user.discord_id);
