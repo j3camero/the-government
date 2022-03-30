@@ -184,7 +184,7 @@ class CommissarUser {
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {
-	console.log(`DB update ${fieldName} = ${fieldValue} for ${this.nickname} (ID:${this.commissar_id}).`);
+	//console.log(`DB update ${fieldName} = ${fieldValue} for ${this.nickname} (ID:${this.commissar_id}).`);
 	const sql = `UPDATE users SET ${fieldName} = ? WHERE commissar_id = ?`;
 	const values = [fieldValue, this.commissar_id];
 	const result = await DB.Query(sql, values);
