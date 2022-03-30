@@ -49,11 +49,7 @@ async function UpdateMemberAppearance(member) {
 	// Ignore other bots.
 	return;
     }
-    const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
-    if (!cu) {
-	console.log('Unknown user detected! username:', member.user.username);
-	return;
-    }
+    const cu = await UserCache.GetOrCreateUserByDiscordId(member);
     if (!cu.citizen) {
 	return;
     }

@@ -75,6 +75,14 @@ async function GetCachedUserByDiscordId(discord_id) {
     return foundUser;
 }
 
+async function GetOrCreateUserByDiscordId(discordMember) {
+    const cu = await GetCachedUserByDiscordId(discordMember.user.id);
+    if (cu) {
+	return cu;
+    }
+    return CreateNewDatabaseUser(discordMember);
+}
+
 // Creates a new user in the database. On success, the new user is added to the cache.
 async function CreateNewDatabaseUser(discordMember) {
     const discord_id = discordMember.user.id;
@@ -209,6 +217,7 @@ module.exports = {
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
     GetMostCentralUsers,
+    GetOrCreateUserByDiscordId,
     GetUsersSortedByLastSeen,
     LoadAllUsersFromDatabase,
 };
