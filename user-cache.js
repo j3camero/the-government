@@ -80,7 +80,7 @@ async function GetOrCreateUserByDiscordId(discordMember) {
     if (cu) {
 	return cu;
     }
-    return CreateNewDatabaseUser(discordMember);
+    return await CreateNewDatabaseUser(discordMember);
 }
 
 // Creates a new user in the database. On success, the new user is added to the cache.

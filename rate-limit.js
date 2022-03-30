@@ -37,6 +37,7 @@ function Run(callback) {
 // from the queue.
 setInterval(() => {
     if (rateLimitQueue.length > 0) {
+	console.log(`Rate limit queue: ${rateLimitQueue.length}`);
 	const nextTask = rateLimitQueue.shift();
 	nextTask();
     }
