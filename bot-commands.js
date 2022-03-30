@@ -64,13 +64,13 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
-    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of March.');
+    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of April.');
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rusty|Vanilla|Long|Monthly', 'https://www.battlemetrics.com/servers/rust/433706', 377);
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 42);
-    await MakeOneServerVoteOption(channel, 'Rustopia US Small', 'https://www.battlemetrics.com/servers/rust/3444203', 201);
-    await MakeOneServerVoteOption(channel, '[US EAST] Facepunch 3', 'https://www.battlemetrics.com/servers/rust/9622793', 233);
-    await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 432);
+    await MakeOneServerVoteOption(channel, 'Rusty|Vanilla|Long|Monthly', 'https://www.battlemetrics.com/servers/rust/433706', 691);
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 68);
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Main|', 'https://www.battlemetrics.com/servers/rust/2933324', 21);
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Main', 'https://www.battlemetrics.com/servers/rust/2936493', 19);
+    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Main', 'https://www.battlemetrics.com/servers/rust/6324892', 1);
 }
 
 async function HandleVoiceActiveUsersCommand(discordMessage) {
