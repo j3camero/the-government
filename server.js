@@ -217,7 +217,7 @@ async function MinuteHeartbeat() {
     await Rank.UpdateUserRanks();
     await UpdateAllDiscordMemberAppearances();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
-    await huddles.Update();
+    await huddles.ScheduleUpdate();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
     await DB.WriteTimeTogetherRecords(timeCappedRecords);
@@ -307,7 +307,7 @@ async function Start() {
 	if (cu.good_standing === false) {
 	    await newVoiceState.member.voice.kick();
 	}
-	await huddles.Update();
+	await huddles.ScheduleUpdate();
     });
 
     // When a user changes their username or other user details.
