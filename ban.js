@@ -3,6 +3,8 @@ const moment = require('moment');
 const RateLimit = require('./rate-limit');
 const UserCache = require('./user-cache');
 
+const banPowerRank = 5;
+
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_end_time) {
 	// No trial to update.
@@ -69,7 +71,7 @@ async function UpdateTrial(cu) {
 		continue;
 	    }
 	    const jurorUser = await UserCache.GetCachedUserByDiscordId(juror.id);
-	    if (!jurorUser || !jurorUser.citizen || jurorUser.rank > 5) {
+	    if (!jurorUser || !jurorUser.citizen || jurorUser.rank > banPowerRank) {
 		// Remove unauthorized vote. This check will catch unauthorized votes that
 		// made it through the initial filter because the bot was not running.
 		await reaction.users.remove(juror);
@@ -217,7 +219,7 @@ function HowManyMoreYes(yes, no) {
 // The given Discord message is already verified to start with the !ban prefix.
 async function HandleBanCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.rank > 5) {
+    if (!author || author.rank > banPowerRank) {
 	await discordMessage.channel.send('Only Generals can do that.');
 	return;
     }
@@ -294,7 +296,7 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 	return;
     }
     const juror = await UserCache.GetCachedUserByDiscordId(discordUser.id);
-    if (!juror || juror.rank > 5) {
+    if (!juror || juror.rank > banPowerRank) {
 	// Ignore votes from unqualified jurors.
 	await reaction.users.remove(discordUser.id);
 	return;
