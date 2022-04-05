@@ -4,7 +4,7 @@ const RateLimit = require('./rate-limit');
 const UserCache = require('./user-cache');
 
 const banCommandRank = 5;  // General 1
-const banVoteRank = 5;  // General 1
+const banVoteRank = 9;  // Lieutenant
 
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_end_time) {
