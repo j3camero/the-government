@@ -3,8 +3,8 @@ const moment = require('moment');
 const RateLimit = require('./rate-limit');
 const UserCache = require('./user-cache');
 
-const banCommandRank = 5;
-const banVoteRank = 5;
+const banCommandRank = 5;  // General 1
+const banVoteRank = 5;  // General 1
 
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_end_time) {
