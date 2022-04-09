@@ -81,7 +81,7 @@ async function HandleVoiceActiveUsersCommand(discordMessage) {
     }
     const daysToLookbackAsText = tokens[1];
     if (isNaN(daysToLookbackAsText)) {
-	await discordMessage.channel.send('Invalid arguments.\nUSAGE: !orders daysToLookback');
+	await discordMessage.channel.send('Invalid arguments.\nUSAGE: !voiceactiveusers daysToLookback');
 	return;
     }
     const daysToLookback = parseInt(daysToLookbackAsText);
@@ -115,10 +115,10 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `These are your secret orders for the month of March.\n\n`;
-	ordersMessage += `Report to the Rust server PICKLE VANILLA MONTHLY. We have an OP strategy for surviving.\n\n`;
+	ordersMessage += `These are your secret orders for the month of April.\n\n`;
+	ordersMessage += `Report to the Rust server PICKLE VANILLA MONTHLY.\n\n`;
 	ordersMessage += '```client.connect vanilla.pickleservers.com:28046```\n\n';
-	ordersMessage += `Multiple team members have all blueprints. We will be raiding in no time.\n\n`;
+	ordersMessage += `Many team members have all blueprints. We will be raiding in no time.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government`;
 	const discordMember = await guild.members.fetch(user.discord_id);
