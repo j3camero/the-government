@@ -9,6 +9,7 @@ class CommissarUser {
 	commissar_id,
 	discord_id,
 	nickname,
+	nick,
 	rank,
 	last_seen,
 	office,
@@ -26,6 +27,7 @@ class CommissarUser {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
+	this.nick = nick;
 	this.rank = rank;
 	this.last_seen = last_seen;
 	this.office = office;
@@ -57,6 +59,15 @@ class CommissarUser {
 	}
 	this.nickname = nickname;
 	await this.updateFieldInDatabase('nickname', this.nickname);
+    }
+
+    async setNick(nick) {
+	nick = FilterUsername(nick);
+	if (nick === this.nick) {
+	    return;
+	}
+	this.nick = nick;
+	await this.updateFieldInDatabase('nick', this.nick);
     }
 
     async setRank(rank) {
@@ -207,7 +218,8 @@ class CommissarUser {
 	    const prefix = this.getGenderPrefix();
 	    return `${prefix} ${job.title}`;
 	} else {
-	    return this.nickname;
+	    // User-supplied nickname overrides their Discord-wide nickname.
+	    return this.nick || this.nickname;
 	}
     }
 

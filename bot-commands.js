@@ -2,6 +2,7 @@
 const Artillery = require('./artillery');
 const Ban = require('./ban');
 const DiscordUtil = require('./discord-util');
+const FilterUsername = require('./filter-username');
 const RandomPin = require('./random-pin');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
@@ -211,6 +212,25 @@ async function HandleBadgeCommand(discordMessage) {
     }
 }
 
+async function HandleNickCommand(discordMessage) {
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length < 2) {
+	await discordMessage.channel.send(`ERROR: wrong number of arguments. USAGE: !nick NewNicknam3`);
+	return;
+    }
+    const raw = discordMessage.content.substring(6);
+    const filtered = FilterUsername(raw);
+    if (filtered.length === 0) {
+	await discordMessage.channel.send(`ERROR: no weird nicknames.`);
+	return;
+    }
+    const discordId = discordMessage.author.id;
+    const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+    await cu.setNick(filtered);
+    const newName = cu.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`Changed name to ${newName}`);
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -230,6 +250,7 @@ async function Dispatch(discordMessage) {
 	'!code': HandleCodeCommand,
 	'!gender': HandleGenderCommand,
 	'!howhigh': Artillery,
+	'!nick': HandleNickCommand,
 	'!orders': HandleOrdersCommand,
 	'!pardon': Ban.HandlePardonCommand,
 	'!ping': HandlePingCommand,
