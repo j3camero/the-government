@@ -9,7 +9,6 @@ const huddles = require('./huddles');
 const moment = require('moment');
 const Rank = require('./rank');
 const RankMetadata = require('./rank-definitions');
-const RateLimit = require('./rate-limit');
 const RoleID = require('./role-id');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
@@ -154,13 +153,12 @@ async function UpdateAllCitizens() {
 	if (user.citizen) {
 	    console.log(`Checking user ${user.nickname}`,
 			`(ID:${user.commissar_id}).`);
-	    const discordMember = await RateLimit.Run(async () => {
-		try {
-		    return await guild.members.fetch(user.discord_id);
-		} catch (error) {
-		    return null;
-		}
-	    });
+	    let discordMember;
+	    try {
+		discordMember = await guild.members.fetch(user.discord_id);
+	    } catch (error) {
+		discordMember = null;
+	    }
 	    if (!discordMember) {
 		await user.setCitizen(false);
 		return;
@@ -209,9 +207,6 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
 
 // The 60-second heartbeat event. Take care of things that need attention each minute.
 async function MinuteHeartbeat() {
-    if (RateLimit.Busy()) {
-	return;
-    }
     console.log('Minute heartbeat');
     await UpdateHarmonicCentrality();
     await Rank.UpdateUserRanks();

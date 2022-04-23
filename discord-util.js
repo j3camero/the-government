@@ -2,7 +2,6 @@
 const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
-const RateLimit = require('./rate-limit');
 
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({
@@ -54,10 +53,8 @@ async function AddRole(member, role) {
     if (!role || has) {
 	return;
     }
-    await RateLimit.Run(async () => {
-	console.log('Adding role', role.name || role, 'to', member.nickname);
-	await member.roles.add(role);
-    });
+    console.log('Adding role', role.name || role, 'to', member.nickname);
+    await member.roles.add(role);
 }
 
 // Removes a role from a GuildMember.
@@ -68,10 +65,8 @@ async function RemoveRole(member, role) {
     if (!role || !has) {
 	return;
     }
-    await RateLimit.Run(async () => {
-	console.log('Removing role', role.name || role, 'from', member.nickname);
-	await member.roles.remove(role);
-    });
+    console.log('Removing role', role.name || role, 'from', member.nickname);
+    await member.roles.remove(role);
 }
 
 async function GetCategoryChannelByName(channelName) {

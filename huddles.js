@@ -7,7 +7,6 @@
 // the right amount of rooms no matter how busy.
 
 const DiscordUtil = require('./discord-util');
-const RateLimit = require('./rate-limit');
 const RoleID = require('./role-id');
 
 const huddles = [
@@ -51,9 +50,7 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	userLimit: huddle.userLimit,
     };
     console.log('Creating channel.');
-    await RateLimit.Run(async () => {
-	return await guild.channels.create(huddle.name, options);
-    });
+    await guild.channels.create(huddle.name, options);
     console.log('Done');
 }
 
@@ -81,13 +78,11 @@ function GetMostRecentlyCreatedVoiceChannel(channels) {
 async function DeleteMostRecentlyCreatedVoiceChannel(channels) {
     const channel = GetMostRecentlyCreatedVoiceChannel(channels);
     console.log('Deleting channel');
-    await RateLimit.Run(async () => {
-	try {
-	    await channel.delete();
-	} catch (error) {
-	    console.log('Failed to delete channel. Probably a harmless race condition. Ignoring.');
-	}
-    });
+    try {
+	await channel.delete();
+    } catch (error) {
+	console.log('Failed to delete channel. Probably a harmless race condition. Ignoring.');
+    }
 }
 
 async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {

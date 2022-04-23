@@ -1,6 +1,5 @@
 const DiscordUtil = require('./discord-util');
 const moment = require('moment');
-const RateLimit = require('./rate-limit');
 const UserCache = require('./user-cache');
 
 const banCommandRank = 5;  // General 1
@@ -23,38 +22,34 @@ async function UpdateTrial(cu) {
     const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
     const roomName = cu.nickname;
     // Update or create the courtroom: a text chat room under the Ban Court category.
-    const channel = await RateLimit.Run(async () => {
-	if (cu.ban_vote_chatroom) {
-	    return await guild.channels.resolve(cu.ban_vote_chatroom);
-	} else {
-	    const newChannel = await guild.channels.create(roomName, { type: 'text' });
-	    await newChannel.setParent(banCourtCategory);
-	    if (member) {
-		await newChannel.createOverwrite(member, {
-		    CONNECT: true,
-		    SEND_MESSAGES: true,
-		    VIEW_CHANNEL: true,
-		});
-	    }
-	    return newChannel;
+    let channel;
+    if (cu.ban_vote_chatroom) {
+	channel = await guild.channels.resolve(cu.ban_vote_chatroom);
+    } else {
+	channel = await guild.channels.create(roomName, { type: 'text' });
+	await channel.setParent(banCourtCategory);
+	if (member) {
+	    await channel.createOverwrite(member, {
+		CONNECT: true,
+		SEND_MESSAGES: true,
+		VIEW_CHANNEL: true,
+	    });
 	}
-    });
+    }
     if (!channel) {
 	console.log('Failed to find or create ban court channel', roomName);
     }
     await cu.setBanVoteChatroom(channel.id);
     // Update or create the ban vote message itself. The votes are reactions to this message.
-    const message = await RateLimit.Run(async () => {
-	if (cu.ban_vote_message) {
-	    return await channel.messages.fetch(cu.ban_vote_message);
-	} else {
-	    const newMessage = await channel.send('Welcome to the Ban Court');
-	    await newMessage.react('✅');
-	    await newMessage.react('❌');
-	    await newMessage.pin();
-	    return newMessage;
-	}
-    });
+    let message;
+    if (cu.ban_vote_message) {
+	message = await channel.messages.fetch(cu.ban_vote_message);
+    } else {
+	message = await channel.send('Welcome to the Ban Court');
+	await message.react('✅');
+	await message.react('❌');
+	await message.pin();
+    }
     await cu.setBanVoteMessage(message.id);
     const noVotes = [];
     const yesVotes = [];
