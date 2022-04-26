@@ -350,10 +350,11 @@ async function Start() {
     // Set up heartbeat events. These run at fixed intervals of time.
     const oneSecond = 1000;
     const oneMinute = 60 * oneSecond;
+    const fiveMinutes = 5 * oneMinute;
     const oneHour = 60 * oneMinute;
     // Set up the hour and minute heartbeat routines to run on autopilot.
     setInterval(HourlyHeartbeat, oneHour);
-    setInterval(MinuteHeartbeat, oneMinute);
+    setInterval(MinuteHeartbeat, fiveMinutes);
     await MinuteHeartbeat();
     await HourlyHeartbeat();
 }
