@@ -343,6 +343,10 @@ async function Start() {
 	await Ban.HandlePossibleReaction(messageReaction, user, false);
     });
 
+    discordClient.on('debug', console.log);
+    discordClient.on('error', console.log);
+    discordClient.on('warning', console.log);
+
     // Set up heartbeat events. These run at fixed intervals of time.
     const oneSecond = 1000;
     const oneMinute = 60 * oneSecond;

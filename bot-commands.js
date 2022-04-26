@@ -212,6 +212,91 @@ async function HandleBadgeCommand(discordMessage) {
     }
 }
 
+async function HandleCommitteeCommand(discordMessage) {
+    console.log('!committee command detected.');
+    const authorMember = discordMessage.member;
+    const authorUser = await UserCache.GetCachedUserByDiscordId(authorMember.id);
+    if (!authorUser) {
+	return;
+    }
+    const authorName = authorUser.getNicknameOrTitleWithInsignia();
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 4) {
+	await discordMessage.channel.send('Invalid arguments. USAGE: !committee give Berry @nickname');
+	return;
+    }
+    if (tokens[2].length <= 1) {
+	await discordMessage.channel.send('Invalid role name ' + tokens[2]);
+	return;
+    }
+    const roleName = tokens[2] + ' Committee';
+    console.log('roleName', roleName);
+    const role = await DiscordUtil.GetRoleByName(discordMessage.guild, roleName);
+    if (!role) {
+	console.log('No such role', roleName);
+	await discordMessage.channel.send('No such role ' + roleName);
+	return;
+    }
+    const has = await DiscordUtil.GuildMemberHasRole(authorMember, role);
+    if (!has) {
+	console.log(`Only ${roleName} members can do that.`);
+	await discordMessage.channel.send(`Only ${roleName} members can do that.`);
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    console.log('tokens[1]', tokens[1]);
+    if (tokens[1] === 'give') {
+	console.log('give');
+	if (!mentionedMember) {
+	    await discordMessage.channel.send('Invalid arguments. USAGE: !committee give Berry @nickname');
+	    return;
+	}
+	const hasRole = await DiscordUtil.GuildMemberHasRole(mentionedMember, role);
+	if (hasRole) {
+	    console.log(`That person is already on the ${roleName}.`);
+	    await discordMessage.channel.send(`That person is already on the ${roleName}.`);
+	    return;
+	}
+	const mentionedCommissarUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+	if (!mentionedCommissarUser) {
+	    await discordMessage.channel.send('Cannot find mentioned member in the database. Something must be badly fucked up!');
+	    return;
+	}
+	await DiscordUtil.AddRole(mentionedMember, role);
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	await discordMessage.channel.send(`${name} has been addded to the ${roleName} by ${authorName}`);
+    } else if (tokens[1] === 'remove') {
+	console.log('remove');
+	if (!mentionedMember) {
+	    await discordMessage.channel.send('Invalid arguments. USAGE: !committee remove Berry @nickname');
+	    return;
+	}
+	const hasRole = await DiscordUtil.GuildMemberHasRole(mentionedMember, role);
+	if (!hasRole) {
+	    await discordMessage.channel.send(`That person is not on the ${roleName}. Cannot remove.`);
+	    return;
+	}
+	const mentionedCommissarUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+	if (!mentionedCommissarUser) {
+	    await discordMessage.channel.send('Cannot find mentioned member in the database. Something must be badly fucked up!');
+	    return;
+	}
+	await DiscordUtil.RemoveRole(mentionedMember, role);
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	await discordMessage.channel.send(`${roleName} has been removed from ${name} by ${authorName}`);
+    } else if (tokens[1] === 'color') {
+	const colorCode = tokens[3];
+	if (colorCode.length !== 6) {
+	    await discordMessage.channel.send('Invalid arguments. USAGE: !committee color Berry AB0B23');
+	    return;
+	}
+	await role.setColor(colorCode);
+	await discordMessage.channel.send(`Badge color updated successfully.`);
+    } else {
+	await discordMessage.channel.send(`Invalid command !committee`, tokens[1], '. Options are [give|remove|color].');	
+    }
+}
+
 async function HandleNickCommand(discordMessage) {
     const tokens = discordMessage.content.split(' ');
     if (tokens.length < 2) {
@@ -248,6 +333,7 @@ async function Dispatch(discordMessage) {
 	'!badge': HandleBadgeCommand,
 	'!ban': Ban.HandleBanCommand,
 	'!code': HandleCodeCommand,
+	'!committee': HandleCommitteeCommand,
 	'!gender': HandleGenderCommand,
 	'!howhigh': Artillery,
 	'!nick': HandleNickCommand,
