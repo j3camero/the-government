@@ -83,6 +83,9 @@ async function HandleArtilleryCommand(discordMessage) {
     }
     const elevationAngleString = Math.round(100 * elevationAngleWindow).toString().padStart(2, '0');
     const elevationPixels = Math.round(189 + (1 - elevationAngleWindow) * (599 - 189));
+    let bearingRadians = Math.atan2(tz - fz, tx - fx);
+    const bearingDegrees = bearingRadians * 180 / Math.PI;
+    const bearingRounded = Math.round(bearingDegrees);
     const image = await Canvas.loadImage('window.png');
     const canvas = new Canvas.Canvas(image.width, image.height);
     const context = canvas.getContext('2d');
@@ -103,7 +106,7 @@ async function HandleArtilleryCommand(discordMessage) {
 
     const buf = canvas.toBuffer();
     await fs.writeFileSync('elevation.png', buf);
-    await discordMessage.channel.send('Elevation ' + elevationAngleString + '%', {
+    await discordMessage.channel.send(`Elevation ${elevationAngleString} % - Direction ${bearingRounded}`, {
 	files: [{
 	    attachment: 'elevation.png',
 	    name: 'elevation.png'
