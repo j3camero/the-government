@@ -85,40 +85,85 @@ async function UpdateAllDiscordMemberAppearances() {
     }
 }
 
+const afkLoungeId = '703716669452714054';
+
 // Looks for 2 or more users in voice channels together and credits them.
 // Looks in the main Discord Guild only.
 async function UpdateVoiceActiveMembersForMainDiscordGuild() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    await UpdateVoiceActiveMembersForOneGuild(guild);
-}
-
-// Looks for 2 or more users in voice channels together and credits them.
-//
-// guild - Looks for voice channels in this guild only.
-async function UpdateVoiceActiveMembersForOneGuild(guild) {
     const listOfLists = [];
     for (const [channelId, channel] of guild.channels.cache) {
-	if (channel.type === 'voice') {
-	    const channelActive = [];
-	    for (const [memberId, member] of channel.members) {
-		if (member.voice.mute || member.voice.deaf) {
-		    continue;
-		}
-		const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
-		if (!cu) {
-		    // Shouldn't happen, but ignore and hope for recovery.
-		    continue;
-		}
-		channelActive.push(cu.commissar_id);
+	if (channel.id === afkLoungeId) {
+	    continue;
+	}
+	if (channel.type !== 'voice') {
+	    continue;
+	}
+	const channelActive = [];
+	for (const [memberId, member] of channel.members) {
+	    if (member.voice.mute || member.voice.deaf) {
+		continue;
 	    }
-	    if (channelActive.length >= 2) {
-		listOfLists.push(channelActive);
+	    const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
+	    if (!cu) {
+		// Shouldn't happen, but ignore and hope for recovery.
+		continue;
 	    }
+	    channelActive.push(cu.commissar_id);
+	}
+	if (channelActive.length >= 2) {
+	    listOfLists.push(channelActive);
 	}
     }
     console.log('Voice active members by ID:');
     console.log(listOfLists);
     timeTogetherStream.seenTogether(listOfLists);
+}
+
+// Counts the total number of people who are connected to voice chat.
+function HowManyPeopleInVoiceChat(guild) {
+    let count = 0;
+    for (const [channelId, channel] of guild.channels.cache) {
+	if (channel.id === afkLoungeId) {
+	    continue;
+	}
+	if (channel.type !== 'voice') {
+	    continue;
+	}
+	for (const [memberId, member] of channel.members) {
+	    if (!member.voice.mute && !member.voice.deaf && !member.user.bot) {
+		count += 1;
+	    }
+	}
+    }
+    return count;
+}
+
+// Updates the visibility of the secret Raid voice chat channel.
+async function UpdateRaidChannelVisibility() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const pop = HowManyPeopleInVoiceChat(guild);
+    const channel = await guild.channels.resolve('967407726424625232');
+    if (!channel) {
+	throw 'Oh fuck the raid channel is missing!';
+    }
+    const perms = ['CONNECT', 'VIEW_CHANNEL'];
+    if (pop >= 10) {
+	if (channel.permissionOverwrites.size !== 4) {
+	    await channel.overwritePermissions([
+		{ id: RoleID.Bots, allow: perms },
+		{ id: RoleID.General, allow: perms },
+		{ id: RoleID.Marshal, allow: perms },
+		{ id: RoleID.Officer, allow: perms },
+	    ]);
+	}
+    } else {
+	if (channel.permissionOverwrites.size !== 1) {
+	    await channel.overwritePermissions([
+		{ id: guild.roles.everyone, deny: perms },
+	    ]);
+	}
+    }
 }
 
 async function UpdateHarmonicCentrality() {
@@ -303,6 +348,7 @@ async function Start() {
 	    await newVoiceState.member.voice.kick();
 	}
 	await huddles.ScheduleUpdate();
+	await UpdateRaidChannelVisibility();
     });
 
     // When a user changes their username or other user details.
