@@ -148,7 +148,7 @@ async function UpdateRaidChannelVisibility() {
 	throw 'Oh fuck the raid channel is missing!';
     }
     const perms = ['CONNECT', 'VIEW_CHANNEL'];
-    if (pop >= 10) {
+    if (pop >= 8) {
 	if (channel.permissionOverwrites.size !== 4) {
 	    await channel.overwritePermissions([
 		{ id: RoleID.Bots, allow: perms },
