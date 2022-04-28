@@ -264,7 +264,7 @@ async function HandleCommitteeCommand(discordMessage) {
 	}
 	await DiscordUtil.AddRole(mentionedMember, role);
 	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
-	await discordMessage.channel.send(`${name} has been addded to the ${roleName} by ${authorName}`);
+	await discordMessage.channel.send(`${name} has been added to the ${roleName} by ${authorName}`);
     } else if (tokens[1] === 'remove') {
 	console.log('remove');
 	if (!mentionedMember) {
