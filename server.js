@@ -149,7 +149,7 @@ async function UpdateRaidChannelVisibility() {
     }
     const perms = ['CONNECT', 'VIEW_CHANNEL'];
     if (pop >= 8) {
-	if (channel.permissionOverwrites.size !== 4) {
+	if (channel.permissionOverwrites.size !== 5) {
 	    await channel.overwritePermissions([
 		{ id: RoleID.Bots, allow: perms },
 		{ id: RoleID.General, allow: perms },
