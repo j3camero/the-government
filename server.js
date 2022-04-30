@@ -155,6 +155,7 @@ async function UpdateRaidChannelVisibility() {
 		{ id: RoleID.General, allow: perms },
 		{ id: RoleID.Marshal, allow: perms },
 		{ id: RoleID.Officer, allow: perms },
+		{ id: guild.roles.everyone, deny: perms },
 	    ]);
 	}
     } else {
