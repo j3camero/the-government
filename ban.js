@@ -38,6 +38,7 @@ async function UpdateTrial(cu) {
     }
     if (!channel) {
 	console.log('Failed to find or create ban court channel', roomName);
+	return;
     }
     await cu.setBanVoteChatroom(channel.id);
     // Update or create the ban vote message itself. The votes are reactions to this message.
@@ -158,7 +159,11 @@ async function UpdateTrial(cu) {
 	} else {
 	    console.log('Not guilty y\'all got to feel me!');
 	}
-	await channel.delete();
+	try {
+	    await channel.delete();
+	} catch (error) {
+	    // Channel has likely already been deleted.
+	}
 	await cu.setBanVoteEndTime(null);
 	await cu.setBanVoteChatroom(null);
 	await cu.setBanVoteMessage(null);
