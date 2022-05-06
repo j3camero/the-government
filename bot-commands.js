@@ -119,9 +119,9 @@ async function HandleOrdersCommand(discordMessage) {
 	ordersMessage += `These are your secret orders for the month of May.\n\n`;
 	ordersMessage += `Report to the Rust server Rusty Moose US Small.\n\n`;
 	ordersMessage += '```client.connect small.us.moose.gg:28015```\n\n';
-	ordersMessage += `Many team members have all blueprints. We will be raiding in no time.\n\n`;
+	ordersMessage += `We have 30+ bases down already. Come build yours.\n\n`;
 	ordersMessage += `Yours truly,\n`;
-	ordersMessage += `The Government`;
+	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
 	discordMember.send(ordersMessage);
 	await Sleep(5 * 1000);
