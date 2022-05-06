@@ -116,9 +116,9 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `These are your secret orders for the month of April.\n\n`;
-	ordersMessage += `Report to the Rust server PICKLE VANILLA MONTHLY.\n\n`;
-	ordersMessage += '```client.connect vanilla.pickleservers.com:28046```\n\n';
+	ordersMessage += `These are your secret orders for the month of May.\n\n`;
+	ordersMessage += `Report to the Rust server Rusty Moose US Small.\n\n`;
+	ordersMessage += '```client.connect small.us.moose.gg:28015```\n\n';
 	ordersMessage += `Many team members have all blueprints. We will be raiding in no time.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government`;
