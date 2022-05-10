@@ -207,6 +207,8 @@ class CommissarUser {
     getGenderPrefix() {
 	if (this.gender === 'F') {
 	    return 'Madam';
+	} else if (this.gender === 'A') {
+	    return 'The';
 	} else {
 	    return 'Mr.';
 	}
@@ -224,10 +226,6 @@ class CommissarUser {
     }
 
     getInsignia() {
-	if (this.commissar_id === 6) {
-	    // Brobob memorial insignia: Eternal Leader.
-	    return '★★★★★';
-	}
 	if (!this.citizen) {
 	    return '●';
 	}
