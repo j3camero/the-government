@@ -33,6 +33,19 @@ function SetDistance(d, i, j, value) {
     d[i][j] = value;
 }
 
+// This stops Jeff from being the leader.
+function ApplyPointsPenaltyToJeff(relationships) {
+    const jeffId = 7;
+    const newRelationships = [];
+    for (const r of relationships) {
+	if (r.lo_user_id === jeffId || r.hi_user_id === jeffId) {
+	    r.discounted_diluted_seconds *= 0.5;
+	}
+	newRelationships.push(r);
+    }
+    return newRelationships;
+}
+
 function FloydWarshall(relationships, candidates) {
     const d = {};
     relationships.forEach((r) => {
@@ -69,7 +82,8 @@ function ConvertDistanceMatrixToHarmonicCentrality(d, candidates) {
 
 async function HarmonicCentrality(candidates) {
     const relationships = await DB.GetTimeMatrix();
-    const d = FloydWarshall(relationships, candidates);
+    const penalizedRelationships = ApplyPointsPenaltyToJeff(relationships);
+    const d = FloydWarshall(penalizedRelationships, candidates);
     const h = ConvertDistanceMatrixToHarmonicCentrality(d, candidates);
     return h;
 }
