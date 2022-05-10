@@ -123,7 +123,11 @@ async function HandleOrdersCommand(discordMessage) {
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
-	discordMember.send(ordersMessage);
+	try {
+	    discordMember.send(ordersMessage);
+	} catch (error) {
+	    console.log('Failed to send orders to', discordMember.nickname);
+	}
 	await Sleep(5 * 1000);
     }
 }
