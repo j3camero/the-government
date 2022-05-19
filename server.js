@@ -298,7 +298,12 @@ async function Start() {
 	    // We have no record of this Discord user. Create a new record in the cache.
 	    console.log('New Discord user detected.');
 	    await UserCache.CreateNewDatabaseUser(member);
-	    await DiscordUtil.AddRole(member, RoleID.Unverified);
+	    const isCaptchaEnabled = false;
+	    if (isCaptchaEnabled) {
+		await DiscordUtil.AddRole(member, RoleID.Unverified);
+	    } else {
+		await DiscordUtil.AddRole(member, RoleID.Verified);
+	    }
 	}
     });
 
