@@ -332,29 +332,29 @@ async function HandleUnknownCommand(discordMessage) {
 // If so, control is dispatched to the appropriate command-specific handler function.
 async function Dispatch(discordMessage) {
     const handlers = {
+	'!apprehend': Ban.HandleBanCommand,
+	'!arrest': Ban.HandleBanCommand,
 	'!art': Artillery,
 	'!artillery': Artillery,
 	'!badge': HandleBadgeCommand,
 	'!ban': Ban.HandleBanCommand,
-	'!arrest': Ban.HandleBanCommand,
-	'!indict': Ban.HandleBanCommand,
-	'!detain': Ban.HandleBanCommand,
-	'!trial': Ban.HandleBanCommand,
-	'!apprehend': Ban.HandleBanCommand,
-	'!fuck': Ban.HandleBanCommand,
-	'!goodbye': Ban.HandleBanCommand,
-	'!welp': Ban.HandleBanCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
+	'!detain': Ban.HandleBanCommand,
+	'!fuck': Ban.HandleBanCommand,
 	'!gender': HandleGenderCommand,
+	'!goodbye': Ban.HandleBanCommand,
 	'!howhigh': Artillery,
+	'!indict': Ban.HandleBanCommand,
 	'!nick': HandleNickCommand,
 	'!orders': HandleOrdersCommand,
 	'!pardon': Ban.HandlePardonCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
 	'!servervote': HandleServerVoteCommand,
+	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
+	'!welp': Ban.HandleBanCommand,
     };
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;
