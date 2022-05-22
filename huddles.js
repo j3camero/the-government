@@ -126,6 +126,13 @@ function CompareRooms(a, b) {
     if (!a.full && b.full) {
 	return -1;
     }
+    // Rooms with more people in them sort down.
+    if (a.members.size > b.members.size) {
+	return 1;
+    }
+    if (a.members.size < b.members.size) {
+	return -1;
+    }
     // Rooms named Main sort up.
     if (a.name !== 'Main' && b.name === 'Main') {
 	return 1;
@@ -138,13 +145,6 @@ function CompareRooms(a, b) {
 	return 1;
     }
     if (a.name !== 'Officers Only' && b.name === 'Officers Only') {
-	return -1;
-    }
-    // Rooms with more people in them sort down.
-    if (a.members.size > b.members.size) {
-	return 1;
-    }
-    if (a.members.size < b.members.size) {
 	return -1;
     }
     // Rooms with higher capacity sort down.
@@ -178,9 +178,6 @@ async function MoveOneRoomIfNeeded(guild) {
 	}
 	return 0;
     });
-    for (const room of rooms) {
-        console.log(room.name, room.position, room.members.size);
-    }
     for (let i = 0; i < rooms.length - 1; i++) {
 	const a = rooms[i];
 	const b = rooms[i + 1];
