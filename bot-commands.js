@@ -25,8 +25,15 @@ async function HandlePingPublicChatCommand(discordMessage) {
 
 // A message that starts with !code.
 async function HandleCodeCommand(discordMessage) {
+    const discordId = discordMessage.author.id;
+    const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+    if (!cu) {
+	return;
+    }
+    const name = cu.getNicknameOrTitleWithInsignia();
     const pin = RandomPin();
-    const message = await discordMessage.channel.send(pin);
+    await discordMessage.author.dmChannel.send(pin);
+    await discordMessage.channel.send(`Sent a random code to ${name}`);
 }
 
 // A message that starts with !gender.
