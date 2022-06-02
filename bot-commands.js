@@ -74,6 +74,24 @@ async function HandleServerVoteCommand(discordMessage) {
     await MakeOneServerVoteOption(channel, '[US East] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2317951', 280, 12, 'BP wipe unknown');
 }
 
+async function HandleRecoilVoteCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.create('recoil-vote');
+    const message = await channel.send(
+	'__**Official Recoil Vote**__\n' +
+	'The Rust dev team has heard our pleas. They have agreed to respect the results of this vote.\n\n' +
+	'Vote YES to roll out the new Recoil system on June 2.\n\n' +
+	'Vote NO to scrap the proposed changes.\n\n' +
+	'The devs have heard us loud and clear. After many denials, they now admit the need to urgently rethink the recoil changes. To make a final decision, they decided to have the poll in the largest community of active Rust players.\n\n' +
+	'                         --The Government'
+    );
+}
+
 async function HandleVoiceActiveUsersCommand(discordMessage) {
     const tokens = discordMessage.content.split(' ');
     if (tokens.length != 2) {
@@ -351,6 +369,7 @@ async function Dispatch(discordMessage) {
 	'!pardon': Ban.HandlePardonCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
+	'!recoilvote': HandleRecoilVoteCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
