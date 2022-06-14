@@ -14,7 +14,7 @@ const huddles = [
     { name: 'Duo', userLimit: 2, position: 2000 },
     { name: 'Trio', userLimit: 3, position: 3000 },
     { name: 'Quad', userLimit: 4, position: 4000 },
-    //{ name: 'Five Room', userLimit: 5, position: 5000 },
+    //{ name: 'High Five', userLimit: 5, position: 5000 },
     //{ name: 'Six Pack', userLimit: 6, position: 6000 },
     { name: 'Squad', userLimit: 8, position: 7000 },
 ];

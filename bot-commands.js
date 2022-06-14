@@ -32,7 +32,7 @@ async function HandleCodeCommand(discordMessage) {
     }
     const name = cu.getNicknameOrTitleWithInsignia();
     const pin = RandomPin();
-    await discordMessage.author.dmChannel.send(pin);
+    await discordMessage.author.send(pin);
     await discordMessage.channel.send(`Sent a random code to ${name}`);
 }
 
@@ -141,15 +141,17 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `These are your secret orders for the month of May.\n\n`;
-	ordersMessage += `Report to the Rust server Rusty Moose US Small.\n\n`;
-	ordersMessage += '```client.connect small.us.moose.gg:28015```\n\n';
-	ordersMessage += `We have 30+ bases down already. Come build yours.\n\n`;
+	ordersMessage += `These are your secret orders for the month of June.\n\n`;
+	ordersMessage += `Report to the Rust server PICKLE VANILLA MONTHLY.\n\n`;
+	ordersMessage += '```client.connect vanilla.pickleservers.com:28046```\n\n';
+	ordersMessage += `We are going to hurt this server. We will use our #map to conquer all opposing groups. Members are building so many cool projects in our village this month, it will be like an art gallery.\n\n`;
+	ordersMessage += `Run straight to C16. Grab 30 cloth to make yourself a sleeping bag. Hit a tree with your rock to get the first wood for the starter shack. We got this!\n\n`;
+	ordersMessage += `Or if you have your own plan, then go for it! File a #ticket to share your base location so we don't all raid each other.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
 	try {
-	    discordMember.send(ordersMessage);
+	    await discordMember.send(ordersMessage);
 	} catch (error) {
 	    console.log('Failed to send orders to', discordMember.nickname);
 	}
