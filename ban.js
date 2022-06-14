@@ -242,43 +242,8 @@ async function HandleBanCommand(discordMessage) {
     await discordMessage.channel.send(`${mentionedUser.getNicknameWithInsignia()} has been sent to Ban Court!`);
     const sevenDays = moment().add(7, 'days').format();
     await mentionedUser.setBanVoteEndTime(sevenDays);
-    QueueUpdate(mentionedUser.commissar_id);
+    UpdateTrial(mentionedUser);
 }
-
-// A list of commisar IDs that are waiting to have their ban votes updated in Discord.
-// This will stop the update operation from being swamped by people spamming the
-// voting buttons. The channel will still update within a few seconds, but multiple
-// spammed updates will be grouped.
-const updateQueue = [];
-
-// Enqueue an update for a user's ban vote chatroom in Discord.
-function QueueUpdate(commissar_id) {
-    if (!updateQueue.includes(commissar_id)) {
-	updateQueue.push(commissar_id);
-    }
-}
-
-// A helper function that processes one item of the update queue then goes back to sleep.
-async function ProcessQueue() {
-    if (updateQueue.length === 0) {
-	// Short delay whenever no items are processed. This makes the queue more responsive
-	// than a fixed-delay loop.
-	setTimeout(ProcessQueue, 1000);
-	return;
-    }
-    const commissar_id = updateQueue.shift();
-    const defendant = await UserCache.GetCachedUserByCommissarId(commissar_id);
-    if (!defendant) {
-	// Shouldn't happen. Bail.
-	return;
-    }
-    await UpdateTrial(defendant);
-    // Long delay after successfully processing an item. It needs time to comfortably finish.
-    setTimeout(ProcessQueue, 10 * 1000);
-}
-
-// Kick off the processing of the queue.
-setTimeout(ProcessQueue, 1000);
 
 // Handle all incoming Discord reactions. Not all may be votes.
 // Some are regular message reactions in ordinary Discord chats.
@@ -315,9 +280,7 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 	    }
 	}
     }
-    // Queue an update for the Discord chatroom. This stops people flooding
-    // the bot with spam votes.
-    QueueUpdate(defendant.commissar_id);    
+    UpdateTrial(defendant);
 }
 
 // The given Discord message is already verified to start with the !pardon prefix.
