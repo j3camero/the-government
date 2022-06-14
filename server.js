@@ -74,17 +74,6 @@ async function UpdateMemberAppearance(member) {
     }
 }
 
-// Updates people's rank and nickname-based insignia (dots, stars) in Discord.
-async function UpdateAllDiscordMemberAppearances() {
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    console.log('Fetching members to update appearances.');
-    const members = await guild.members.fetch();
-    console.log('Got members. Updating appearances.');
-    for (const [memberId, member] of members) {
-	await UpdateMemberAppearance(member);
-    }
-}
-
 const afkLoungeId = '703716669452714054';
 
 // Looks for 2 or more users in voice channels together and credits them.
@@ -210,22 +199,12 @@ async function UpdateAllCitizens() {
 		return;
 	    }
 	    await user.setNickname(discordMember.user.username);
-	    await DestroyFriendSectionForCommissarUser(user, guild);
 	    await SetGoodStandingIfVerified(user, discordMember);
+	    await UpdateMemberAppearance(discordMember);
 	}
 	// Update ban trial even if the defendant leaves the guild.
 	await Ban.UpdateTrial(user);
     });
-}
-
-async function DestroyFriendSectionForCommissarUser(cu, guild) {
-    if (!cu.friend_category_id) {
-	return;
-    }
-    const section = await guild.channels.resolve(cu.friend_category_id);
-    await cu.setFriendCategorityId(null);
-    await cu.setFriendTextChatId(null);
-    await cu.setFriendVoiceRoomId(null);
 }
 
 // Enforces a time cap per 16h period between every pair of members. This stops
@@ -256,7 +235,6 @@ async function RoutineUpdate() {
     console.log('Routine update');
     await UpdateHarmonicCentrality();
     await Rank.UpdateUserRanks();
-    await UpdateAllDiscordMemberAppearances();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
     await huddles.ScheduleUpdate();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
