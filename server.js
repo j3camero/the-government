@@ -251,9 +251,9 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
     return matchingRecords;
 }
 
-// The 60-second heartbeat event. Take care of things that need attention each minute.
-async function MinuteHeartbeat() {
-    console.log('Minute heartbeat');
+// Routine update event. Take care of book-keeping that need attention once every few minutes.
+async function RoutineUpdate() {
+    console.log('Routine update');
     await UpdateHarmonicCentrality();
     await Rank.UpdateUserRanks();
     await UpdateAllDiscordMemberAppearances();
@@ -262,12 +262,6 @@ async function MinuteHeartbeat() {
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
     await DB.WriteTimeTogetherRecords(timeCappedRecords);
-}
-
-// The hourly heartbeat event. Take care of things that need attention once an hour.
-async function HourlyHeartbeat() {
-    console.log('Hourly heartbeat');
-    console.log('Consolidating the time matrix.');
     await DB.ConsolidateTimeMatrix();
     await UpdateAllCitizens();
 }
@@ -402,13 +396,10 @@ async function Start() {
     // Set up heartbeat events. These run at fixed intervals of time.
     const oneSecond = 1000;
     const oneMinute = 60 * oneSecond;
-    const fiveMinutes = 5 * oneMinute;
-    const oneHour = 60 * oneMinute;
+    const tenMinutes = 10 * oneMinute;
     // Set up the hour and minute heartbeat routines to run on autopilot.
-    setInterval(HourlyHeartbeat, oneHour);
-    setInterval(MinuteHeartbeat, fiveMinutes);
-    await MinuteHeartbeat();
-    await HourlyHeartbeat();
+    setInterval(RoutineUpdate, tenMinutes);
+    await RoutineUpdate();
 }
 
 Start();
