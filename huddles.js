@@ -8,6 +8,7 @@
 
 const DiscordUtil = require('./discord-util');
 const RoleID = require('./role-id');
+const UserCache = require('./user-cache');
 
 const huddles = [
     { name: 'Main', userLimit: 99, position: 1000 },
@@ -106,6 +107,20 @@ async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {
     }
 }
 
+// Returns the maximum Harmonic Centrality score of any members in a VC room.
+function MaxHarmonicCentrality(discordChannel) {
+    let m = 0;
+    for (const [memberId, member] of discordChannel.members) {
+	const cu = UserCache.GetCachedUserByDiscordId(memberId);
+	if (!cu) {
+	    continue;
+	}
+	const h = cu.harmonic_centrality || 0;
+	m = Math.max(m, h);
+    }
+    return m;
+}
+
 // A comparator for Discord rooms. Controls the sort order of the rooms.
 function CompareRooms(a, b) {
     // Never sort rooms that have a parent.
@@ -126,13 +141,18 @@ function CompareRooms(a, b) {
     if (!a.full && b.full) {
 	return -1;
     }
-    // Rooms with more people in them sort down.
-    if (a.members.size > b.members.size) {
+    // This is the scoring rule for rooms that are neither empty nor full.
+    // The room with the most senior member wins.
+    const ah = MaxHarmonicCentrality(a);
+    const bh = MaxHarmonicCentrality(b);
+    if (ah < bh) {
 	return 1;
     }
-    if (a.members.size < b.members.size) {
+    if (ah > bh) {
 	return -1;
     }
+    // Rules from here on down are mainly intended for sorting the empty
+    // VC rooms at the bottom amongst themselves.
     // Rooms named Main sort up.
     if (a.name !== 'Main' && b.name === 'Main') {
 	return 1;

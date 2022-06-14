@@ -66,14 +66,12 @@ function GetCachedUserByCommissarId(commissar_id) {
 }
 
 // Get a cached user record by Discord ID.
-async function GetCachedUserByDiscordId(discord_id) {
-    let foundUser = null;
-    await ForEach((user) => {
+function GetCachedUserByDiscordId(discord_id) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
 	if (user.discord_id === discord_id) {
-	    foundUser = user;
-	}
-    });
-    return foundUser;
+	    return user;
+	}	
+    }
 }
 
 async function GetOrCreateUserByDiscordId(discordMember) {
