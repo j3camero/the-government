@@ -1,6 +1,7 @@
 // Routines for handling bot commands like !ping and !ban.
 const Artillery = require('./artillery');
 const Ban = require('./ban');
+const diff = require('diff');
 const DiscordUtil = require('./discord-util');
 const FilterUsername = require('./filter-username');
 const RandomPin = require('./random-pin');
@@ -328,6 +329,40 @@ async function HandleCommitteeCommand(discordMessage) {
     }
 }
 
+const wikiChannelId = '987549333144633355';
+
+async function HandleWikiCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const newText = discordMessage.content.substring(6);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const wikiChannel = await guild.channels.resolve(wikiChannelId);
+    const messages = await wikiChannel.messages.fetch();
+    const wikiMessage = messages.first();
+    const oldText = wikiMessage.content;
+    const diffs = diff.diffLines(oldText, newText);
+    let diffText = '```diff\n';
+    for (const d of diffs) {
+	const lines = d.value.split('\n');
+	for (let i = 0; i < d.count; i++) {
+	    const line = lines[i];
+	    if (d.added) {
+		diffText += '+';
+	    }
+	    if (d.removed) {
+		diffText += '-';
+	    }
+	    diffText += line;
+	    diffText += '\n';
+	}
+    }
+    diffText += '```';
+    await discordMessage.channel.send(diffText);
+}
+
 async function HandleNickCommand(discordMessage) {
     const tokens = discordMessage.content.split(' ');
     if (tokens.length < 2) {
@@ -383,6 +418,7 @@ async function Dispatch(discordMessage) {
 	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!welp': Ban.HandleBanCommand,
+	'!wiki': HandleWikiCommand,
     };
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;
