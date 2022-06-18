@@ -107,18 +107,34 @@ async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {
     }
 }
 
+// Calculates the median of an array of numbers.
+function Median(arr) {
+    const mid = Math.floor(arr.length / 2);
+    const nums = [...arr].sort((a, b) => a - b);
+    return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+}
+
 // Returns the maximum Harmonic Centrality score of any members in a VC room.
-function MaxHarmonicCentrality(discordChannel) {
-    let m = 0;
+function ScoreRoom(discordChannel) {
+    const scores = [];
     for (const [memberId, member] of discordChannel.members) {
+	if (member.user.bot) {
+	    continue;
+	}
 	const cu = UserCache.GetCachedUserByDiscordId(memberId);
 	if (!cu) {
 	    continue;
 	}
-	const h = cu.harmonic_centrality || 0;
-	m = Math.max(m, h);
+	let s = cu.harmonic_centrality || 0;
+	if (member.voice.mute) {
+	    s *= 0.5;
+	}
+	if (member.voice.deaf) {
+	    s = 0;
+	}
+	scores.push(s);
     }
-    return m;
+    return Median(scores);
 }
 
 // A comparator for Discord rooms. Controls the sort order of the rooms.
@@ -143,8 +159,8 @@ function CompareRooms(a, b) {
     }
     // This is the scoring rule for rooms that are neither empty nor full.
     // The room with the most senior member wins.
-    const ah = MaxHarmonicCentrality(a);
-    const bh = MaxHarmonicCentrality(b);
+    const ah = ScoreRoom(a);
+    const bh = ScoreRoom(b);
     if (ah < bh) {
 	return 1;
     }
