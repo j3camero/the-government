@@ -61,8 +61,7 @@ async function HandleGenderCommand(discordMessage) {
 async function MakeOneServerVoteOption(channel, serverName, battlemetricsLink, peakRank, playerDensity, bpWipe) {
     const text = `__**${serverName}**__\n${battlemetricsLink}\n_Peak rank #${peakRank} ★ ${playerDensity} players / sq km ★ ${bpWipe}_`;
     const message = await channel.send(text);
-    await message.react('👍');
-    await message.react('👎');    
+    await message.react('✅');
 }
 
 async function HandleServerVoteCommand(discordMessage) {
@@ -73,13 +72,13 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
-    const message = await channel.send('The Government will play on whichever server gets the most _upvotes minus downvotes_. This will be our main home Rust server for the month of June.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of July.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5, 28, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 30, 24, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 56, 11, 'Yes BP wipe');
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 116, 16, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, '[US East] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2317951', 280, 12, 'BP wipe unknown');
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |EU Monthly|', 'https://www.battlemetrics.com/servers/rust/11378166', 15, 28, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 34, 29, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 18, 17, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 52, 16, 'No BP wipe');
 }
 
 async function HandleRecoilVoteCommand(discordMessage) {
