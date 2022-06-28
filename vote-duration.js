@@ -63,10 +63,16 @@ function VoteMargin(y, n, DecisionRule) {
 function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, secondsSinceLastChange, DecisionRule) {
     const days = secondsSinceLastChange / 86400;
     const n = 7;
+    if (days >= n) {
+	return 0;
+    }
     // Integral of triangle distribution. 0 < p < 1
     const p = (n - days) * (n - days) / (n * n);
     const undecidedVoters = numVoters - yesVotes - noVotes;
     const margin = VoteMargin(yesVotes, noVotes, DecisionRule);
+    if (margin > undecidedVoters) {
+	return 0;
+    }
     return 1 - BinomialCDF(margin, undecidedVoters, p);
 }
 

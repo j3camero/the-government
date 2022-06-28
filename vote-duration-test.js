@@ -58,4 +58,18 @@ describe('Vote Duration', () => {
 	assert(p > 0.1);
 	assert(p < 0.3);
     });
+    it('11-1 vote', () => {
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(100, 11, 1, 5 * 86400, VoteDuration.SimpleMajority);
+	assert(p > 0.09);
+	assert(p < 0.11);
+    });
+    it('5-3 vote', () => {
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 4 * 86400, VoteDuration.SimpleMajority);
+	assert(p > 0.1);
+	assert(p < 0.2);
+    });
+    it('Past the deadline', () => {
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 8 * 86400, VoteDuration.SimpleMajority);
+	assert(p < 0.001);
+    });
 });
