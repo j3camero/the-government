@@ -1,3 +1,4 @@
+const BinomialCDF = require('binomial-cdf');
 
 // Decision rule for simple majority.
 function SimpleMajority(y, n) {
@@ -60,7 +61,13 @@ function VoteMargin(y, n, DecisionRule) {
 }
 
 function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, secondsSinceLastChange, DecisionRule) {
-
+    const days = secondsSinceLastChange / 86400;
+    const n = 7;
+    // Integral of triangle distribution. 0 < p < 1
+    const p = (n - days) * (n - days) / (n * n);
+    const undecidedVoters = numVoters - yesVotes - noVotes;
+    const margin = VoteMargin(yesVotes, noVotes, DecisionRule);
+    return 1 - BinomialCDF(margin, undecidedVoters, p);
 }
 
 module.exports = {

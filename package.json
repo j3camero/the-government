@@ -29,6 +29,7 @@
   "homepage": "https://github.com/j3camero/secretclan#readme",
   "dependencies": {
     "aws-sdk": "^2.780.0",
+    "binomial-cdf": "^2.0.0",
     "canvas": "^2.6.1",
     "deep-equal": "^2.0.4",
     "diff": "^5.1.0",

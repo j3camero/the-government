@@ -29,6 +29,22 @@ describe('Vote Duration', () => {
     });
     it('VoteMargin', () => {
 	assert.equal(VoteDuration.VoteMargin(0, 0, VoteDuration.SimpleMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(0, 1, VoteDuration.SimpleMajority), 2);
+	assert.equal(VoteDuration.VoteMargin(1, 0, VoteDuration.SimpleMajority), 1);
 	assert.equal(VoteDuration.VoteMargin(7, 4, VoteDuration.SimpleMajority), 3);
+	assert.equal(VoteDuration.VoteMargin(5, 9, VoteDuration.SimpleMajority), 5);
+	assert.equal(VoteDuration.VoteMargin(3, 3, VoteDuration.SimpleMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(5, 6, VoteDuration.SimpleMajority), 2);
+	assert.equal(VoteDuration.VoteMargin(3, 2, VoteDuration.SimpleMajority), 1);
+    });
+    it('27-1 trial', () => {
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 27, 1, 3 * 86400, VoteDuration.SuperMajority);
+	assert(p > 0.001);
+	assert(p < 0.01);
+    });
+    it('5-3 trial', () => {
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 5, 3, 6 * 86400, VoteDuration.SuperMajority);
+	assert(p > 0.1);
+	assert(p < 0.3);
     });
 });
