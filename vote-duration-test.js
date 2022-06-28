@@ -28,14 +28,25 @@ describe('Vote Duration', () => {
 	assert(!VoteDuration.SuperMajority(0, 0));
     });
     it('VoteMargin', () => {
+	// Simple Majority.
 	assert.equal(VoteDuration.VoteMargin(0, 0, VoteDuration.SimpleMajority), 1);
-	assert.equal(VoteDuration.VoteMargin(0, 1, VoteDuration.SimpleMajority), 2);
 	assert.equal(VoteDuration.VoteMargin(1, 0, VoteDuration.SimpleMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(0, 1, VoteDuration.SimpleMajority), 2);
+	assert.equal(VoteDuration.VoteMargin(1, 1, VoteDuration.SimpleMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(3, 3, VoteDuration.SimpleMajority), 1);
 	assert.equal(VoteDuration.VoteMargin(7, 4, VoteDuration.SimpleMajority), 3);
 	assert.equal(VoteDuration.VoteMargin(5, 9, VoteDuration.SimpleMajority), 5);
-	assert.equal(VoteDuration.VoteMargin(3, 3, VoteDuration.SimpleMajority), 1);
 	assert.equal(VoteDuration.VoteMargin(5, 6, VoteDuration.SimpleMajority), 2);
 	assert.equal(VoteDuration.VoteMargin(3, 2, VoteDuration.SimpleMajority), 1);
+	// SuperMajority.
+	assert.equal(VoteDuration.VoteMargin(0, 0, VoteDuration.SuperMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(1, 0, VoteDuration.SuperMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(0, 1, VoteDuration.SuperMajority), 2);
+	assert.equal(VoteDuration.VoteMargin(1, 1, VoteDuration.SuperMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(2, 1, VoteDuration.SuperMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(3, 3, VoteDuration.SuperMajority), 3);
+	assert.equal(VoteDuration.VoteMargin(5, 2, VoteDuration.SuperMajority), 1);
+	assert.equal(VoteDuration.VoteMargin(10, 3, VoteDuration.SuperMajority), 3);
     });
     it('27-1 trial', () => {
 	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 27, 1, 3 * 86400, VoteDuration.SuperMajority);
