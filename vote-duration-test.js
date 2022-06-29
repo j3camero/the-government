@@ -49,27 +49,30 @@ describe('Vote Duration', () => {
 	assert.equal(VoteDuration.VoteMargin(10, 3, VoteDuration.SuperMajority), 3);
     });
     it('27-1 trial', () => {
-	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 27, 1, 3 * 86400, VoteDuration.SuperMajority);
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 27, 1, 3, VoteDuration.SuperMajority);
 	assert(p > 0.001);
 	assert(p < 0.01);
+	const t = VoteDuration.EstimateVoteDuration(50, 27, 1, VoteDuration.SuperMajority);
+	// Next up: add ApproximatelyEquals test for the duration.
+	// Add cache test where the same parameters are calculated a huge number of times.
     });
     it('5-3 trial', () => {
-	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 5, 3, 6 * 86400, VoteDuration.SuperMajority);
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 5, 3, 6, VoteDuration.SuperMajority);
 	assert(p > 0.1);
 	assert(p < 0.3);
     });
     it('11-1 vote', () => {
-	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(100, 11, 1, 5 * 86400, VoteDuration.SimpleMajority);
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(100, 11, 1, 5, VoteDuration.SimpleMajority);
 	assert(p > 0.09);
 	assert(p < 0.11);
     });
     it('5-3 vote', () => {
-	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 4 * 86400, VoteDuration.SimpleMajority);
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 4, VoteDuration.SimpleMajority);
 	assert(p > 0.1);
 	assert(p < 0.2);
     });
     it('Past the deadline', () => {
-	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 8 * 86400, VoteDuration.SimpleMajority);
+	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 8, VoteDuration.SimpleMajority);
 	assert(p < 0.001);
     });
 });

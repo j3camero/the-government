@@ -60,8 +60,8 @@ function VoteMargin(y, n, DecisionRule) {
     }
 }
 
-function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, secondsSinceLastChange, DecisionRule) {
-    const days = secondsSinceLastChange / 86400;
+function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, daysSinceLastChange, DecisionRule) {
+    const days = daysSinceLastChange;
     const n = 7;
     if (days >= n) {
 	return 0;
@@ -76,7 +76,25 @@ function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, secondsSin
     return 1 - BinomialCDF(margin, undecidedVoters, p);
 }
 
+function EstimateVoteDuration(numVoters, yesVotes, noVotes, DecisionRule) {
+    const targetErrorProbability = 0.01;
+    const oneSecondIsh = 0.00001;
+    let lo = 0;
+    let hi = 7;
+    while (hi - lo > oneSecondIsh) {
+	const mid = (hi + lo) / 2;
+	const p = ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, mid, DecisionRule);
+	if (p < targetErrorProbability) {
+	    hi = mid;
+	} else {
+	    lo = mid;
+	}
+    }
+    return hi;
+}
+
 module.exports = {
+    EstimateVoteDuration,
     ProbabilityOfVoteOutcomeChange,
     SimpleMajority,
     SuperMajority,
