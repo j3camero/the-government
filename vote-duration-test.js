@@ -1,3 +1,4 @@
+const ApproximatelyEquals = require('./approximately-equals');
 const assert = require('assert');
 const VoteDuration = require('./vote-duration');
 
@@ -48,31 +49,33 @@ describe('Vote Duration', () => {
 	assert.equal(VoteDuration.VoteMargin(5, 2, VoteDuration.SuperMajority), 1);
 	assert.equal(VoteDuration.VoteMargin(10, 3, VoteDuration.SuperMajority), 3);
     });
-    it('27-1 trial', () => {
+    it('27-1 supermajority vote', () => {
 	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 27, 1, 3, VoteDuration.SuperMajority);
-	assert(p > 0.001);
-	assert(p < 0.01);
+	assert(ApproximatelyEquals(p, 0.01));
 	const t = VoteDuration.EstimateVoteDuration(50, 27, 1, VoteDuration.SuperMajority);
-	// Next up: add ApproximatelyEquals test for the duration.
-	// Add cache test where the same parameters are calculated a huge number of times.
+	assert(ApproximatelyEquals(t, 2.75));
     });
-    it('5-3 trial', () => {
+    it('5-3 supermajority vote', () => {
 	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(50, 5, 3, 6, VoteDuration.SuperMajority);
-	assert(p > 0.1);
-	assert(p < 0.3);
+	assert(ApproximatelyEquals(p, 0.21));
+	const t = VoteDuration.EstimateVoteDuration(50, 5, 3, VoteDuration.SuperMajority);
+	assert(ApproximatelyEquals(t, 6.58));
     });
-    it('11-1 vote', () => {
+    it('11-1 simple majority vote', () => {
 	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(100, 11, 1, 5, VoteDuration.SimpleMajority);
-	assert(p > 0.09);
-	assert(p < 0.11);
+	assert(ApproximatelyEquals(p, 0.1));
+	const t = VoteDuration.EstimateVoteDuration(100, 11, 1, VoteDuration.SuperMajority);
+	assert(ApproximatelyEquals(t, 5.99));
     });
-    it('5-3 vote', () => {
+    it('5-3 simple majority vote', () => {
 	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 4, VoteDuration.SimpleMajority);
-	assert(p > 0.1);
-	assert(p < 0.2);
+	assert(ApproximatelyEquals(p, 0.12));
+	const t = VoteDuration.EstimateVoteDuration(15, 5, 3, VoteDuration.SuperMajority);
+	assert(ApproximatelyEquals(t, 5.95));
     });
     it('Past the deadline', () => {
 	const p = VoteDuration.ProbabilityOfVoteOutcomeChange(15, 5, 3, 8, VoteDuration.SimpleMajority);
-	assert(p < 0.001);
+	assert(ApproximatelyEquals(p, 0));
     });
+    // Add cache test where the same parameters are calculated a huge number of times.
 });
