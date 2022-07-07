@@ -175,11 +175,12 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `These are your secret orders for the month of June.\n\n`;
-	ordersMessage += `Report to the Rust server PICKLE VANILLA MONTHLY.\n\n`;
-	ordersMessage += '```client.connect vanilla.pickleservers.com:28046```\n\n';
-	ordersMessage += `We are going to hurt this server. We will use our #map to conquer all opposing groups. Members are building so many cool projects in our village this month, it will be like an art gallery.\n\n`;
-	ordersMessage += `Run straight to C16. Grab 30 cloth to make yourself a sleeping bag. Hit a tree with your rock to get the first wood for the starter shack. We got this!\n\n`;
+	ordersMessage += `These are your secret orders for the month of July.\n\n`;
+	ordersMessage += `Report to the Rust server Rusty Moose |US Monthly|.\n\n`;
+	ordersMessage += '```client.connect monthly.us.moose.gg:28015```\n\n';
+	ordersMessage += `This is going to be a tough wipe week. The Officers and Generals voted to invade the #1 monthly vanilla server. Pace yourself accordingly. After the first 4 days, the pressure will begin to decrease and we will prosper for the whole month. With a bit of persistence, we have the chance to conquer the #1 server.\n\n`;
+	ordersMessage += `If you feel discouraged at any time, go ahead and take a break for a few days. With different players hitting their limit at different times, we will keep a full bench of chads pushing hard in shifts just like a hockey team.\n\n`;
+	ordersMessage += `Run straight to Z18. Grab 30 cloth to make yourself a sleeping bag. Hit a tree with your rock to get the first wood for the starter shack. Officers & Generals only will have access to the Community Base this month. Grunts build yourself a small base as close to Z18 as you can. We have several elite PVP squads building zerg bases nearby. The combination of all these elements will be unprecedented power for the group. We got this!\n\n`;
 	ordersMessage += `Or if you have your own plan, then go for it! File a #ticket to share your base location so we don't all raid each other.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
