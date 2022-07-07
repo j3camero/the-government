@@ -82,6 +82,39 @@ async function HandleServerVoteCommand(discordMessage) {
     await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 52, 16, 'No BP wipe');
 }
 
+async function MakeOnePresidentVoteOption(channel, playerName) {
+    const text = `**${playerName} ★**__`;
+    const message = await channel.send(text);
+    await message.react('✅');
+}
+
+async function HandlePresidentVoteCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.create('presidential-election');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on July 7. Mr. or Madam President has the power to choose where The Government builds. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
+    await message.react('❤️');
+    await MakeOnePresidentVoteOption(channel, 'BOORKEN');
+    await MakeOnePresidentVoteOption(channel, 'Jeff');
+    await MakeOnePresidentVoteOption(channel, 'TheBuschman');
+    await MakeOnePresidentVoteOption(channel, 'Sky312line');
+    await MakeOnePresidentVoteOption(channel, 'Agent Scarrab');
+    await MakeOnePresidentVoteOption(channel, 'Hank');
+    await MakeOnePresidentVoteOption(channel, 'TwiceTheBaka');
+    await MakeOnePresidentVoteOption(channel, 'Vitality');
+    await MakeOnePresidentVoteOption(channel, 'xBlaze');
+    await MakeOnePresidentVoteOption(channel, 'Glide');
+    await MakeOnePresidentVoteOption(channel, 'grimmjaune');
+    await MakeOnePresidentVoteOption(channel, 'Great Leader Salty');
+    await MakeOnePresidentVoteOption(channel, 'Wraith');
+    await MakeOnePresidentVoteOption(channel, 'BeatKidz');
+    await MakeOnePresidentVoteOption(channel, 'Ray');
+}
+
 async function HandleRecoilVoteCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
@@ -382,6 +415,7 @@ async function Dispatch(discordMessage) {
 	'!recoilvote': HandleRecoilVoteCommand,
 	'!rules': rules.HandleRulesCommand,
 	'!servervote': HandleServerVoteCommand,
+	'!presidentvote': HandlePresidentVoteCommand,
 	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!welp': Ban.HandleBanCommand,
