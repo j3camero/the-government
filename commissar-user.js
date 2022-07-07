@@ -204,6 +204,16 @@ class CommissarUser {
 	}
     }
 
+    getRank() {
+	if (this.office === 'PREZ') {
+	    return 0;
+	}
+	if (this.office === 'VEEP') {
+	    return 1;
+	}
+	return this.rank;
+    }
+    
     getGenderPrefix() {
 	if (this.gender === 'F') {
 	    return 'Madam';
@@ -215,7 +225,8 @@ class CommissarUser {
     }
 
     getNicknameOrTitle() {
-	const job = RankMetadata[this.rank];
+	const rank = this.getRank();
+	const job = RankMetadata[rank];
 	if (job.titleOverride) {
 	    const prefix = this.getGenderPrefix();
 	    return `${prefix} ${job.title}`;
@@ -229,7 +240,8 @@ class CommissarUser {
 	if (!this.citizen) {
 	    return '●';
 	}
-	const rankData = RankMetadata[this.rank];
+	const rank = this.getRank();
+	const rankData = RankMetadata[rank];
 	return rankData.insignia;
     }
 
@@ -245,7 +257,8 @@ class CommissarUser {
     }
 
     getRankNameAndInsignia() {
-	const job = RankMetadata[this.rank];
+	const rank = this.getRank();
+	const job = RankMetadata[rank];
 	const nameAndInsignia = this.getNicknameOrTitleWithInsignia();
 	return `${job.title} ${nameAndInsignia}`;
     }

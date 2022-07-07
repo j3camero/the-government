@@ -56,7 +56,8 @@ async function UpdateMemberAppearance(member) {
 	// The user has not been assigned a rank yet. Bail.
 	return;
     }
-    const rankData = RankMetadata[cu.rank];
+    const rank = cu.getRank();
+    const rankData = RankMetadata[rank];
     if (!rankData) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
