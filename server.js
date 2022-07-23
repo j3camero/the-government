@@ -263,6 +263,7 @@ async function Start() {
 	    return;
 	}
 	const greeting = `Everybody welcome ${member.user.username} to the server!`;
+	await DiscordUtil.MessageWelcomeChatChannel(greeting);
 	await DiscordUtil.MessagePublicChatChannel(greeting);
 	const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (cu) {

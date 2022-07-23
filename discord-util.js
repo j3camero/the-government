@@ -121,6 +121,14 @@ async function MessagePublicChatChannel(discordMessage) {
     channel.send(discordMessage);
 }
 
+// Send a message to the main Discord server's #welcome channel.
+async function MessageWelcomeChatChannel(discordMessage) {
+    const guild = await GetMainDiscordGuild();
+    const welcomeChannelId = '998398383284813834';
+    const channel = await guild.channels.resolve(welcomeChannelId);
+    channel.send(discordMessage);
+}
+
 let cachedHarmonicCentralityMessage = "";
 
 async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
@@ -206,6 +214,7 @@ module.exports = {
     GetRoleByName,
     GuildMemberHasRole,
     MessagePublicChatChannel,
+    MessageWelcomeChatChannel,
     ParseExactlyOneMentionedDiscordMember,
     RemoveRole,
     UpdateHarmonicCentralityChatChannel,
