@@ -73,17 +73,17 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of July.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of August.');
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5, 28, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |EU Monthly|', 'https://www.battlemetrics.com/servers/rust/11378166', 15, 28, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 34, 29, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 18, 17, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 52, 16, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 4, 28, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 22, 29, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 14, 17, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 29, 13, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 107, 16, 'No BP wipe');
 }
 
 async function MakeOnePresidentVoteOption(channel, playerName) {
-    const text = `**${playerName} ★**__`;
+    const text = `**${playerName} ★**`;
     const message = await channel.send(text);
     await message.react('✅');
 }
@@ -96,23 +96,28 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('presidential-election');
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on July 7. Mr. or Madam President has the power to choose where The Government builds. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on August 4th. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
     await message.react('❤️');
-    await MakeOnePresidentVoteOption(channel, 'BOORKEN');
-    await MakeOnePresidentVoteOption(channel, 'Jeff');
-    await MakeOnePresidentVoteOption(channel, 'TheBuschman');
-    await MakeOnePresidentVoteOption(channel, 'Sky312line');
-    await MakeOnePresidentVoteOption(channel, 'Agent Scarrab');
-    await MakeOnePresidentVoteOption(channel, 'Hank');
-    await MakeOnePresidentVoteOption(channel, 'TwiceTheBaka');
-    await MakeOnePresidentVoteOption(channel, 'Vitality');
-    await MakeOnePresidentVoteOption(channel, 'xBlaze');
-    await MakeOnePresidentVoteOption(channel, 'Glide');
-    await MakeOnePresidentVoteOption(channel, 'grimmjaune');
-    await MakeOnePresidentVoteOption(channel, 'Great Leader Salty');
-    await MakeOnePresidentVoteOption(channel, 'Wraith');
-    await MakeOnePresidentVoteOption(channel, 'BeatKidz');
-    await MakeOnePresidentVoteOption(channel, 'Ray');
+    const candidates = [
+	'TheBuschman',
+	'grimmjaune',
+	'Sky312line',
+	'xBlaze',
+	'Jeff',
+	'Great Leader Salty',
+	'Merry Dankmus',
+	'Dannykun',
+	'Fwinkle Dietz',
+	'Ray',
+	'Dirty Oiler',
+	'prism',
+	'Mancrog',
+	'Nade',
+	'BeatKidz',
+    ];
+    for (const candidate of candidates) {
+	await MakeOnePresidentVoteOption(channel, candidate);
+    }
 }
 
 async function HandleRecoilVoteCommand(discordMessage) {
