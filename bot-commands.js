@@ -387,6 +387,12 @@ async function HandleNickCommand(discordMessage) {
     await discordMessage.channel.send(`Changed name to ${newName}`);
 }
 
+async function HandleYenCommand(discordMessage) {
+    const discordId = discordMessage.author.id;
+    const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+    await discordMessage.channel.send('```Current balance: ' + `${cu.yen}` + ' yen```');
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -425,6 +431,7 @@ async function Dispatch(discordMessage) {
 	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!welp': Ban.HandleBanCommand,
+	'!yen': HandleYenCommand,
     };
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;

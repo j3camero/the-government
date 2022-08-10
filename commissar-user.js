@@ -23,7 +23,8 @@ class CommissarUser {
         friend_voice_room_id,
         ban_vote_end_time,
         ban_vote_chatroom,
-        ban_vote_message) {
+        ban_vote_message,
+        yen) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -42,6 +43,7 @@ class CommissarUser {
 	this.ban_vote_end_time = ban_vote_end_time;
 	this.ban_vote_chatroom = ban_vote_chatroom;
 	this.ban_vote_message = ban_vote_message;
+	this.yen = yen;
     }
 
     async setDiscordId(discord_id) {
@@ -192,6 +194,14 @@ class CommissarUser {
 	}
 	this.ban_vote_message = ban_vote_message;
 	await this.updateFieldInDatabase('ban_vote_message', this.ban_vote_message);
+    }
+
+    async setYen(yen) {
+	if (yes === this.yen) {
+	    return;
+	}
+	this.yes = yen;
+	await this.updateFieldInDatabase('yen', this.yen);
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {
