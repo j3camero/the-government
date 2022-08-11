@@ -8,6 +8,7 @@ const RandomPin = require('./random-pin');
 const rules = require('./rules');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
+const yen = require('./yen');
 
 // The given Discord message is already verified to start with the !ping prefix.
 // This is an example bot command that has been left in for fun. Maybe it's
@@ -387,12 +388,6 @@ async function HandleNickCommand(discordMessage) {
     await discordMessage.channel.send(`Changed name to ${newName}`);
 }
 
-async function HandleYenCommand(discordMessage) {
-    const discordId = discordMessage.author.id;
-    const cu = await UserCache.GetCachedUserByDiscordId(discordId);
-    await discordMessage.channel.send('```Current balance: ' + `${cu.yen}` + ' yen```');
-}
-
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -410,6 +405,8 @@ async function Dispatch(discordMessage) {
 	'!art': Artillery,
 	'!artillery': Artillery,
 	'!badge': HandleBadgeCommand,
+	'!bal': yen.HandleYenCommand,
+	'!balance': yen.HandleYenCommand,
 	'!ban': Ban.HandleBanCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
@@ -419,19 +416,25 @@ async function Dispatch(discordMessage) {
 	'!goodbye': Ban.HandleBanCommand,
 	'!howhigh': Artillery,
 	'!indict': Ban.HandleBanCommand,
+	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
 	'!orders': HandleOrdersCommand,
 	'!pardon': Ban.HandlePardonCommand,
+	'!pay': yen.HandlePayCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
 	'!recoilvote': HandleRecoilVoteCommand,
 	'!rules': rules.HandleRulesCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
+	'!tip': yen.HandleTipCommand,
 	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!welp': Ban.HandleBanCommand,
-	'!yen': HandleYenCommand,
+	'!yen': yen.HandleYenCommand,
+	'!yencreate': yen.HandleYenCreateCommand,
+	'!yendestroy': yen.HandleYenDestroyCommand,
+	'!yenfaq': yen.HandleYenFaqCommand,
     };
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;

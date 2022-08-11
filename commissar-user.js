@@ -43,7 +43,7 @@ class CommissarUser {
 	this.ban_vote_end_time = ban_vote_end_time;
 	this.ban_vote_chatroom = ban_vote_chatroom;
 	this.ban_vote_message = ban_vote_message;
-	this.yen = yen;
+	this.yen = parseInt(yen);
     }
 
     async setDiscordId(discord_id) {
@@ -200,7 +200,7 @@ class CommissarUser {
 	if (yes === this.yen) {
 	    return;
 	}
-	this.yes = yen;
+	this.yes = parseInt(yen);
 	await this.updateFieldInDatabase('yen', this.yen);
     }
 
