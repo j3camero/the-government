@@ -197,10 +197,10 @@ class CommissarUser {
     }
 
     async setYen(yen) {
-	if (yes === this.yen) {
+	if (yen === this.yen) {
 	    return;
 	}
-	this.yes = parseInt(yen);
+	this.yen = parseInt(yen);
 	await this.updateFieldInDatabase('yen', this.yen);
     }
 
