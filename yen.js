@@ -1,4 +1,5 @@
 const DiscordUtil = require('./discord-util');
+const { exchangeRates } = require('exchange-rates-api');
 const UserCache = require('./user-cache');
 
 const threeTicks = '```';
@@ -217,10 +218,6 @@ async function HandleYenDestroyCommand(discordMessage) {
     await UpdateYenChannel();
 }
 
-async function CreateOneYenFaqMessage(title, body) {
-
-}
-
 async function HandleYenFaqCommand(discordMessage) {
     const discordId = discordMessage.author.id;
     const cu = await UserCache.GetCachedUserByDiscordId(discordId);
@@ -301,7 +298,61 @@ async function HandleYenFaqCommand(discordMessage) {
 //	"\n");
 }
 
+let cachedUsdJpyExchangeRate;
+let cacheTime;
+
+async function GetCachedUsdJpyExchangeRate() {
+    const currentTime = new Date().getTime();
+    const cacheAge = currentTime - cacheTime;
+    const oneMinute = 60 * 1000;
+    if (cachedUsdJpyExchangeRate && cacheTime && cacheAge < oneMinute) {
+	return cachedUsdJpyExchangeRate;
+    }
+    const rate = await exchangeRates()
+	  .setApiBaseUrl('https://api.exchangerate.host')
+	  .latest()
+	  .base('USD')
+	  .symbols(['JPY'])
+	  .fetch();
+    if (!rate) {
+	return cachedUsdJpyExchangeRate;
+    }
+    cachedUsdJpyExchangeRate = rate;
+    cacheTime = currentTime;
+    return cachedUsdJpyExchangeRate;
+}
+
+async function HandleConvertCommand(discordMessage) {
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 2) {
+	await discordMessage.channel.send('Error. Wrong number of parameters. Example: `!convert 42`');
+	return;
+    }
+    let amount;
+    try {
+	amount = parseFloat(tokens[1]);
+    } catch (error) {
+	await discordMessage.channel.send('Error. Invalid number. Example: `!convert 3.50`');
+	return;
+    }
+    const fxRate = await GetCachedUsdJpyExchangeRate();
+    if (!fxRate) {
+	await discordMessage.channel.send('Error. Problem fetching the latest JPYUSD fx rate.`');
+	return;
+    }
+    const usd = amount / fxRate;
+    const yen = amount * fxRate;
+    const usdString = usd.toFixed(2);
+    const yenString = yen.toFixed();
+    let message = '';
+    message += `At current market exchange rates\n`;
+    message += `¥ ${amount} = $ ${usdString} USD\n`;
+    message += `$ ${amount} = ¥ ${yenString} JPY`;
+    await discordMessage.channel.send(threeTicks + message + threeTicks);
+}
+
 module.exports = {
+    HandleConvertCommand,
     HandlePayCommand,
     HandleTipCommand,
     HandleYenCommand,

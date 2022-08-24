@@ -410,6 +410,7 @@ async function Dispatch(discordMessage) {
 	'!ban': Ban.HandleBanCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
+	'!convert': yen.HandleConvertCommand,
 	'!detain': Ban.HandleBanCommand,
 	'!fuck': Ban.HandleBanCommand,
 	'!gender': HandleGenderCommand,
