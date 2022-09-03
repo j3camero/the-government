@@ -55,10 +55,17 @@ async function UpdateYenChannel() {
 	}
 	return 0;
     });
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const yenChannelId = '1007017809492070522';
+    const channel = await guild.channels.resolve(yenChannelId);
+    await channel.bulkDelete(99);
     let message = '';
     let savedMessage;
     let rank = 1;
     let maxYenDigits;
+    let totalYen = 0;
+    let taxableYen = 0;
+    let untaxableYen = 0;
     for (const user of users) {
 	const yenString = `¥ ${user.yen}`;
 	if (!maxYenDigits) {
@@ -69,16 +76,26 @@ async function UpdateYenChannel() {
 	const rankString = rank.toString().padStart(3);
 	rank++;
 	message += `${rankString}. ${paddedYen} ${name}\n`;
-	if (message.length > 1900) {
-	    break;
+	if (message.length > 1800) {
+	    await channel.send(threeTicks + message + threeTicks);
+	    message = '';
 	}
-	savedMessage = message;
+	totalYen += user.yen;
+	if (user.yen < 100) {
+	    untaxableYen += user.yen;
+	} else {
+	    untaxableYen += 100;
+	    taxableYen += user.yen - 100;
+	}
     }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const yenChannelId = '1007017809492070522';
-    const channel = await guild.channels.resolve(yenChannelId);
-    await channel.bulkDelete(3);
-    await channel.send(threeTicks + savedMessage + threeTicks);
+    if (message.length !== 0) {
+	await channel.send(threeTicks + message + threeTicks);
+    }
+    message = '';
+    message += `Total yen in circulation: ¥ ${totalYen}\n`;
+    message += `Total taxable yen (>100): ¥ ${taxableYen}\n`;
+    message += `Total untaxable yen (<100): ¥ ${untaxableYen}\n`;
+    await channel.send(threeTicks + message + threeTicks);
 }
 
 async function YenLog(message) {
