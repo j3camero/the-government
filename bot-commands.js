@@ -181,9 +181,9 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `These are your secret orders for the month of August.\n\n`;
+	ordersMessage += `These are your secret orders for the month of September.\n\n`;
 	ordersMessage += `Report to the Rust server Rustopia US Large.\n\n`;
-	ordersMessage += '```client.connect USLarge.Rustopia.dev:28015```\n\n';
+	ordersMessage += '```client.connect USLarge.Rustopia.gg:28015```\n\n';
 	ordersMessage += `This is going to be a fun wipe. Everyone will have a bag and get codes to the main build.\n\n`;
 	ordersMessage += `We have a great team building 2 community bases. One for Grunts and the other for Officers & Generals. They will be close by each other.\n\n`;
 	ordersMessage += `Run straight to the build site. Grab 30 cloth to make yourself a sleeping bag. Hit a tree with your rock to get the first wood for the starter shack.\n\n`;
