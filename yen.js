@@ -91,10 +91,15 @@ async function UpdateYenChannel() {
     if (message.length !== 0) {
 	await channel.send(threeTicks + message + threeTicks);
     }
+    const jeffSteamInventoryValue = 16000;
+    const reserveRatio = jeffSteamInventoryValue / totalYen;
+    const formattedReserveRatio = parseInt(reserveRatio * 100);
     message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
     message += `Total taxable yen (>100): ¥ ${taxableYen}\n`;
     message += `Total untaxable yen (<100): ¥ ${untaxableYen}\n`;
+    message += `Liquidation value of Jeff's Rust skins (Sept 2022): ¥ ${jeffSteamInventoryValue}\n`;
+    message += `Reserve ratio: ${formattedReserveRatio}%\n`;
     await channel.send(threeTicks + message + threeTicks);
 }
 
