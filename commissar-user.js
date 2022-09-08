@@ -24,7 +24,8 @@ class CommissarUser {
         ban_vote_end_time,
         ban_vote_chatroom,
         ban_vote_message,
-        yen) {
+        yen,
+        inactivity_tax_paid_until) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -44,6 +45,7 @@ class CommissarUser {
 	this.ban_vote_chatroom = ban_vote_chatroom;
 	this.ban_vote_message = ban_vote_message;
 	this.yen = parseInt(yen);
+	this.inactivity_tax_paid_until = inactivity_tax_paid_until;
     }
 
     async setDiscordId(discord_id) {
@@ -202,6 +204,14 @@ class CommissarUser {
 	}
 	this.yen = parseInt(yen);
 	await this.updateFieldInDatabase('yen', this.yen);
+    }
+
+    async setInactivityTaxPaidUntil(inactivity_tax_paid_until) {
+	if (inactivity_tax_paid_until === this.inactivity_tax_paid_until) {
+	    return;
+	}
+	this.inactivity_tax_paid_until = inactivity_tax_paid_until;
+	await this.updateFieldInDatabase('inactivity_tax_paid_until', this.inactivity_tax_paid_until);
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {

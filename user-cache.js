@@ -33,6 +33,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.ban_vote_chatroom,
 	    row.ban_vote_message,
 	    row.yen,
+	    row.inactivity_tax_paid_until,
 	);
 	newCache[row.commissar_id] = newUser;
     });

@@ -39,6 +39,23 @@ function ExactlyOneOfTwoStringsMustBeAnInteger(a, b) {
     return null;
 }
 
+function CalculateInactivityTax() {
+    const users = [];
+    await UserCache.ForEach((user) => {
+	if (user.yen > 0) {
+	    users.push(user);
+	}
+    });
+}
+
+async function UpdateTaxChannel() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const taxChannelId = '1012023632312156311';
+    const channel = await guild.channels.resolve(taxChannelId);
+    await channel.bulkDelete(99);
+    
+}
+
 async function UpdateYenChannel() {
     const users = [];
     await UserCache.ForEach((user) => {
