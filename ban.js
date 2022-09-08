@@ -28,6 +28,7 @@ async function UpdateTrial(cu) {
     } else {
 	channel = await guild.channels.create(roomName, { type: 'text' });
 	await channel.setParent(banCourtCategory);
+	await channel.setRateLimitPerUser(3600);
 	if (member) {
 	    await channel.createOverwrite(member, {
 		CONNECT: true,
@@ -40,6 +41,8 @@ async function UpdateTrial(cu) {
 	console.log('Failed to find or create ban court channel', roomName);
 	return;
     }
+    // TODO: remove this line any time as it was only needed to bootstrap the rate limit once.
+    await channel.setRateLimitPerUser(3600);
     await cu.setBanVoteChatroom(channel.id);
     // Update or create the ban vote message itself. The votes are reactions to this message.
     let message;
