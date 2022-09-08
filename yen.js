@@ -81,8 +81,6 @@ async function UpdateYenChannel() {
     let rank = 1;
     let maxYenDigits;
     let totalYen = 0;
-    let taxableYen = 0;
-    let untaxableYen = 0;
     for (const user of users) {
 	const yenString = `¥ ${user.yen}`;
 	if (!maxYenDigits) {
@@ -98,12 +96,6 @@ async function UpdateYenChannel() {
 	    message = '';
 	}
 	totalYen += user.yen;
-	if (user.yen < 100) {
-	    untaxableYen += user.yen;
-	} else {
-	    untaxableYen += 100;
-	    taxableYen += user.yen - 100;
-	}
     }
     if (message.length !== 0) {
 	await channel.send(threeTicks + message + threeTicks);
@@ -113,8 +105,6 @@ async function UpdateYenChannel() {
     const formattedReserveRatio = parseInt(reserveRatio * 100);
     message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
-    message += `Total taxable yen (>100): ¥ ${taxableYen}\n`;
-    message += `Total untaxable yen (<100): ¥ ${untaxableYen}\n`;
     message += `Liquidation value of Jeff's Rust skins (Sept 2022): ¥ ${jeffSteamInventoryValue}\n`;
     message += `Reserve ratio: ${formattedReserveRatio}%\n`;
     await channel.send(threeTicks + message + threeTicks);
