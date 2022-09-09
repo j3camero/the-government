@@ -102,10 +102,10 @@ async function UpdateTaxChannel() {
     }
     sortedTaxBase.sort((a, b) => {
 	if (a.tax < b.tax) {
-	    return -1;
+	    return 1;
 	}
 	if (a.tax > b.tax) {
-	    return 1;
+	    return -1;
 	}
 	return 0;
     });
@@ -127,6 +127,11 @@ async function UpdateTaxChannel() {
     message += `!tax @RecipientName 17`;
     await channel.send(threeTicks + message + threeTicks);
 }
+
+// Update the tax channel once per hour.
+setInterval(async () => {
+    await UpdateTaxChannel();
+}, 3600 * 1000);
 
 async function CalculateTaxPlan(yenToRaise) {
     if (yenToRaise === 0) {
