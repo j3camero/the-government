@@ -215,8 +215,8 @@ async function ImplementTaxPlan(plan, recipient, discordMessage) {
 
 async function HandleTaxCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
+    if (!author || author.commissar_id !== 7 || author.office === 'PREZ') {
+	await discordMessage.channel.send('Only the elected President can do that.');
 	return;
     }
     const tokens = discordMessage.content.split(' ');
