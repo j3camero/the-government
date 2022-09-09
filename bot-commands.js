@@ -428,6 +428,7 @@ async function Dispatch(discordMessage) {
 	'!rules': rules.HandleRulesCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
+	'!tax': yen.HandleTaxCommand,
 	'!tip': yen.HandleTipCommand,
 	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,

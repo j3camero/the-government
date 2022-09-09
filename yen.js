@@ -1,5 +1,6 @@
 const DiscordUtil = require('./discord-util');
 const { exchangeRates } = require('exchange-rates-api');
+const moment = require('moment');
 const UserCache = require('./user-cache');
 
 const threeTicks = '```';
@@ -39,13 +40,47 @@ function ExactlyOneOfTwoStringsMustBeAnInteger(a, b) {
     return null;
 }
 
-function CalculateInactivityTax() {
-    const users = [];
+async function CalculateInactivityTaxBase() {
+    const tax = {};
+    const r = Math.log(2) / 90;
     await UserCache.ForEach((user) => {
-	if (user.yen > 0) {
-	    users.push(user);
+	if (!user.yen) {
+	    // Users with no yen can't pay tax.
+	    return;
+	}
+	if (user.yen <= 1) {
+	    // Users with 1 or fewer yen are exempt from the tax.
+	    return;
+	}
+	if (!user.last_seen) {
+	    // Users that have never been seen for whatever reason don't pay tax.
+	    return;
+	}
+	const lastSeen = moment(user.last_seen);
+	const gracePeriodEnd = lastSeen.add(90, 'days');
+	const currentTime = moment();
+	if (gracePeriodEnd.isAfter(currentTime)) {
+	    // Recently active users don't pay tax. Only inactive ones.
+	    return;
+	}
+	let paidUntil;
+	if (user.inactivity_tax_paid_until) {
+	    paidUntil = moment(user.inactivity_tax_paid_until);
+	} else {
+	    paidUntil = gracePeriodEnd;
+	}
+	if (gracePeriodEnd.isAfter(paidUntil)) {
+	    paidUntil = gracePeriodEnd;
+	}
+	const elapsedSeconds = currentTime.diff(paidUntil, 'seconds');
+	const elapsedDays = elapsedSeconds / 86400;
+	const t = user.yen * (1 - Math.exp(-r * elapsedDays));
+	const taxOwing = Math.floor(t);
+	if (taxOwing > 0) {
+	    tax[user.commissar_id] = taxOwing;
 	}
     });
+    return tax;
 }
 
 async function UpdateTaxChannel() {
@@ -53,7 +88,97 @@ async function UpdateTaxChannel() {
     const taxChannelId = '1012023632312156311';
     const channel = await guild.channels.resolve(taxChannelId);
     await channel.bulkDelete(99);
-    
+    let message = '';
+    const taxBase = await CalculateInactivityTaxBase();
+    const n = Object.keys(taxBase).length;
+    const sortedTaxBase = [];
+    let totalTax = 0;
+    for (const cid in taxBase) {
+	const tax = taxBase[cid];
+	totalTax += tax;
+	const user = UserCache.GetCachedUserByCommissarId(cid);
+	const name = user.getNicknameOrTitleWithInsignia();
+	sortedTaxBase.push({tax, name});
+    }
+    sortedTaxBase.sort((a, b) => {
+	if (a.tax < b.tax) {
+	    return -1;
+	}
+	if (a.tax > b.tax) {
+	    return 1;
+	}
+	return 0;
+    });
+    if (n === 0) {
+	message = 'There is no tax revenue to spend at this time.';
+	await channel.send(threeTicks + message + threeTicks);
+	return;
+    }
+    message += 'Inactivity Tax\n';
+    message += '--------------\n';
+    message += 'Tax is how we keep the yen in circulation. Members inactive from VC longer than 90 days have their yen taxed at a slow rate. You can avoid tax completely by connecting to VC every 3 months.\n\n';
+    message += 'Currently available tax revenues:\n\n';
+    for (const taxpayer of sortedTaxBase) {
+	message += `¥ ${taxpayer.tax} ${taxpayer.name}\n`;
+    }
+    message += '-----\n';
+    message += `¥ ${totalTax} Total\n\n`;
+    message += 'Mr. or Madam President is responsible for Government spending. They are encouraged to spend all available tax revenue to bring inactive yen back into circulation. To spend tax money,\n\n';
+    message += `!tax @RecipientName 17`;
+    await channel.send(threeTicks + message + threeTicks);
+}
+
+async function CalculateTaxPlan(yenToRaise) {
+    if (yenToRaise === 0) {
+	return null;
+    }
+    const taxBase = await CalculateInactivityTaxBase();
+    let totalBase = 0;
+    for (const cid in taxBase) {
+	totalBase += taxBase[cid];
+    }
+    if (yenToRaise > totalBase) {
+	return null;
+    }
+    const taxPlan = {};
+    let raised = 0;
+    for (const cid in taxBase) {
+	const tax = Math.floor(taxBase[cid] * yenToRaise / totalBase);
+	if (tax > 0) {
+	    taxPlan[cid] = tax;
+	    raised += tax;
+	}
+    }
+    for (const cid in taxBase) {
+	const tax = taxPlan[cid] || 0;
+	if (raised < yenToRaise && tax < taxBase[cid]) {
+	    taxPlan[cid] = tax + 1;
+	    raised += 1;
+	}
+    }
+    return taxPlan;
+}
+
+async function HandleTaxCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 3) {
+	await discordMessage.channel.send('Error. Wrong number of parameters. Example: `!pay @Jeff 42`');
+	return;
+    }
+    const amount = ExactlyOneOfTwoStringsMustBeAnInteger(tokens[1], tokens[2]);
+    if (!amount || amount === null || amount === 0) {
+	await discordMessage.channel.send('Error. You must enter a positive whole number. Example: `!pay @Jeff 42`');
+	return;
+    }
+    const plan = await CalculateTaxPlan(amount);
+    console.log('TAX PLAN');
+    console.log(plan);
+    await UpdateTaxChannel();
 }
 
 async function UpdateYenChannel() {
@@ -117,6 +242,21 @@ async function YenLog(message) {
     await channel.send(threeTicks + message + threeTicks);
 }
 
+async function Pay(sender, recipient, amount, discordMessage) {
+    const senderYenBefore = sender.yen;
+    const payeeYenBefore = recipient.yen;
+    const senderYenAfter = senderYenBefore - amount;
+    const payeeYenAfter = payeeYenBefore + amount;
+    await sender.setYen(senderYenAfter);
+    await recipient.setYen(payeeYenAfter);
+    const senderName = sender.getNicknameOrTitleWithInsignia();
+    const payeeName = recipient.getNicknameOrTitleWithInsignia();
+    const sweet = Math.random() < 0.1 ? 'of those sweet sweet ' : '';
+    const message = `${senderName} sent ${amount} ${sweet}yen to ${payeeName}`;
+    await discordMessage.channel.send(threeTicks + message + threeTicks);
+    await YenLog(message);
+}
+
 async function HandlePayCommandWithAmount(discordMessage, amount) {
     const authorDiscordId = discordMessage.author.id;
     const authorCommissarUser = await UserCache.GetCachedUserByDiscordId(authorDiscordId);
@@ -143,19 +283,9 @@ async function HandlePayCommandWithAmount(discordMessage, amount) {
 	await discordMessage.channel.send('Error. Invalid recipient for funds.');
 	return;
     }
-    const senderYenBefore = authorCommissarUser.yen;
-    const payeeYenBefore = mentionedCommissarUser.yen;
-    const senderYenAfter = senderYenBefore - amount;
-    const payeeYenAfter = payeeYenBefore + amount;
-    await authorCommissarUser.setYen(senderYenAfter);
-    await mentionedCommissarUser.setYen(payeeYenAfter);
-    const senderName = authorCommissarUser.getNicknameOrTitleWithInsignia();
-    const payeeName = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
-    const sweet = Math.random() < 0.1 ? 'of those sweet sweet ' : '';
-    const message = `${senderName} sent ${amount} ${sweet}yen to ${payeeName}`;
-    await discordMessage.channel.send(threeTicks + message + threeTicks);
-    await YenLog(message);
+    await Pay(authorCommissarUser, mentionedCommissarUser, amount, discordMessage);
     await UpdateYenChannel();
+    await UpdateTaxChannel();
 }
 
 async function HandlePayCommand(discordMessage) {
@@ -212,6 +342,7 @@ async function HandleYenCreateCommand(discordMessage) {
     await discordMessage.channel.send(threeTicks + message + threeTicks);
     await YenLog(message);
     await UpdateYenChannel();
+    await UpdateTaxChannel();
 }
 
 async function HandleYenDestroyCommand(discordMessage) {
@@ -383,6 +514,7 @@ async function HandleConvertCommand(discordMessage) {
 module.exports = {
     HandleConvertCommand,
     HandlePayCommand,
+    HandleTaxCommand,
     HandleTipCommand,
     HandleYenCommand,
     HandleYenCreateCommand,
