@@ -140,23 +140,77 @@ async function CalculateTaxPlan(yenToRaise) {
     if (yenToRaise > totalBase) {
 	return null;
     }
-    const taxPlan = {};
+    const plan = {};
     let raised = 0;
     for (const cid in taxBase) {
 	const tax = Math.floor(taxBase[cid] * yenToRaise / totalBase);
 	if (tax > 0) {
-	    taxPlan[cid] = tax;
+	    plan[cid] = tax;
 	    raised += tax;
 	}
     }
     for (const cid in taxBase) {
-	const tax = taxPlan[cid] || 0;
+	const tax = plan[cid] || 0;
 	if (raised < yenToRaise && tax < taxBase[cid]) {
-	    taxPlan[cid] = tax + 1;
+	    plan[cid] = tax + 1;
 	    raised += 1;
 	}
     }
-    return taxPlan;
+    return plan;
+}
+
+function GetRandomMessageOfThanks() {
+    const thanks = [
+	`The Government thanks the taxpayers for their generosity.`,
+	`Mr. President thanks the taxpayers for their generosity.`,
+	`You gotta keep 'em circulatin'`,
+	`Use 'em or lose 'em.`,
+	`Can I get tree fiddy?`,
+    ];
+    const n = Math.floor(Math.random() * thanks.length);
+    return thanks[n];
+}
+
+async function ImplementTaxPlan(plan, recipient, discordMessage) {
+    let totalTax = 0;
+    let message = GetRandomMessageOfThanks() + '\n\n';
+    for (const cid in plan) {
+	const tax = plan[cid];
+	totalTax += tax;
+	const user = UserCache.GetCachedUserByCommissarId(cid);
+	const name = user.getNicknameOrTitleWithInsignia();
+	message += `- ¥ ${tax} ${name}\n`;
+    }
+    message += '  -----\n';
+    const recipientName = recipient.getNicknameOrTitleWithInsignia();
+    message += `+ ¥ ${totalTax} ${recipientName}\n\n`;
+    message += 'See #tax for more info about tax. Active members are never taxed. You can easily dodge tax by connecting to VC every 3 months. The goal of tax is to give the Government a steady source of revenue by putting inactive yen back into circulation.';
+    await discordMessage.channel.send(threeTicks + message + threeTicks);
+    await YenLog(message);
+    const r = Math.log(2) / 90;
+    for (const cid in plan) {
+	const tax = plan[cid];
+	const user = UserCache.GetCachedUserByCommissarId(cid);
+	if (!user.yen || user.yen === 0 || tax === 0) {
+	    continue;
+	}
+	const lastSeen = moment(user.last_seen);
+	const gracePeriodEnd = lastSeen.add(90, 'days');
+	let paidUntil;
+	if (user.inactivity_tax_paid_until) {
+	    paidUntil = moment(user.inactivity_tax_paid_until);
+	} else {
+	    paidUntil = gracePeriodEnd;
+	}
+	if (gracePeriodEnd.isAfter(paidUntil)) {
+	    paidUntil = gracePeriodEnd;
+	}
+	const days = -Math.log(1 - tax / user.yen) / r;
+	const seconds = days * 86400;
+	const newPaidUntil = paidUntil.add(seconds, 'seconds');
+	await Pay(user, recipient, tax, discordMessage);
+	await user.setInactivityTaxPaidUntil(newPaidUntil.format());
+    }
 }
 
 async function HandleTaxCommand(discordMessage) {
@@ -176,8 +230,27 @@ async function HandleTaxCommand(discordMessage) {
 	return;
     }
     const plan = await CalculateTaxPlan(amount);
-    console.log('TAX PLAN');
-    console.log(plan);
+    if (!plan) {
+	await discordMessage.channel.send('Could not raise that amount of tax revenue.');
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send('Invalid recipient. You must specify who to send yen to. Example: `!tax @Jeff 17`');
+	return;
+    }
+    const mentionedDiscordId = mentionedMember.user.id;
+    if (mentionedDiscordId === discordMessage.author.id) {
+	await discordMessage.channel.send('No embezzling of tax funds LOL');
+	return;
+    }
+    const recipient = await UserCache.GetCachedUserByDiscordId(mentionedDiscordId);
+    if (!recipient) {
+	await discordMessage.channel.send('Error. Invalid recipient for funds.');
+	return;
+    }
+    await ImplementTaxPlan(plan, recipient, discordMessage);
+    await UpdateYenChannel();
     await UpdateTaxChannel();
 }
 
