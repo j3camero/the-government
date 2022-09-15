@@ -129,6 +129,9 @@ async function UpdateTaxChannel() {
 }
 
 // Update the tax channel once per hour.
+setTimeout(async () => {
+    await UpdateTaxChannel();
+}, 60 * 1000);
 setInterval(async () => {
     await UpdateTaxChannel();
 }, 3600 * 1000);
@@ -220,7 +223,8 @@ async function ImplementTaxPlan(plan, recipient, discordMessage) {
 
 async function HandleTaxCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7 || author.office === 'PREZ') {
+    const ok = (author.commissar_id === 7) || (author.office === 'PREZ');
+    if (!author || !ok) {
 	await discordMessage.channel.send('Only the elected President can do that.');
 	return;
     }
