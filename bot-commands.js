@@ -448,7 +448,7 @@ async function Dispatch(discordMessage) {
     if (tokens.length === 0) {
 	return;
     }
-    const command = tokens[0];
+    const command = tokens[0].toLowerCase();
     if (command in handlers) {
 	const handler = handlers[command];
 	await handler(discordMessage);

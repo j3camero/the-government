@@ -6,9 +6,17 @@ const UserCache = require('./user-cache');
 const threeTicks = '```';
 
 async function HandleYenCommand(discordMessage) {
-    const discordId = discordMessage.author.id;
-    const cu = await UserCache.GetCachedUserByDiscordId(discordId);
-    await discordMessage.channel.send('```Current balance: ' + `${cu.yen}` + ' yen```');
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (mentionedMember) {
+	const discordId = mentionedMember.id;
+	const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+	const name = cu.getNicknameOrTitleWithInsignia();
+	await discordMessage.channel.send(threeTicks + `${name} has ${cu.yen} yen` + threeTicks);
+    } else {
+	const discordId = discordMessage.author.id;
+	const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+	await discordMessage.channel.send('```Current balance: ' + `${cu.yen}` + ' yen```');
+    }
 }
 
 function IsDigit(s) {
