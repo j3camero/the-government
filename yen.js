@@ -315,7 +315,7 @@ async function UpdateYenChannel() {
     if (message.length !== 0) {
 	await channel.send(threeTicks + message + threeTicks);
     }
-    const jeffSteamInventoryValue = 19309;
+    const jeffSteamInventoryValue = 57171;
     const reserveRatio = jeffSteamInventoryValue / totalYen;
     const formattedReserveRatio = parseInt(reserveRatio * 100);
     message = '';
