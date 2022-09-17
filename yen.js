@@ -48,6 +48,46 @@ function ExactlyOneOfTwoStringsMustBeAnInteger(a, b) {
     return null;
 }
 
+async function CalculateInactivityTaxForecast() {
+    let forecast = 0;
+    const r = Math.log(2) / 90;
+    await UserCache.ForEach((user) => {
+	if (!user.yen) {
+	    // Users with no yen can't pay tax.
+	    return;
+	}
+	if (user.yen <= 1) {
+	    // Users with 1 or fewer yen are exempt from the tax.
+	    return;
+	}
+	if (!user.last_seen) {
+	    // Users that have never been seen for whatever reason don't pay tax.
+	    return;
+	}
+	const lastSeen = moment(user.last_seen);
+	const gracePeriodEnd = lastSeen.add(90, 'days');
+	const currentTime = moment();
+	if (gracePeriodEnd.isAfter(currentTime)) {
+	    // Recently active users don't pay tax. Only inactive ones.
+	    return;
+	}
+	let paidUntil;
+	if (user.inactivity_tax_paid_until) {
+	    paidUntil = moment(user.inactivity_tax_paid_until);
+	} else {
+	    paidUntil = gracePeriodEnd;
+	}
+	if (gracePeriodEnd.isAfter(paidUntil)) {
+	    paidUntil = gracePeriodEnd;
+	}
+	// Calculate expected tax over the next 30 days.
+	const days = 30;
+	const t = user.yen * (1 - Math.exp(-r * days));
+	forecast += t;
+    });
+    return Math.floor(forecast);
+}
+
 async function CalculateInactivityTaxBase() {
     const tax = {};
     const r = Math.log(2) / 90;
@@ -98,6 +138,7 @@ async function UpdateTaxChannel() {
     await channel.bulkDelete(99);
     let message = '';
     const taxBase = await CalculateInactivityTaxBase();
+    const taxForecast = await CalculateInactivityTaxForecast();
     const n = Object.keys(taxBase).length;
     const sortedTaxBase = [];
     let totalTax = 0;
@@ -131,6 +172,7 @@ async function UpdateTaxChannel() {
     }
     message += '-----\n';
     message += `¥ ${totalTax} Total\n\n`;
+    message += `Expected new Government revenues over the next 30 days: ¥ ${taxForecast}\n\n`;
     message += 'Mr. or Madam President is responsible for Government spending. They are encouraged to spend all available tax revenue to bring inactive yen back into circulation. To spend tax money,\n\n';
     message += `!tax @RecipientName 17`;
     await channel.send(threeTicks + message + threeTicks);
