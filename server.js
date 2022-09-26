@@ -328,7 +328,7 @@ async function Start() {
 	    await newVoiceState.member.voice.kick();
 	}
 	await huddles.ScheduleUpdate();
-	await UpdateRaidChannelVisibility();
+	//await UpdateRaidChannelVisibility();
     });
 
     // When a user changes their username or other user details.
