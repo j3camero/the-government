@@ -74,13 +74,13 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of September.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of October.');
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 4, 28, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 22, 29, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 14, 17, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 29, 13, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 107, 16, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Hardcore|', 'https://www.battlemetrics.com/servers/rust/16646780', 5, 16, 'Monthly BP wipe');
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 17, 22, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 24, 13, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 67, 16, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rustopia US Hardcore', 'https://www.battlemetrics.com/servers/rust/16390854', 208, 12, 'Monthly BP wipe');
 }
 
 async function MakeOnePresidentVoteOption(channel, playerName) {
