@@ -231,18 +231,49 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
     return matchingRecords;
 }
 
+async function HourlyUpdate() {
+    startTime = new Date().getTime();
+    await UpdateHarmonicCentrality();
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`UpdateHarmonicCentrality: ${elapsed} ms`);
+}
+
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
 async function RoutineUpdate() {
     console.log('Routine update');
-    await UpdateHarmonicCentrality();
+    startTime = new Date().getTime();
     await Rank.UpdateUserRanks();
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`UpdateUserRanks: ${elapsed} ms`);
+    startTime = new Date().getTime();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`UpdateVoiceActiveMembersForMainDiscordGuild: ${elapsed} ms`);
+    startTime = new Date().getTime();
     await huddles.ScheduleUpdate();
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`huddles: ${elapsed} ms`);
+    startTime = new Date().getTime();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
     await DB.WriteTimeTogetherRecords(timeCappedRecords);
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`Time Matrix: ${elapsed} ms`);
+    startTime = new Date().getTime();
     await DB.ConsolidateTimeMatrix();
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`ConsolidateTimeMatrix: ${elapsed} ms`);
+    startTime = new Date().getTime();
     await UpdateAllCitizens();
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`UpdateAllCitizens: ${elapsed} ms`);
 }
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
@@ -375,10 +406,13 @@ async function Start() {
     // Set up heartbeat events. These run at fixed intervals of time.
     const oneSecond = 1000;
     const oneMinute = 60 * oneSecond;
-    const tenMinutes = 10 * oneMinute;
-    // Set up the hour and minute heartbeat routines to run on autopilot.
-    setInterval(RoutineUpdate, tenMinutes);
+    const fifteenMinutes = 15 * oneMinute;
+    const oneHour = 60 * oneMinute;
+    // Set up the auto-scheduled routines to run on autopilot.
+    setInterval(RoutineUpdate, fifteenMinutes);
+    setInterval(HourlyUpdate, oneHour);
     await RoutineUpdate();
+    // Don't run the hourly update on startup for now because it takes a while to run.
 }
 
 Start();
