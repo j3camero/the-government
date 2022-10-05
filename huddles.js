@@ -55,13 +55,18 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 }
 
 async function CreateNewVoiceChannel(guild, huddle) {
-    const preferredBitrate = 128000;
+    const level3Bitrate = 384000;
+    const level2Bitrate = 128000;
     try {
-	await CreateNewVoiceChannelWithBitrate(guild, huddle, preferredBitrate);
+	await CreateNewVoiceChannelWithBitrate(guild, huddle, level3Bitrate);
     } catch (err) {
-	// If channel creation fails, assume that it's because of the bitrate and try again.
-	// This will save us if the server loses Discord Nitro levels.
-	await CreateNewVoiceChannelWithBitrate(guild, huddle);
+	try {
+	    await CreateNewVoiceChannelWithBitrate(guild, huddle, level2Bitrate);
+	} catch (err) {
+	    // If channel creation fails, assume that it's because of the bitrate and try again.
+	    // This will save us if the server loses Discord Nitro levels.
+	    await CreateNewVoiceChannelWithBitrate(guild, huddle);
+	}
     }
 }
 
