@@ -41,7 +41,7 @@ async function LoadAllUsersFromDatabase() {
     const n = Object.keys(commissarUserCache).length;
     console.log(`Loaded ${n} users from the database.`);
 }
-
+6
 // Calls a function once for every cached user.
 //   - innerFunction: this function is called once for each cached user, like:
 //                    innerFunction(user), where user is a CommisarUser object.
@@ -176,7 +176,8 @@ function GetCachedUserByBanVoteMessageId(messageId) {
 
 function GetUsersSortedByLastSeen(inactivityLimitInDays) {
     const users = [];
-    const timeCutoff = moment().subtract(inactivityLimitInDays, 'days');
+    const seconds = 86400 * inactivityLimitInDays;
+    const timeCutoff = moment().subtract(seconds, 'seconds');
     for (const [commissarId, user] of Object.entries(commissarUserCache)) {
 	const lastSeen = moment(user.last_seen);
 	if (user.citizen && user.good_standing && lastSeen.isAfter(timeCutoff)) {

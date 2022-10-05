@@ -172,7 +172,7 @@ async function HandleOrdersCommand(discordMessage) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const daysToLookback = parseInt(daysToLookbackAsText);
+    const daysToLookback = parseFloat(daysToLookbackAsText);
     const recentActiveUsers = UserCache.GetUsersSortedByLastSeen(daysToLookback);
     await discordMessage.channel.send(`Sending orders to ${recentActiveUsers.length} members. Restart the bot now if this is not right.`);
     await Sleep(10 * 1000);
@@ -181,12 +181,12 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `We have an actual mission for you for once!\n\n`;
-	ordersMessage += `We want to win the map vote to throw our enemies off their game.\n\n`;
-	ordersMessage += `Join the Rustopia Discord here: https://discord.gg/8UPaRgvS\n\n`;
-	ordersMessage += `Agree to the rules of the server. Then head to #map-votes-large\n\n`;
-	ordersMessage += `Vote for the FIRST map in the list at the top. Don't vote for additional maps.\n\n`;
-	ordersMessage += `Your help is greatly appreciated as we prepare for wipe day on Oct 6. See you in 3 days. Hyyyype!\n\n`;
+	ordersMessage += `Here are your secret orders for the month of October. Report to the server Rustopia US Large.\n\n`;
+	ordersMessage += '```client.connect USLarge.Rustopia.gg:28015```\n\n';
+	const buildCoordinates = 'G19';
+	ordersMessage += `Run directly to the build spot, ${buildCoordinates}. Help build the Community base then build your own small base close by.\n\n`;
+	ordersMessage += `Check out our NEW intelligence portal. Depending on your rank, various intelligence products are available for you there.\n\n`;
+	ordersMessage += `https://app.rustintel.com/wipeinfo?invite=${user.discord_id}\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
