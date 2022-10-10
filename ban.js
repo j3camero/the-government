@@ -246,9 +246,9 @@ async function HandleBanCommand(discordMessage) {
 	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial.`);
 	return;
     }
-    await discordMessage.channel.send(`${mentionedUser.getNicknameWithInsignia()} has been sent to Ban Court!`);
-    const sevenDays = moment().add(7, 'days').format();
-    await mentionedUser.setBanVoteEndTime(sevenDays);
+    await discordMessage.channel.send(`${mentionedUser.getRankNameAndInsignia()} has been sent to Ban Court!`);
+    const currentTimeIsoString = moment().format();
+    await mentionedUser.setBanVoteStartTime(currentTimeIsoString);
     UpdateTrial(mentionedUser);
 }
 
@@ -309,7 +309,7 @@ async function HandlePardonCommand(discordMessage) {
     }
     const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
     if (mentionedUser.ban_vote_end_time) {
-	await mentionedUser.setBanVoteEndTime(null);
+	await mentionedUser.setBanVoteStartTime(null);
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     if (mentionedUser.ban_vote_chatroom) {
