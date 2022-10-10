@@ -21,7 +21,7 @@ class CommissarUser {
         friend_category_id,
         friend_text_chat_id,
         friend_voice_room_id,
-        ban_vote_end_time,
+        ban_vote_start_time,
         ban_vote_chatroom,
         ban_vote_message,
         yen,
@@ -41,7 +41,7 @@ class CommissarUser {
 	this.friend_category_id = friend_category_id;
 	this.friend_text_chat_id = friend_text_chat_id;
 	this.friend_voice_room_id = friend_voice_room_id;
-	this.ban_vote_end_time = ban_vote_end_time;
+	this.ban_vote_start_time = ban_vote_start_time;
 	this.ban_vote_chatroom = ban_vote_chatroom;
 	this.ban_vote_message = ban_vote_message;
 	this.yen = parseInt(yen);
@@ -174,12 +174,12 @@ class CommissarUser {
 	await this.updateFieldInDatabase('friend_voice_room_id', this.friend_voice_room_id);
     }
 
-    async setBanVoteEndTime(ban_vote_end_time) {
-	if (ban_vote_end_time === this.ban_vote_end_time) {
+    async setBanVoteStartTime(ban_vote_start_time) {
+	if (ban_vote_start_time === this.ban_vote_start_time) {
 	    return;
 	}
-	this.ban_vote_end_time = ban_vote_end_time;
-	await this.updateFieldInDatabase('ban_vote_end_time', this.ban_vote_end_time);
+	this.ban_vote_start_time = ban_vote_start_time;
+	await this.updateFieldInDatabase('ban_vote_start_time', this.ban_vote_start_time);
     }
 
     async setBanVoteChatroom(ban_vote_chatroom) {

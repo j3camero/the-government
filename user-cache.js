@@ -29,7 +29,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.friend_category_id,
 	    row.friend_text_chat_id,
 	    row.friend_voice_room_id,
-	    row.ban_vote_end_time,
+	    row.ban_vote_start_time,
 	    row.ban_vote_chatroom,
 	    row.ban_vote_message,
 	    row.yen,
