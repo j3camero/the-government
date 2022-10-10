@@ -60,14 +60,16 @@ function VoteMargin(y, n, DecisionRule) {
     }
 }
 
-function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, daysSinceLastChange, DecisionRule) {
-    const days = daysSinceLastChange;
-    const n = 7;
-    if (days >= n) {
+// Estimate the probability that a vote outcome will change. This is used to determine when
+// a vote can be "called" early, if the probability of an outcome flip is low enough.
+function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, daysSinceLastChange, baselineDurationDays, DecisionRule) {
+    const n = baselineDurationDays;
+    const d = daysSinceLastChange;
+    if (d >= n) {
 	return 0;
     }
     // Integral of triangle distribution. 0 < p < 1
-    const p = (n - days) * (n - days) / (n * n);
+    const p = (n - d) * (n - d) / (n * n);
     const undecidedVoters = numVoters - yesVotes - noVotes;
     const margin = VoteMargin(yesVotes, noVotes, DecisionRule);
     if (margin > undecidedVoters) {
@@ -76,14 +78,13 @@ function ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, daysSinceL
     return 1 - BinomialCDF(margin, undecidedVoters, p);
 }
 
-function EstimateVoteDuration(numVoters, yesVotes, noVotes, DecisionRule) {
-    const targetErrorProbability = 0.01;
+function EstimateVoteDuration(numVoters, yesVotes, noVotes, baselineDurationDays, targetErrorProbability, DecisionRule) {
     const oneSecondIsh = 0.00001;
     let lo = 0;
     let hi = 7;
     while (hi - lo > oneSecondIsh) {
 	const mid = (hi + lo) / 2;
-	const p = ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, mid, DecisionRule);
+	const p = ProbabilityOfVoteOutcomeChange(numVoters, yesVotes, noVotes, mid, baselineDurationDays, DecisionRule);
 	if (p < targetErrorProbability) {
 	    hi = mid;
 	} else {
