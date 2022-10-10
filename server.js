@@ -172,7 +172,7 @@ async function SetGoodStandingIfVerified(cu, member) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const role = await DiscordUtil.GetRoleByName(guild, 'Verified');
     const isVerified = await DiscordUtil.GuildMemberHasRole(member, role);
-    const isOnTrial = cu.ban_vote_end_time;
+    const isOnTrial = cu.ban_vote_start_time;
     if (isVerified && !isOnTrial) {
 	console.log('Detected Verified role', member.nickname);
 	await cu.setGoodStanding(true);

@@ -1,12 +1,13 @@
 const DiscordUtil = require('./discord-util');
 const moment = require('moment');
 const UserCache = require('./user-cache');
+const VoteDuration = require('./vote-duration');
 
 const banCommandRank = 5;  // General 1
 const banVoteRank = 9;  // Lieutenant
 
 async function UpdateTrial(cu) {
-    if (!cu.ban_vote_end_time) {
+    if (!cu.ban_vote_start_time) {
 	// No trial to update.
 	await cu.setBanVoteChatroom(null);
 	await cu.setBanVoteMessage(null);
@@ -29,21 +30,19 @@ async function UpdateTrial(cu) {
 	channel = await guild.channels.create(roomName, { type: 'text' });
 	await channel.setParent(banCourtCategory);
 	await channel.setRateLimitPerUser(3600);
-	if (member) {
-	    await channel.createOverwrite(member, {
-		CONNECT: true,
-		SEND_MESSAGES: true,
-		VIEW_CHANNEL: true,
-	    });
-	}
     }
     if (!channel) {
 	console.log('Failed to find or create ban court channel', roomName);
 	return;
     }
-    // TODO: remove this line any time as it was only needed to bootstrap the rate limit once.
-    await channel.setRateLimitPerUser(3600);
     await cu.setBanVoteChatroom(channel.id);
+    if (member) {
+	await channel.createOverwrite(member, {
+	    CONNECT: true,
+	    SEND_MESSAGES: true,
+	    VIEW_CHANNEL: true,
+	});
+    }
     // Update or create the ban vote message itself. The votes are reactions to this message.
     let message;
     if (cu.ban_vote_message) {
@@ -118,32 +117,37 @@ async function UpdateTrial(cu) {
     const underline = new Array(caseTitle.length + 1).join('-');
     const threeTicks = '```';
     const currentTime = moment();
-    let endTime = moment(cu.ban_vote_end_time);
-    const twentyFourHours = moment().add(24, 'hours');
-    const sevenDays = moment().add(168, 'hours');
+    let startTime = moment(cu.ban_vote_start_time);
+    const totalVoters = 50;
+    let baselineVoteDurationDays;
     let nextStateChangeMessage;
     if (guilty) {
+	baselineVoteDurationDays = 5;
 	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more NO votes to unban`;
 	if (cu.good_standing) {
-	    endTime = sevenDays;
-	    console.log('New trial end time:', endTime.format());
-	    await cu.setBanVoteEndTime(endTime.format());
+	    // Vote outcome flipped. Reset the clock.
+	    startTime = currentTime;
 	}
 	await cu.setGoodStanding(false);
 	if (member) {
 	    await member.voice.kick();
 	}
     } else {
+	baselineVoteDurationDays = 1;
 	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
 	nextStateChangeMessage = `${n} more YES votes to ban`;
-	if (endTime.isAfter(twentyFourHours)) {
-	    endTime = twentyFourHours;
-	    console.log('New trial end time:', endTime.format());
-	    await cu.setBanVoteEndTime(endTime.format());
+	if (!cu.good_standing) {
+	    // Vote outcome flipped. Reset the clock.
+	    startTime = currentTime;
 	}
 	await cu.setGoodStanding(true);
     }
+    await cu.setBanVoteStartTime(startTime.format());
+    const fivePercent = 0.05;
+    const durationDays = VoteDuration.EstimateVoteDuration(totalVoters, yesVoteCount, noVoteCount, baselineVoteDurationDays, fivePercent, VoteDuration.SuperMajority);
+    const durationSeconds = durationDays * 86400;
+    const endTime = startTime.add(durationSeconds, 'seconds');
     if (currentTime.isAfter(endTime)) {
 	// Ban trial is over. End it and clean it up.
 	console.log('Trial ended. Cleaning up.');
@@ -167,7 +171,7 @@ async function UpdateTrial(cu) {
 	} catch (error) {
 	    // Channel has likely already been deleted.
 	}
-	await cu.setBanVoteEndTime(null);
+	await cu.setBanVoteStartTime(null);
 	await cu.setBanVoteChatroom(null);
 	await cu.setBanVoteMessage(null);
 	console.log('Trial cleanup done. Justice prevails!');
