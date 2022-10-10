@@ -2,12 +2,12 @@
   "name": "secretclan",
   "version": "1.0.0",
   "description": "Software for managing a gaming clan.",
-  "main": "commissar.js",
+  "main": "server.js",
   "engines": {
     "node": ">=0.14.15"
   },
   "scripts": {
-    "start": "node commissar.js",
+    "start": "node server.js --unhandled-rejections=strict --trace-warnings",
     "test": "mocha './{,!(node_modules)/**}/*-test.js'"
   },
   "repository": {
@@ -29,9 +29,12 @@
   "homepage": "https://github.com/j3camero/secretclan#readme",
   "dependencies": {
     "aws-sdk": "^2.780.0",
+    "binomial-cdf": "^2.0.0",
     "canvas": "^2.6.1",
     "deep-equal": "^2.0.4",
+    "diff": "^5.1.0",
     "discord.js": "^12.4.1",
+    "exchange-rates-api": "^1.1.0",
     "gamedig": "^2.0.23",
     "mocha": "^6.2.0",
     "moment": "^2.29.1",

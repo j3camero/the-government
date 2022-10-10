@@ -25,6 +25,18 @@ async function Connect() {
 
 Connect();
 
+async function Query(sql, values) {
+    return new Promise((resolve, reject) => {
+	connection.query(sql, values, (err, results) => {
+	    if (err) {
+		reject(err);
+	    } else {
+		resolve(results);
+	    }
+	});
+    });
+}
+
 connection.on('error', async (err) => {
     console.log('Database error:', err);
     if (err.code === 'PROTOCOL_CONNECTION_LOST') {
@@ -36,54 +48,75 @@ connection.on('error', async (err) => {
 
 // Send a simple query periodically to keep the connection alive.
 setInterval(function () {
-    connection.query('SELECT 1');
+    Query('SELECT 1');
 }, 8 * 60 * 1000);
-
-function getConnection() {
-    return connection;
-}
 
 // Write these records to the database immediately without buffering.
 // Each record represents time spent together between a pair of
 // Commissar users.
-function writeTimeTogetherRecords(records) {
+async function WriteTimeTogetherRecords(records) {
     if (records.length === 0) {
 	return;
     }
     const sqlParts = [];
-    records.forEach((r) => {
+    for (const r of records) {
 	if (!r.durationSeconds || r.durationSeconds <= 0 || !r.dilutedSeconds || r.dilutedSeconds <= 0) {
 	    return;
 	}
 	sqlParts.push(`(${r.loUserId},${r.hiUserId},${r.durationSeconds},${r.dilutedSeconds})`);
-    });
+    }
     const sql = (
 	'INSERT INTO time_together ' +
 	'(lo_user_id, hi_user_id, duration_seconds, diluted_seconds) ' +
-	'VALUES ' + sqlParts.join(', '));
-    connection.query(sql, (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	console.log(`Wrote ${records.length} records to the time matrix.`);
+	    'VALUES ' + sqlParts.join(', '));
+    console.log('About to write records to the time matrix.');
+    await Query(sql);
+    console.log(`Wrote ${records.length} records to the time matrix.`);
+}
+
+// Run a SQL query from a file. Returns a promise that can be awaited to get
+// the results of the query if applicable.
+async function QueryFromFile(sqlFilename) {
+    return new Promise((resolve, reject) => {
+	fs.readFile(sqlFilename, 'utf8', async (err, sqlQuery) => {
+	    if (err) {
+		reject(err);
+	    }
+	    const results = await Query(sqlQuery);
+	    resolve(results);
+	});
     });
 }
 
 // Query the database for the latest time matrix.
-// On success, calls the given callback with a list of entries from the time matrix.
-function getTimeMatrix(callback) {
-    const sqlFilename = 'discounted-time-matrix.sql';
-    fs.readFile(sqlFilename, 'utf8', function(err, sqlQuery) {
-	if (err) {
-	    throw err;
+async function GetTimeMatrix() {
+    return QueryFromFile('discounted-time-matrix.sql');
+}
+
+// Query the database for the latest time matrix.
+async function GetTimeMatrix16h() {
+    const t = {};
+    const rawRecords = await QueryFromFile('discounted-time-matrix-16h.sql');
+    for (const r of rawRecords) {
+	const lo = parseInt(r.lo_user_id);
+	const hi = parseInt(r.hi_user_id);
+	if (!(lo in t)) {
+	    t[lo] = {};
 	}
-	connection.query(sqlQuery, (err, results, fields) => {
-	    if (err) {
-		throw err;
-	    }
-	    callback(results);
-	});
-    });
+	t[lo][hi] = r.discounted_diluted_seconds;
+    }
+    return t;
+}
+
+// Consolidate the time matrix. The time matrix can have duplicate entries in the
+// short term. It's designed this way to make the records more efficient to store
+// at the moment when they are first created. The consolidation process has to be
+// run at routine intervals to stop too many duplicate records piling up. Two
+// records are considered duplicate if they record time spent between the same
+// pair of two users. Duplicate records are consolidated by adding them together,
+// with the time decay properly factored in.
+async function ConsolidateTimeMatrix() {
+    return QueryFromFile('consolidate-time-matrix-older-than-one-week.sql');
 }
 
 // Write some Battlemetrics session records to the database.
@@ -92,7 +125,7 @@ function getTimeMatrix(callback) {
 // If any sessions already exist in the database (according to the
 // Battlemetrics session id) then their fields are updated. Duplicate
 // records are not created in the database.
-function writeBattlemetricsSessions(sessions) {
+async function WriteBattlemetricsSessions(sessions) {
     if (!sessions || sessions.length === 0) {
 	return;
     }
@@ -129,19 +162,18 @@ function writeBattlemetricsSessions(sessions) {
 	    '    battlemetrics_sessions.identifier_id = VALUES(battlemetrics_sessions.identifier_id)');
     // Time the database operation.
     const startTime = Date.now();
-    connection.query(sql, (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	const elapsed = Date.now() - startTime;
-	console.log(`Wrote ${sessions.length} Battlemetrics sessions to the DB. [${elapsed} ms]`);
-    });
+    await Query(sql);
+    const elapsed = Date.now() - startTime;
+    console.log(`Wrote ${sessions.length} Battlemetrics sessions to the DB. [${elapsed} ms]`);
 }
 
 module.exports = {
     Connect,
-    getConnection,
-    getTimeMatrix,
-    writeBattlemetricsSessions,
-    writeTimeTogetherRecords,
+    ConsolidateTimeMatrix,
+    GetTimeMatrix,
+    GetTimeMatrix16h,
+    Query,
+    QueryFromFile,
+    WriteBattlemetricsSessions,
+    WriteTimeTogetherRecords,
 };

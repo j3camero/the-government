@@ -1,74 +1,61 @@
+const RankMetadata = require('./rank-definitions');
 const CommissarUser = require('./commissar-user');
+const DB = require('./database');
 const FilterUsername = require('./filter-username');
 const moment = require('moment');
-const rankModule = require('./rank');
 
 // Below is a cache of the users that is kept in-memory, keyed by commissar_id.
 // Various functions are provided to load and sync users, and search the cache.
 let commissarUserCache = {};
 
 // Read all the users from the database, then swap the cache.
-// Calls the provided callback on success.
-function LoadAllUsersFromDatabase(connection, callback) {
-    connection.query('SELECT * FROM users', (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	const newCache = {};
-	result.forEach((row) => {
-	    const newUser = new CommissarUser(
-		row.commissar_id,
-		row.discord_id,
-		row.nickname,
-		row.rank,
-		row.last_seen,
-		row.office
-	    );
-	    newCache[row.commissar_id] = newUser;
-	});
-	commissarUserCache = newCache;
-	if (callback) {
-	    callback();
-	}
+async function LoadAllUsersFromDatabase() {
+    const results = await DB.Query('SELECT * FROM users');
+    const newCache = {};
+    results.forEach((row) => {
+	const newUser = new CommissarUser(
+	    row.commissar_id,
+	    row.discord_id,
+	    row.nickname,
+	    row.nick,
+	    row.rank,
+	    row.last_seen,
+	    row.office,
+	    row.harmonic_centrality,
+	    row.peak_rank,
+	    row.gender,
+	    row.citizen,
+	    row.good_standing,
+	    row.friend_category_id,
+	    row.friend_text_chat_id,
+	    row.friend_voice_room_id,
+	    row.ban_vote_start_time,
+	    row.ban_vote_chatroom,
+	    row.ban_vote_message,
+	    row.yen,
+	    row.inactivity_tax_paid_until,
+	);
+	newCache[row.commissar_id] = newUser;
     });
+    commissarUserCache = newCache;
+    const n = Object.keys(commissarUserCache).length;
+    console.log(`Loaded ${n} users from the database.`);
 }
-
-// Write only the dirty records to the database.
-function WriteDirtyUsersToDatabase(connection) {
-    let firstOne = true;
-    Object.keys(commissarUserCache).forEach((id) => {
-	const u = commissarUserCache[id];
-	if (u.dirty) {
-	    u.writeToDatabase(connection);
-	    if (firstOne) {
-		console.log(`Writing dirty users to the DB.`);
-		firstOne = false;
-	    }
-	    console.log(`    * ${u.nickname}`);
-	}
-    });
-}
-
-// Update all the cached users in the database.
-function WriteAllUsersToDatabase(connection) {
-    console.log(`Writing all users to the DB.`);
-    Object.keys(commissarUserCache).forEach((id) => {
-	const u = commissarUserCache[id];
-	u.writeToDatabase(connection);
-    });
-}
-
+6
 // Calls a function once for every cached user.
 //   - innerFunction: this function is called once for each cached user, like:
 //                    innerFunction(user), where user is a CommisarUser object.
 //   - userCache (optional): for unit testing. Leave it out in production.
-function ForEach(innerFunction, userCache) {
+async function ForEach(innerFunction, userCache) {
     if (!userCache) {
 	userCache = commissarUserCache;
     }
-    Object.values(userCache).forEach((user) => {
-	innerFunction(user);
-    });
+    const userList = Object.values(userCache);
+    // Sequential for loop on purpose, so that we can await each item one after the other.
+    for (let i = 0; i < userList.length; ++i) {
+	const user = userList[i];
+	await innerFunction(user);
+    }
 }
 
 // Get a cached user record by Commissar ID.
@@ -82,61 +69,159 @@ function GetCachedUserByCommissarId(commissar_id) {
 
 // Get a cached user record by Discord ID.
 function GetCachedUserByDiscordId(discord_id) {
-    let foundUser = null;
-    Object.keys(commissarUserCache).forEach((commissar_id) => {
-	const user = commissarUserCache[commissar_id];
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
 	if (user.discord_id === discord_id) {
-	    foundUser = user;
-	}
-    });
-    return foundUser;
+	    return user;
+	}	
+    }
 }
 
-// Creates a new user in the database. On success, the new user is added to the cache and the callback is called.
-function CreateNewDatabaseUser(connection, discordMember, callback) {
+async function GetOrCreateUserByDiscordId(discordMember) {
+    const cu = await GetCachedUserByDiscordId(discordMember.user.id);
+    if (cu) {
+	return cu;
+    }
+    return await CreateNewDatabaseUser(discordMember);
+}
+
+// Creates a new user in the database. On success, the new user is added to the cache.
+async function CreateNewDatabaseUser(discordMember) {
     const discord_id = discordMember.user.id;
     const nickname = FilterUsername(discordMember.user.username);
     console.log(`Create a new DB user for ${nickname}`);
-    const rank = rankModule.metadata.length - 1;
+    const rank = RankMetadata.length - 1;
     const last_seen = moment().format();
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};
-    connection.query('INSERT INTO users SET ?', fields, (err, result) => {
-	if (err) {
-	    throw err;
-	}
-	const commissar_id = result.insertId;
-	const newUser = new CommissarUser(
-	    commissar_id,
-	    discord_id,
-	    nickname,
-	    rank,
-	    last_seen,
-	    office
-	);
-	commissarUserCache[commissar_id] = newUser;
-	if (callback) {
-	    callback();
-	}
-    });
+    const result = await DB.Query('INSERT INTO users SET ?', fields);
+    const commissar_id = result.insertId;
+    const newUser = new CommissarUser(
+	commissar_id,
+	discord_id,
+	nickname,
+	null,
+	rank,
+	last_seen,
+	office,
+	0, 12, null,
+	true, true,
+	null, null, null,
+	null, null, null,
+	0,
+    );
+    commissarUserCache[commissar_id] = newUser;
+    return newUser;
 }
 
 // Returns a dictionary of nicknames, keyed by Commissar ID.
-function GetAllNicknames() {
+async function GetAllNicknames() {
     const nicknames = {};
-    Object.values(commissarUserCache).forEach((user) => {
-	nicknames[user.commissar_id] = user.nickname;
+    await ForEach((user) => {
+	nicknames[user.commissar_id] = user.getNicknameOrTitleWithInsignia();
     });
     return nicknames;
 }
 
+// Get the N top users by Harmonic Centrality.
+//
+// topN - the number of top most central users to return. Omit this
+//        to return all citizens sorted by centrality.
+//
+// Returns a list of pairs:
+//   [(commissar_id, centrality), ...]
+function GetMostCentralUsers(topN) {
+    const flat = [];
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.citizen) {
+	    flat.push(user);
+	}
+    }
+    flat.sort((a, b) => {
+	return b.harmonic_centrality - a.harmonic_centrality;
+    });
+    return flat.slice(0, topN);
+}
+
+async function BulkCentralityUpdate(centralityScores) {
+    // Sequential for loop used on purpose. This loop awaits each user update
+    // in turn.
+    for (const commissar_id in centralityScores) {
+	if (!commissar_id) {
+	    throw 'Nope';
+	}
+	const centrality = centralityScores[commissar_id];
+	const user = GetCachedUserByCommissarId(commissar_id);
+	await user.setHarmonicCentrality(centrality);
+    }
+}
+
+async function GetAllCitizenCommissarIds() {
+    const ids = [];
+    await ForEach((user) => {
+	if (user.citizen) {
+	    ids.push(user.commissar_id);
+	}
+    });
+    return ids;
+}
+
+function GetCachedUserByBanVoteMessageId(messageId) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.ban_vote_message === messageId) {
+	    return user;
+	}
+    }
+    return null;
+}
+
+function GetUsersSortedByLastSeen(inactivityLimitInDays) {
+    const users = [];
+    const seconds = 86400 * inactivityLimitInDays;
+    const timeCutoff = moment().subtract(seconds, 'seconds');
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	const lastSeen = moment(user.last_seen);
+	if (user.citizen && user.good_standing && lastSeen.isAfter(timeCutoff)) {
+	    users.push(user);
+	}
+    }
+    users.sort((a, b) => {
+	const at = moment(a.last_seen);
+	const bt = moment(b.last_seen);
+	if (at.isBefore(bt)) {
+	    return 1;
+	} else if (at.isAfter(bt)) {
+	    return -1;
+	} else {
+	    return 0;
+	}
+    });
+    return users;
+}
+
+function CountVoiceActiveUsers(inactivityLimitInDays) {
+    let count = 0;
+    const timeCutoff = moment().subtract(inactivityLimitInDays, 'days');
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	const lastSeen = moment(user.last_seen);
+	if (lastSeen.isAfter(timeCutoff)) {
+	    count += 1;
+	}
+    }
+    return count;
+}
+
 module.exports = {
+    BulkCentralityUpdate,
+    CountVoiceActiveUsers,
     CreateNewDatabaseUser,
     ForEach,
+    GetAllCitizenCommissarIds,
     GetAllNicknames,
+    GetCachedUserByBanVoteMessageId,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
+    GetMostCentralUsers,
+    GetOrCreateUserByDiscordId,
+    GetUsersSortedByLastSeen,
     LoadAllUsersFromDatabase,
-    WriteAllUsersToDatabase,
-    WriteDirtyUsersToDatabase,
 };

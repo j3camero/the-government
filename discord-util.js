@@ -2,7 +2,6 @@
 const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
-const UserCache = require('./user-cache');
 
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({
@@ -37,9 +36,51 @@ async function GetRoleByName(guild, roleName) {
 }
 
 // Checks if a Discord guild member has a role. The targetRole is a structured Discord Role object.
-function GuildMemberHasRole(member, targetRole) {
-    const foundRole = member.roles.cache.find(role => role.id === targetRole.id);
+async function GuildMemberHasRole(member, targetRole) {
+    if (!guildRolesCached) {
+	await member.guild.roles.fetch();
+	guildRolesCached = true;
+    }
+    const foundRole = member.roles.cache.find(role => (role.id === targetRole.id) || (role.id === targetRole));
     return foundRole ? true : false;
+}
+
+// Adds a role to a GuildMember.
+//
+// Tries to be efficient by checking if the member already has the role.
+async function AddRole(member, role) {
+    const has = await GuildMemberHasRole(member, role);
+    if (!role || has) {
+	return;
+    }
+    console.log('Adding role', role.name || role, 'to', member.nickname);
+    await member.roles.add(role);
+}
+
+// Removes a role from a GuildMember.
+//
+// Tries to be efficient by checking if the member already has the role.
+async function RemoveRole(member, role) {
+    const has = await GuildMemberHasRole(member, role);
+    if (!role || !has) {
+	return;
+    }
+    console.log('Removing role', role.name || role, 'from', member.nickname);
+    await member.roles.remove(role);
+}
+
+async function GetCategoryChannelByName(channelName) {
+    const guild = await GetMainDiscordGuild();
+    for (const [id, channel] of guild.channels.cache) {
+	if (channel.name === channelName && channel.type === 'category') {
+	    return channel;
+	}
+    }
+    return null;
+}
+
+async function GetBanCourtCategoryChannel() {
+    return await GetCategoryChannelByName('Ban Court');
 }
 
 // Returns a list of text channels with names that match channelName.
@@ -80,93 +121,92 @@ async function MessagePublicChatChannel(discordMessage) {
     channel.send(discordMessage);
 }
 
-async function UpdateChainOfCommandChatChannel(guild, canvas) {
-    const mainMessage = (
-	'The Chain of Command auto updates based on who you spend time with in Discord. ' +
-	    'Anyone can become Mr. President because of the impartial AI algorithm.');
-    const footerMessage = (
-	'Most clans have some kind of President-for-life or other fixed leadership ' +
-	    'positions. Not us. That is what makes our clan totally unique.');
-    const channels = GetAllMatchingTextChannels(guild, 'chain-of-command');
-    if (channels.length === 0) {
-	throw new Error('Could not find #chain-of-command chat channel.');
-    }
-    const channel = channels[0];
-    // Bulk delete messages
-    await channel.bulkDelete(3);
-    const buf = canvas.toBuffer();
-    fs.writeFileSync('live-chain-of-command.png', buf);
-    await channel.send(mainMessage, {
-	files: [{
-	    attachment: 'live-chain-of-command.png',
-	    name: 'chain-of-command.png'
-	}]
-    });
-    channel.send(footerMessage);
-}
+let cachedHarmonicCentralityMessage = "";
 
-async function UpdateHarmonicCentralityChatChannel(centrality) {
+async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     const guild = await GetMainDiscordGuild();
-    const channels = GetAllMatchingTextChannels(guild, 'harmonic-centrality');
+    const channels = GetAllMatchingTextChannels(guild, 'ranks');
     if (channels.length === 0) {
 	throw new Error('Could not find #harmonic-centrality chat channel.');
     }
-    const channel = channels[0];
-    // Bulk delete messages
-    channel.bulkDelete(3);
-    const flat = [];
-    Object.keys(centrality).forEach((i) => {
-	flat.push({
-	    cid: i,
-	    centrality: centrality[i],
-	});
-    });
-    flat.sort((a, b) => {
-	return b.centrality - a.centrality;
-    });
-    const topN = 5;
     const threeBackticks = '\`\`\`';
-    let message = ('This is how we elect Mr. President. Harmonic Centrality is a math formula that ' +
-		   'calculates \'influence\' in a social network. It is impartial and fair. Anyone ' +
-		   'can become Mr. President. Here are the top candidates right now:\n' + threeBackticks);
-    for (let i = 0; i < topN && i < flat.length; ++i) {
-	const cu = UserCache.GetCachedUserByCommissarId(flat[i].cid);
-	const scoreString = Math.round(flat[i].centrality).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-	const margin = flat[i].centrality / flat[0].centrality - 1;
-	const marginString = Math.round(100 * margin);
-	message += `${i + 1} ${cu.nickname} (\$${scoreString})`
-	if (i > 0) {
-	    message += ` [${marginString}\%]`
-	}
-	message += '\n';
+    let message = ('Harmonic Centrality is a math formula that calculates \'influence\' in a ' +
+		   'social network. It is impartial and fair. Anyone can become become a General.\n' + threeBackticks);
+    for (let i = 0; i < mostCentralUsers.length; ++i) {
+	const cu = mostCentralUsers[i];
+	const score = cu.harmonic_centrality / 1000;
+	const scoreString = Math.round(score).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	const dollarAmount = '$' + scoreString;
+	const paddedDollarAmount = dollarAmount.padStart(6, ' ');
+	message += `${paddedDollarAmount} ${cu.getNicknameOrTitleWithInsignia()}\n`;
     }
     message += threeBackticks;
-    channel.send(message);
+    if (message === cachedHarmonicCentralityMessage) {
+	return;
+    }
+    cachedHarmonicCentralityMessage = message;
+    const channel = channels[0];
+    await channel.bulkDelete(3);
+    await channel.send(message);
 }
 
-async function GetCommissarIdsOfDiscordMembers() {
-    const guild = await GetMainDiscordGuild();
-    const members = await guild.members.fetch();
-    const ids = [];
-    members.forEach((member) => {
-	const discordID = member.id;
-	const cu = UserCache.GetCachedUserByDiscordId(discordID);
-	if (cu) {
-	    ids.push(cu.commissar_id);
+async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
+    // Look for exactly one member being mentioned.
+    let mentionedMember;
+    // First, check for explicit @mentions. There must be at most 1 or it's an error.
+    if (!discordMessage ||
+	!discordMessage.mentions ||
+	!discordMessage.mentions.members ||
+	discordMessage.mentions.members.size < 1) {
+	// No members mentioned using @mention. Do nothing. A member might be mentioned
+	// in another way, such as by Discord ID.
+    } else if (discordMessage.mentions.members.size === 1) {
+	return discordMessage.mentions.members.first();
+    } else if (discordMessage.mentions.members.size > 1) {
+	return null;
+    }
+    // Second, check for mentions by full Discord user ID. This will usually be a long
+    // sequence of digits. Still, finding more than 1 mentioned member is an error.
+    const tokens = discordMessage.content.split(' ');
+    // Throw out the first token, which we know is the command itself. Keep only the arguments.
+    tokens.shift();
+    for (const token of tokens) {
+	const isNumber = /^\d+$/.test(token);
+	if (token.length > 5 && isNumber) {
+	    if (mentionedMember) {
+		return null;
+	    }
+	    try {
+		const guild = await DiscordUtil.GetMainDiscordGuild();
+		mentionedMember = await guild.members.fetch(token);
+	    } catch (error) {
+		return null;
+	    }
+	} else {
+	    return null;
 	}
-    });
-    return ids;
+    }
+    // We might get this far and find no member mentioned by @ or by ID.
+    if (!mentionedMember) {
+	return null;
+    }
+    // If we get this far, it means we found exactly one member mentioned,
+    // whether by @mention or by user ID.
+    return mentionedMember;
 }
 
 module.exports = {
+    AddRole,
     Connect,
     GetAllMatchingTextChannels,
-    GetCommissarIdsOfDiscordMembers,
+    GetBanCourtCategoryChannel,
+    GetCategoryChannelByName,
     GetPublicChatChannel,
     GetMainDiscordGuild,
     GetRoleByName,
     GuildMemberHasRole,
     MessagePublicChatChannel,
-    UpdateChainOfCommandChatChannel,
+    ParseExactlyOneMentionedDiscordMember,
+    RemoveRole,
     UpdateHarmonicCentralityChatChannel,
 };
