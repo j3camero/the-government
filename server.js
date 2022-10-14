@@ -164,7 +164,7 @@ async function UpdateHarmonicCentrality() {
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    const mostCentral = await UserCache.GetMostCentralUsers(135);
+    const mostCentral = await UserCache.GetMostCentralUsers(400);
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
@@ -412,6 +412,7 @@ async function Start() {
     setInterval(RoutineUpdate, fifteenMinutes);
     setInterval(HourlyUpdate, oneHour);
     await RoutineUpdate();
+    //await HourlyUpdate();
     // Don't run the hourly update on startup for now because it takes a while to run.
 }
 
