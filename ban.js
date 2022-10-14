@@ -29,12 +29,12 @@ async function UpdateTrial(cu) {
     } else {
 	channel = await guild.channels.create(roomName, { type: 'text' });
 	await channel.setParent(banCourtCategory);
-	await channel.setRateLimitPerUser(3600);
     }
     if (!channel) {
 	console.log('Failed to find or create ban court channel', roomName);
 	return;
     }
+    await channel.setRateLimitPerUser(1800);
     await cu.setBanVoteChatroom(channel.id);
     if (member) {
 	await channel.createOverwrite(member, {

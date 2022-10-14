@@ -195,6 +195,9 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
     return mentionedMember;
 }
 
+async function SendLongList(list, channel) {
+}
+
 module.exports = {
     AddRole,
     Connect,
