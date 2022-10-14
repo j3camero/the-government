@@ -196,6 +196,19 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
 }
 
 async function SendLongList(list, channel) {
+    const maxMessageLength = 1960;
+    const threeTicks = '```';
+    let message = '';
+    for (const s of list) {
+	message += s + '\n';
+	if (message.length > maxMessageLength) {
+	    await channel.send(threeTicks + message + threeTicks);
+	    message = '';
+	}
+    }
+    if (message.length > 0) {
+	await channel.send(threeTicks + message + threeTicks);
+    }
 }
 
 module.exports = {
@@ -211,5 +224,6 @@ module.exports = {
     MessagePublicChatChannel,
     ParseExactlyOneMentionedDiscordMember,
     RemoveRole,
+    SendLongList,
     UpdateHarmonicCentralityChatChannel,
 };

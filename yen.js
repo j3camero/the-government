@@ -320,6 +320,7 @@ async function UpdateYenChannel() {
 	    users.push(user);
 	}
     });
+    const n = users.length;
     users.sort((a, b) => {
 	if (a.yen < b.yen) {
 	    return 1;
@@ -329,38 +330,26 @@ async function UpdateYenChannel() {
 	}
 	return 0;
     });
+    const lines = [];
+    let savedMessage;
+    let totalYen = 0;
+    for (let i = 0; i < n; i++) {
+	const user = users[i];
+	const name = user.getNicknameOrTitleWithInsignia();
+	const rank = i + 1;
+	const line = `${rank}. ¥ ${user.yen} ${name}`;
+	lines.push(line);
+	totalYen += user.yen;
+    }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const yenChannelId = '1007017809492070522';
     const channel = await guild.channels.resolve(yenChannelId);
     await channel.bulkDelete(99);
-    let message = '';
-    let savedMessage;
-    let rank = 1;
-    let maxYenDigits;
-    let totalYen = 0;
-    for (const user of users) {
-	const yenString = `¥ ${user.yen}`;
-	if (!maxYenDigits) {
-	    maxYenDigits = yenString.length;
-	}
-	const paddedYen = yenString.padStart(maxYenDigits);
-	const name = user.getNicknameOrTitleWithInsignia();
-	const rankString = rank.toString().padStart(3);
-	rank++;
-	message += `${rankString}. ${paddedYen} ${name}\n`;
-	if (message.length > 1800) {
-	    await channel.send(threeTicks + message + threeTicks);
-	    message = '';
-	}
-	totalYen += user.yen;
-    }
-    if (message.length !== 0) {
-	await channel.send(threeTicks + message + threeTicks);
-    }
-    const jeffSteamInventoryValue = 57171;
+    await DiscordUtil.SendLongList(lines, channel);
+    const jeffSteamInventoryValue = 35058;
     const reserveRatio = jeffSteamInventoryValue / totalYen;
     const formattedReserveRatio = parseInt(reserveRatio * 100);
-    message = '';
+    let message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
     message += `Liquidation value of Jeff's Rust skins (Sept 2022): ¥ ${jeffSteamInventoryValue}\n`;
     message += `Reserve ratio: ${formattedReserveRatio}%\n`;
