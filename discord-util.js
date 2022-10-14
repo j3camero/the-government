@@ -2,6 +2,7 @@
 const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
+const moment = require('moment');
 
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({
@@ -124,6 +125,9 @@ async function MessagePublicChatChannel(discordMessage) {
 }
 
 async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
+    const daysAgo = 30;
+    const currentTime = moment();
+    const cutoff = currentTime.subtract(daysAgo, 'days');
     const guild = await GetMainDiscordGuild();
     const channels = GetAllMatchingTextChannels(guild, 'ranks');
     if (channels.length === 0) {
@@ -131,7 +135,7 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     }
     const channel = channels[0];
     await channel.bulkDelete(99);
-    await channel.send(`Harmonic Centrality is a math formula that calculates 'influence' in a social network. It is impartial and fair. Anyone can become a General.\n`);
+    await channel.send(`Harmonic Centrality is a math formula that calculates 'influence' in a social network. It is impartial and fair. Anyone can become a General.\n\nRecently active members are shown in green.`);
     const lines = [];
     let maxLength = 0;
     for (const user of mostCentralUsers) {
@@ -140,10 +144,17 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
 	maxLength = Math.max(scoreString.length, maxLength);
 	const paddedScore = scoreString.padStart(maxLength, ' ');
 	const name = user.getNicknameOrTitleWithInsignia();
-	const line = `${paddedScore} ${name}`;
+	let plusOrMinus = '-';
+	if (user.last_seen) {
+	    const lastSeen = moment(user.last_seen);
+	    if (lastSeen.isAfter(cutoff)) {
+		plusOrMinus = '+';
+	    }
+	}
+	const line = `${plusOrMinus} ${paddedScore} ${name}`;
 	lines.push(line);
     }
-    await SendLongList(lines, channel);
+    await SendLongList(lines, channel, true);
 }
 
 async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
@@ -191,18 +202,19 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
     return mentionedMember;
 }
 
-async function SendLongList(list, channel) {
+async function SendLongList(list, channel, diff) {
+    const ifDiff = diff ? 'diff\n' : '';
     const maxMessageLength = 1960;
     let message = '';
     for (const s of list) {
 	message += s + '\n';
 	if (message.length > maxMessageLength) {
-	    await channel.send(threeTicks + message + threeTicks);
+	    await channel.send(threeTicks + ifDiff + message + threeTicks);
 	    message = '';
 	}
     }
     if (message.length > 0) {
-	await channel.send(threeTicks + message + threeTicks);
+	await channel.send(threeTicks + ifDiff + message + threeTicks);
     }
 }
 
