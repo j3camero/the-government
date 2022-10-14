@@ -34,7 +34,7 @@ async function UpdateTrial(cu) {
 	console.log('Failed to find or create ban court channel', roomName);
 	return;
     }
-    await channel.setRateLimitPerUser(1800);
+    await channel.setRateLimitPerUser(600);
     await cu.setBanVoteChatroom(channel.id);
     if (member) {
 	await channel.createOverwrite(member, {
