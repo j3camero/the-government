@@ -351,7 +351,7 @@ async function UpdateYenChannel() {
     const formattedReserveRatio = parseInt(reserveRatio * 100);
     let message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
-    message += `Liquidation value of Jeff's Rust skins (Sept 2022): ¥ ${jeffSteamInventoryValue}\n`;
+    message += `Liquidation value of Jeff's Rust skins (Oct 2022): ¥ ${jeffSteamInventoryValue}\n`;
     message += `Reserve ratio: ${formattedReserveRatio}%\n`;
     await channel.send(threeTicks + message + threeTicks);
 }
@@ -508,75 +508,80 @@ async function HandleYenFaqCommand(discordMessage) {
     if (cu.commissar_id !== 7) {
 	return;
     }
+    await discordMessage.channel.bulkDelete(99);
     await discordMessage.channel.send(
-	"**What is a yen?**\n" +
-	"Yen is the official currency of The Government. Its value is pegged to the actual Japanese Yen (JPY). You can think of them as being worth about 1 American penny each. See how many yen you have with\n" +
-	"```!yen```\n");
+	"**What is a yen?**\n\n" +
+	"Yen is the official currency of The Government. Its value is pegged to the actual Japanese Yen (JPY). You can think of them as being worth about 1 American penny each. See how many yen you have with\n\n" +
+	"```!yen```\n\n");
     await discordMessage.channel.send(
-	"**How can I get some yen?**\n" +
-	"A few ways. Ask Mr. or Madam President what needs doing. They usually have some yen. Trade valuable items in game for yen. Place in the top 3 of a PVP Tournament for cash prizes in yen.\n" +
-	"You can get fresh yen by depositing valuable Rust skins with Jeff in the Steam Marketplace.\n");
+	"**How can I get some yen?**\n\n" +
+	"A few ways. Ask a General what needs doing. They usually have some yen. Trade valuable items in game for yen. Scrap and tea seem to be the most profitable items. Government contracts like wall building pay yen. Place in the top 3 of a PVP Tournament for cash prizes in yen.\n\n" +
+	"You can get fresh yen by depositing valuable Rust skins with Jeff in the Steam Marketplace.\n\n");
     await discordMessage.channel.send(
-	"**How can I spend yen?**\n" +
-	"Send yen to other members of The Government with\n" +
-	"```!pay @RecipientName amount```\n" +
-	"For example:\n" +
-	"```!pay @Jeff 42```\n" +
-	"You can give someone a quick thumbs-up by sending them one yen\n" +
-	"```!tip @Jeff```\n" +
-	"Potential uses for yen: trading items in game, prizes for contests, government contracts from Mr. President, trading Rust skins, tipping/gifting, settling small real-world debts, bribing your way out of Ban Court, role playing shopkeeper with real money, and much more. Can't wait to see what you creative capitalists will come up with.\n");
+	"**How can I spend yen?**\n\n" +
+	"Send yen to other members of The Government with\n\n" +
+	"```!pay @RecipientName amount```\n\n" +
+	"For example:\n\n" +
+	"```!pay @Jeff 42```\n\n" +
+	"You can give someone a quick thumbs-up by sending them one yen\n\n" +
+	"```!tip @Jeff```\n\n" +
+	"**What can I buy with yen?**\n\n" +
+	"Trade items in game, prizes for contests, government contracts from Mr. President, trading Rust skins, tipping/gifting, settling small real-world debts, bribing your way out of Ban Court, role playing shopkeeper with real money, and much more. Can't wait to see what you creative capitalists will come up with.\n\n");
     await discordMessage.channel.send(
-	"**Do yen have real-world cash value?**\n" +
-	"Yes. The yen can be freely exchanged for USD at real-world exchange rates, and vice-versa. That makes them pretty much real money.\n");
+	"**Do yen have real-world cash value?**\n\n" +
+	"Yes. The yen can be freely exchanged for USD at real-world exchange rates, and vice-versa. That makes them pretty much real money.\n\n");
     await discordMessage.channel.send(
-	"**How do I trade my yen for real-world cash?**\n" +
-	"Check out Jeff's Steam Inventory. Pick a Rust skin of the monetary value you want to withdraw. Send a one-way trade to Jeff for that item. Use !pay to send the equivalent amount of yen to Jeff. Jeff will accept the trade through Steam and destroy the yen, taking it out of circulation. Withdrawals are processed at exactly the same rate as deposits: the sell price in Steam Marketplace.\n");
+	"**How do I trade my yen for real-world cash?**\n\n" +
+	"Check out Jeff's Steam Inventory at https://steamcommunity.com/profiles/76561198054245955/inventory/\n\n\n\nPick a Rust skin of the monetary value you want to withdraw. Send a one-way trade to Jeff for that item. Use !pay to send the equivalent amount of yen to Jeff. Jeff will accept the trade through Steam and destroy the yen, taking it out of circulation. Withdrawals and deposits are processed at the same rate: the sell price in Steam Marketplace.\n\n");
     await discordMessage.channel.send(
-	"**What about the other way around? Can I trade real-world cash for yen?**\n" +
-	"Yes. Use your real-world cash to buy a Rust skin. Then deposit it in Jeff's inventory using a one-way trade. Jeff will create the equivalent amount of new yen and send it to you.\n");
+	"**Where can I find Jeff's inventory?**\n\n" +
+	"Jeff's inventory is at https://steamcommunity.com/profiles/76561198054245955/inventory/\n\n\n\nYou can add Jeff as a friend on Steam using his friend code 93980227");
     await discordMessage.channel.send(
-	"**What backs the yen?**\n" +
-	"Yen are backed by real-world assets: Rust skins in the Steam Marketplace. Skins are in turn freely convertible to real cash: USD and JPY. yen are freely exchangeable for skins in both directions at the same price, with no fees at all. The reserve ratio will always stay above 200% so that each yen is double-backed. This way, users of the yen can always count on trading every last yen for high-priced, desirable Steam skins. Confidence in the yen will never be shaken. The yen is real money.\n");
+	"**What about the other way around? Can I trade real-world cash for yen?**\n\n" +
+	"Yes. Use your real-world cash to buy a Rust skin. Then deposit it in Jeff's inventory using a one-way trade. Jeff will create the equivalent amount of new yen and send it to you.\n\n");
     await discordMessage.channel.send(
-	"**What if there is a bank run?**\n" +
-	"Every last yen in circulation is backed by a minimum of twice its value in liquid assets. This means that in the case of a bank run, the last person to withdraw their yen will still be left with a large selection of Rust skins to choose from at a variety of price points. There will be no issue with the last person being left with scraps to choose from. We can have confidence that every last yen in circulation is fully backed, and then some.\n");
+	"**What backs the yen?**\n\n" +
+	"Yen are backed by real-world assets: Rust skins in the Steam Marketplace. Skins are in turn freely convertible to real cash: USD and JPY. yen are freely exchangeable for skins in both directions at the same price: the sell price in Steam Marketplace. The reserve ratio will always stay comfortably above 100% so that each yen is fully backed. The extra coverage above 100% means that users of the yen can always count on trading every last yen for high-priced, desirable Steam skins. Confidence in the yen will never be shaken. The yen is real money.\n\n");
     await discordMessage.channel.send(
-	"**Is there a limit to how many yen can be in circulation?**\n" +
-	"In practice, yes. Each yen in circulation is double-backed at a minimum: once by assets desposited by members, plus a second time by Jeff's Rust skin inventory. The total value of Jeff's Steam inventory (about 30,000 yen or $210 USD) is the limit of how many yen can be in circulation.\n");
+	"**What if there is a bank run?**\n\n" +
+	"Every last yen in circulation is backed by more than its value in liquid assets. This means that in the case of a bank run, the last person to withdraw their yen will still be left with a large selection of Rust skins to choose from at a variety of price points. There will be no issue with the last person being left with scraps to choose from. We can have confidence that every last yen in circulation is fully backed, and then some.\n\n");
     await discordMessage.channel.send(
-	"**Are there any fees?**\n" +
-	"No. yen can be exchanged for Rust skins at the same price as they were deposited: the sell price in Steam Marketplace. There is no fee for withdrawing or depositing yen, or sending yen between members. Your yen will never be taken and are yours to keep forever.\n");
+	"**Is there a limit to how many yen can be in circulation?**\n\n" +
+	"Total yen in circulation will never be allowed to exceed ¥150,000, or about $1000 USD. This is to keep it fun and prevent us from getting sued.\n\n");
     await discordMessage.channel.send(
-	"**Do the yen ever wipe?**\n" +
-	"No. Yen balances last forever, until you spend them. There is no tax for keeping your yen forever. They will always keep their value.\n");
+	"**Are there any fees?**\n\n" +
+	"No. yen can be exchanged for Rust skins at the same price as they were deposited: the sell price in Steam Marketplace. There is no fee for withdrawing or depositing yen, or sending yen between members.\n\n");
     await discordMessage.channel.send(
-	"**What is the long-term plan for guaranteeing the stability of the yen?**\n" +
-	"The reserve ratio will be kept above 200% at all times. Every yen in circulation is backed twice over. It will never be allowed to create new yen out of nowhere, without depositing valueable, highly liquid Rust skins. Yen withdrawn from the system will be permanently destroyed, as they are no longer backed by assets.\n");
+	"**Is there any tax?**\n\n" +
+	"Active members are never taxed. It's easy to dodge the tax by connecting to voice chat once every 3 months. Members inactive from voice chat for longer than 90 days start getting their yen taxed at 20% per month. The tax is a gentle way to put inactive yen back into circulation. Another way to dodge the tax is to spend all your yen or cash them out for Steam skins before going inactive.\n\n");
     await discordMessage.channel.send(
-	"**Where did the first yen come from?**\n" +
-	"Jeff created the very first yen by staking his own Rust skins. Anyone can create more yen by staking some of their Rust skins.\n");
+	"**What is the long-term plan for guaranteeing the stability of the yen?**\n\n" +
+	"The reserve ratio will be kept comfortably above 100% at all times. Every yen in circulation is backed with room to spare. It will never be allowed to create new yen out of nowhere, without depositing valueable, highly liquid Rust skins. Yen withdrawn from the system will be permanently destroyed, as they are no longer backed by assets. This plan will keep the Government yen pegged to exactly the value of real Japanese Yen (JPY).\n\n");
     await discordMessage.channel.send(
-	"**What is the plan for putting the yen into wide circulation?**\n" +
-	"The first yen will circulate by donating fully-backed yen to Mr. President to spend as a Government budget each month. Get yen for contributing upkeep to the community base and such. Cash prizes for PVP Tournaments and other events. Trading in-game loot between members for yen will be encouraged. Tipping (sending someone 1 yen) will be encouraged as a way to add oomph to reactions in Discord.\n");
+	"**Where did the first yen come from?**\n\n" +
+	"Jeff created the very first yen by staking some of his own Rust skins. More than a dozen other members have now created yen by staking their own Rust skins. The yen now circulates widely to over 100 users.\n\n");
     await discordMessage.channel.send(
-	"**If anyone can create new yen by depositing Rust skins, doesn't that debase the existing yen causing inflation?**\n" +
-	"No. Each and every single yen in circulation is fully backed. Like the gold standard. It is a stablecoin, pegged to the value of actual Japanese Yen (JPY).\n");
+	"**What is the plan for keeping the yen in wide circulation?**\n\n" +
+	"#tax guarantees that the yen remain in circulation long-term. Active members are never taxed. Trading yen between members in exchange for scrap, tea, and other in-game items will be encouraged. Cash bounties will be encouraged. Tipping (sending someone 1 yen) will be encouraged as a way to add oomph to reactions in Discord. Members have found even more innovative ways to use yen.\n\n");
     await discordMessage.channel.send(
-	"**Does Government spending of yen cause inflation?**\n" +
-	"No. The yen that Mr. President spends on behalf of The Government come from donations of fully-backed yen by Government members. The Government does not spend newly printed yen.\n");
+	"**If anyone can create new yen by depositing Rust skins, doesn't that debase the existing yen causing inflation?**\n\n" +
+	"No. Each and every single yen in circulation is fully backed. Like the gold standard. It is a stablecoin, pegged to the value of actual Japanese Yen (JPY).\n\n");
     await discordMessage.channel.send(
-	"**Is yen a cryptocurrency?**\n" +
-	"No. Government yen are a traditional, centrally issued fiat currency. The're boring. The balances are stored in a central database. With backups of course!\n" +
-	"The value of the yen is pegged to the value of the actual Japanese Yen (JPY). They are similar in value to an American penny (1 cent).\n");
+	"**Does Government spending of yen cause inflation?**\n\n" +
+	"No. The yen that Mr. President spends on behalf of The Government come from taxing inactive members at a gentle rate. The Government does not spend newly printed yen. The primary function of Government spending is to put inactive yen back into circulation.\n\n");
     await discordMessage.channel.send(
-	"**Is this even legal?**\n" +
-	"No. Definitely not. But...\n" +
-	"The amount of yen in circulation is capped to a few hundred US dollars worth. Legally speaking, it is like a game of penny poker. Like penny poker, the tokens are real cash with real-world value.\n" +
-	"We have a public ledger of who has how much yen, making The Government the world's most transparent offshore tax haven.\n");
+	"**Is yen a cryptocurrency?**\n\n" +
+	"No. Government yen are a traditional, centrally issued fiat currency. The're boring. The balances are stored in a central database. With backups of course!\n\n" +
+	"The value of the yen is pegged to the value of the actual Japanese Yen (JPY). They are similar in value to an American penny (1 cent).\n\n");
+    await discordMessage.channel.send(
+	"**Is this even legal?**\n\n" +
+	"No. Definitely not. But...\n\n" +
+	"The amount of yen in circulation is capped to a few hundred US dollars worth. Legally speaking, it is like a game of penny poker.\n\n" +
+	"We have a public ledger of who has how much yen, making The Government the world's most transparent offshore tax haven.\n\n");
 //    await discordMessage.channel.send(
-//	"**?**\n" +
-//	"\n" +
-//	"\n");
+//	"**?**\n\n" +
+//	"\n\n" +
+//	"\n\n");
 }
 
 let cachedUsdJpyExchangeRate;

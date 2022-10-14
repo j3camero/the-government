@@ -135,7 +135,7 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     }
     const channel = channels[0];
     await channel.bulkDelete(99);
-    await channel.send(`Harmonic Centrality is a math formula that calculates 'influence' in a social network. It is impartial and fair. Anyone can become a General.\n\nRecently active members are shown in green.`);
+    await channel.send(`Harmonic Centrality is a math formula that calculates 'influence' in a social network. It is impartial and fair. Anyone can become a General.\n\nMembers active in the last 30 days are shown in green.`);
     const lines = [];
     let maxLength = 0;
     for (const user of mostCentralUsers) {
