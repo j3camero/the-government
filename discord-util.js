@@ -11,6 +11,8 @@ const client = new Discord.Client({
 // Set to true once the guild roles have been cached once.
 let guildRolesCached = false;
 
+const threeTicks = '```';
+
 // Returns a Promise that resolves when the Discord bot is connected.
 async function Connect() {
     return new Promise((resolve, reject) => {
@@ -121,33 +123,27 @@ async function MessagePublicChatChannel(discordMessage) {
     channel.send(discordMessage);
 }
 
-let cachedHarmonicCentralityMessage = "";
-
 async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     const guild = await GetMainDiscordGuild();
     const channels = GetAllMatchingTextChannels(guild, 'ranks');
     if (channels.length === 0) {
 	throw new Error('Could not find #harmonic-centrality chat channel.');
     }
-    const threeBackticks = '\`\`\`';
-    let message = ('Harmonic Centrality is a math formula that calculates \'influence\' in a ' +
-		   'social network. It is impartial and fair. Anyone can become become a General.\n' + threeBackticks);
-    for (let i = 0; i < mostCentralUsers.length; ++i) {
-	const cu = mostCentralUsers[i];
-	const score = cu.harmonic_centrality / 1000;
-	const scoreString = Math.round(score).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-	const dollarAmount = '$' + scoreString;
-	const paddedDollarAmount = dollarAmount.padStart(6, ' ');
-	message += `${paddedDollarAmount} ${cu.getNicknameOrTitleWithInsignia()}\n`;
-    }
-    message += threeBackticks;
-    if (message === cachedHarmonicCentralityMessage) {
-	return;
-    }
-    cachedHarmonicCentralityMessage = message;
     const channel = channels[0];
-    await channel.bulkDelete(3);
-    await channel.send(message);
+    await channel.bulkDelete(99);
+    await channel.send(`Harmonic Centrality is a math formula that calculates 'influence' in a social network. It is impartial and fair. Anyone can become a General.\n`);
+    const lines = [];
+    let maxLength = 0;
+    for (const user of mostCentralUsers) {
+	const score = user.harmonic_centrality / 100;
+	const scoreString = Math.round(score).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	maxLength = Math.max(scoreString.length, maxLength);
+	const paddedScore = scoreString.padStart(maxLength, ' ');
+	const name = user.getNicknameOrTitleWithInsignia();
+	const line = `${paddedScore} ${name}`;
+	lines.push(line);
+    }
+    await SendLongList(lines, channel);
 }
 
 async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
@@ -197,7 +193,6 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
 
 async function SendLongList(list, channel) {
     const maxMessageLength = 1960;
-    const threeTicks = '```';
     let message = '';
     for (const s of list) {
 	message += s + '\n';
