@@ -155,6 +155,10 @@ async function UpdateTrial(cu) {
 	if (!member) {
 	    console.log('Trying to ban an invalid member. Bad sign...');
 	}
+	if (guilty) {
+	    // Record the conviction even if the member has left. That way if they rejoin we can kick them back out.
+	    await cu.setBanConvictionTime(currentTime.format());
+	}
 	if (guilty && member != null) {
 	    console.log('About to ban a guild member.');
 	    // This line of code actually bans a member of the guild. Test carefully!

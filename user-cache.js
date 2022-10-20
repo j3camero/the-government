@@ -34,6 +34,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.ban_vote_message,
 	    row.yen,
 	    row.inactivity_tax_paid_until,
+	    row.ban_conviction_time,
 	);
 	newCache[row.commissar_id] = newUser;
     });
@@ -41,7 +42,7 @@ async function LoadAllUsersFromDatabase() {
     const n = Object.keys(commissarUserCache).length;
     console.log(`Loaded ${n} users from the database.`);
 }
-6
+
 // Calls a function once for every cached user.
 //   - innerFunction: this function is called once for each cached user, like:
 //                    innerFunction(user), where user is a CommisarUser object.

@@ -297,7 +297,13 @@ async function Start() {
 	await DiscordUtil.MessagePublicChatChannel(greeting);
 	const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (cu) {
-	    await cu.setCitizen(true);
+	    if (cu.ban_conviction_time) {
+		const uhoh = `Uh oh! ${member.user.username} has already been convicted in Ban Court. Kicked!`;
+	        await DiscordUtil.MessagePublicChatChannel(uhoh);
+		await member.kick();
+	    } else {
+		await cu.setCitizen(true);
+	    }
 	} else {
 	    // We have no record of this Discord user. Create a new record in the cache.
 	    console.log('New Discord user detected.');
