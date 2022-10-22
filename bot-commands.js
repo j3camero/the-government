@@ -234,6 +234,10 @@ async function HandleBadgeCommand(discordMessage) {
 	return;
     }
     const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send('Couldn't find that member. They might have left the Discord guild. Have them re-join then try again.');
+	return;
+    }
     if (tokens[1] === 'give') {
 	if (!mentionedMember) {
 	    await discordMessage.channel.send('Invalid arguments. USAGE: !badge give Berry @nickname');

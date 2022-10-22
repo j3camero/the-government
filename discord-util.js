@@ -180,17 +180,14 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
     for (const token of tokens) {
 	const isNumber = /^\d+$/.test(token);
 	if (token.length > 5 && isNumber) {
-	    if (mentionedMember) {
-		return null;
-	    }
 	    try {
-		const guild = await DiscordUtil.GetMainDiscordGuild();
+		const guild = await GetMainDiscordGuild();
 		mentionedMember = await guild.members.fetch(token);
 	    } catch (error) {
+		console.log('Error while fetching a member from the discord guild:');
+		console.log(error);
 		return null;
 	    }
-	} else {
-	    return null;
 	}
     }
     // We might get this far and find no member mentioned by @ or by ID.

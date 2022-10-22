@@ -294,7 +294,8 @@ async function Start() {
 	    return;
 	}
 	const greeting = `Everybody welcome ${member.user.username} to the server!`;
-	await DiscordUtil.MessagePublicChatChannel(greeting);
+	// TODO: re-enable this later.
+	//await DiscordUtil.MessagePublicChatChannel(greeting);
 	const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (cu) {
 	    if (cu.ban_conviction_time) {
