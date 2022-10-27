@@ -294,8 +294,7 @@ async function Start() {
 	    return;
 	}
 	const greeting = `Everybody welcome ${member.user.username} to the server!`;
-	// TODO: re-enable this later.
-	//await DiscordUtil.MessagePublicChatChannel(greeting);
+	await DiscordUtil.MessagePublicChatChannel(greeting);
 	const cu = await UserCache.GetCachedUserByDiscordId(member.user.id);
 	if (cu) {
 	    if (cu.ban_conviction_time) {
@@ -416,7 +415,7 @@ async function Start() {
     const fifteenMinutes = 15 * oneMinute;
     const oneHour = 60 * oneMinute;
     // Set up the auto-scheduled routines to run on autopilot.
-    setInterval(RoutineUpdate, fifteenMinutes);
+    setInterval(RoutineUpdate, oneMinute);
     setInterval(HourlyUpdate, oneHour);
     await RoutineUpdate();
     //await HourlyUpdate();

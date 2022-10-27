@@ -74,13 +74,13 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of October.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of November.');
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Hardcore|', 'https://www.battlemetrics.com/servers/rust/16646780', 5, 16, 'Monthly BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 11, 15, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 113, 12, 'No BP wipe');
     await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 17, 22, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 24, 13, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 67, 16, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Rustopia US Hardcore', 'https://www.battlemetrics.com/servers/rust/16390854', 208, 12, 'Monthly BP wipe');
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Main', 'https://www.battlemetrics.com/servers/rust/2936493', 66, 17, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 611, 4, 'No BP wipe');
 }
 
 async function MakeOnePresidentVoteOption(channel, playerName) {
@@ -119,6 +119,26 @@ async function HandlePresidentVoteCommand(discordMessage) {
     for (const candidate of candidates) {
 	await MakeOnePresidentVoteOption(channel, candidate);
     }
+}
+
+async function HandleAmnestyVoteCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.create('amnesty-vote');
+    const message = await channel.send(
+	`__**Amnesty for Members of Hail's Group**__\n\n` +
+	`There is going to be a huge raid soon, with Hail's group teaming up with The Government. The Government has an overwhelming strategic interest in having them as our guests for the duration of the raid.\n\n` +
+        `But there is an issue where some members of Hail's group such as I USE CS WITH MY WALLS have been banned. The reasons for these bans were always shaky. We banned them merely for being our opponents inside the game, and not for breaking any particular rule. This is now limiting us to the point where we want to give ourselves a chance to reconsider on a one-time basis.\n\n` +
+	`Going forward, it is culturally imperative that we not ban people just for playing against us in the game. Today's opponent is tomorrow's critical raiding partner. Our community is a public place, with secure comms for the top members.\n\n` +
+	`These matters will always be decided by the Generals, not by Jeff. If we choose to grant this amnesty, then we can always ban them again later if they individually do anything wrong. Vote YES to enable this huge planned raid and to become the center of gravity for Rustopia US Large.`);
+    await message.react('✅');
+    await message.react('❌');
+    const voteSectionId = '1033499911590776843';
+    await channel.setParent(voteSectionId);
 }
 
 async function HandleRecoilVoteCommand(discordMessage) {
@@ -235,7 +255,7 @@ async function HandleBadgeCommand(discordMessage) {
     }
     const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
     if (!mentionedMember) {
-	await discordMessage.channel.send('Couldn't find that member. They might have left the Discord guild. Have them re-join then try again.');
+	await discordMessage.channel.send(`Couldn't find that member. They might have left the Discord guild. Have them re-join then try again.`);
 	return;
     }
     if (tokens[1] === 'give') {
@@ -431,6 +451,7 @@ async function Dispatch(discordMessage) {
 	'!rules': rules.HandleRulesCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
+	'!amnestyvote': HandleAmnestyVoteCommand,
 	'!tax': yen.HandleTaxCommand,
 	'!tip': yen.HandleTipCommand,
 	'!trial': Ban.HandleBanCommand,
