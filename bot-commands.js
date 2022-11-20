@@ -97,23 +97,23 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('presidential-election');
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on October 1st. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on November 1st. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
     await message.react('❤️');
     const candidates = [
-	'TheBuschman (Waldo)',
 	'Dannykun',
-	'Sky312line',
-	'Jeff',
+	'Aperture',
 	'Hank',
-	'MEE6 (Aperture)',
-	'Brett',
-	'Neff',
-	'Egon',
+	'Jeff',
+	'TheBuschman (Waldo)',
 	'PalmTiger',
+	'Sky312line',
+	'Egon',
+	'William J. Burns (Lopt)',
+	'Brett',
+	'EviL',
+	'Navie',
 	'Scarrab',
-	'PAPA Vanguard',
-	'xBlaze',
-	'grimmjaune',
+	'Neff',
 	'JhdiRay',
     ];
     for (const candidate of candidates) {
@@ -201,12 +201,11 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `Here are your secret orders for the month of October. Report to the server Rustopia US Large.\n\n`;
+	ordersMessage += `Here are your secret orders for the month of November. Report to the server Rustopia US Large.\n\n`;
 	ordersMessage += '```client.connect USLarge.Rustopia.gg:28015```\n\n';
-	const buildCoordinates = 'G19';
+	const buildCoordinates = 'E6';
 	ordersMessage += `Run directly to the build spot, ${buildCoordinates}. Help build the Community base then build your own small base close by.\n\n`;
-	ordersMessage += `Check out our NEW intelligence portal. Depending on your rank, various intelligence products are available for you there.\n\n`;
-	ordersMessage += `https://app.rustintel.com/wipeinfo?invite=${user.discord_id}\n\n`;
+	ordersMessage += `Sign up for a job for wipe day in the #jobs chat channel.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
