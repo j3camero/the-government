@@ -77,9 +77,9 @@ async function HandleServerVoteCommand(discordMessage) {
     const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our main home Rust server for the month of November.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 11, 15, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 113, 12, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 17, 22, 'No BP wipe');
-    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Main', 'https://www.battlemetrics.com/servers/rust/2936493', 66, 17, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 15, 22, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 1, 16, 'No BP wipe');
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 120, 12, 'No BP wipe');
     await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 611, 4, 'No BP wipe');
 }
 
