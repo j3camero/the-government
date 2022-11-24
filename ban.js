@@ -3,8 +3,15 @@ const moment = require('moment');
 const UserCache = require('./user-cache');
 const VoteDuration = require('./vote-duration');
 
+const threeTicks = '```';
+
 const banCommandRank = 5;  // General 1
 const banVoteRank = 9;  // Lieutenant
+
+// Keep track of Discord members that have been removed from Ban Court due to consensus vote.
+// This is done in memory which will mean the bot forgets and possibly re-announces the
+// perm change every time it boots. Make this a database column to make it persistent.
+const bannedFromBanCourt = {};
 
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_start_time) {
@@ -36,13 +43,6 @@ async function UpdateTrial(cu) {
     }
     await channel.setRateLimitPerUser(600);
     await cu.setBanVoteChatroom(channel.id);
-    if (member) {
-	await channel.createOverwrite(member, {
-	    CONNECT: true,
-	    SEND_MESSAGES: true,
-	    VIEW_CHANNEL: true,
-	});
-    }
     // Update or create the ban vote message itself. The votes are reactions to this message.
     let message;
     if (cu.ban_vote_message) {
@@ -111,11 +111,45 @@ async function UpdateTrial(cu) {
     }
     const yesVoteCount = yesVotes.length;
     const noVoteCount = noVotes.length;
+    const voteCount = yesVoteCount + noVoteCount;
+    const yesPercentage = voteCount > 0 ? yesVoteCount / voteCount : 0;
+    if (member) {
+	if (cu.peak_rank >= 10 && voteCount >= 5 && yesPercentage >= 0.8) {
+	    await channel.createOverwrite(member, {
+		CONNECT: false,
+		SEND_MESSAGES: false,
+		VIEW_CHANNEL: false,
+	    });
+	    if (!(member.id in bannedFromBanCourt)) {
+		await channel.send(threeTicks + 'The defendant has been removed from the courtroom.' + threeTicks);
+		bannedFromBanCourt[member.id] = 1;
+	    }
+	} else {
+	    await channel.createOverwrite(member, {
+		CONNECT: true,
+		SEND_MESSAGES: true,
+		VIEW_CHANNEL: true,
+	    });
+	    if (member.id in bannedFromBanCourt) {
+		await channel.send(threeTicks + 'The defendant has re-entered the courtroom.' + threeTicks);
+		delete bannedFromBanCourt[member.id];
+	    }
+	}
+	console.log('DeleteMessagesByMember consideration',
+		    member.nickname,
+		    cu.peak_rank,
+		    voteCount,
+		    yesPercentage,
+		    member.lastMessage);
+	if (cu.peak_rank >= 10 && voteCount >= 10 && yesPercentage >= 0.9 && member.lastMessage) {
+	    await channel.send(threeTicks + 'Deleting messages sent by the Defendant within the last hour.' + threeTicks);
+	    await DiscordUtil.DeleteMessagesByMember(member, 24 * 3600);
+	}
+    }
     const guilty = VoteOutcome(yesVoteCount, noVoteCount);
     const outcomeString = guilty ? 'banned' : 'NOT GUILTY';
     const caseTitle = `THE GOVERNMENT v ${cu.getNicknameWithInsignia()}`;
     const underline = new Array(caseTitle.length + 1).join('-');
-    const threeTicks = '```';
     const currentTime = moment();
     let startTime = moment(cu.ban_vote_start_time);
     const totalVoters = 50;

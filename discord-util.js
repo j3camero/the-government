@@ -3,6 +3,7 @@ const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
 const moment = require('moment');
+const Sleep = require('./sleep');
 
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({
@@ -199,6 +200,8 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
     return mentionedMember;
 }
 
+// Sends a long list of text strings to a text channel. Breaks it up into
+// multiple messages if too big.
 async function SendLongList(list, channel, diff) {
     const ifDiff = diff ? 'diff\n' : '';
     const maxMessageLength = 1900;
@@ -215,9 +218,50 @@ async function SendLongList(list, channel, diff) {
     }
 }
 
+// Deletes recent messages from a member.
+//
+// Only one of these requests can be in-flight per member at any given time.
+const membersWithOngoingMessageDeletion = {};
+async function DeleteMessagesByMember(member, maxAgeInSeconds) {
+    if (member.id in membersWithOngoingMessageDeletion) {
+	// Use a mutex to enforce only one process per member at a time.
+	return;
+    }
+    membersWithOngoingMessageDeletion[member.id] = 1;
+    console.log(`Deleting messages by ${member.nickname} from the last ${maxAgeInSeconds} seconds.`);
+    const maxAgeInMillis = maxAgeInSeconds * 1000;
+    const currentTime = new Date().getTime();
+    const cutoffTime = currentTime - maxAgeInMillis;
+    let failureCount = 0;
+    while (failureCount < 3) {
+	await Sleep(1000);
+	const message = member.lastMessage;
+	console.log(`Deleting message ID ${message.id}`);
+	if (!message) {
+	    console.log(`No more messages to delete.`);
+	    failureCount++;
+	    continue;
+	}
+	if (message.createdTimestamp < cutoffTime) {
+	    continue;
+	}
+	try {
+	    await message.delete();
+	} catch (error) {
+	    console.log(`Failed to delete a message. ${error}`);
+	    failureCount++;
+	    continue;
+	}
+    }
+    console.log(`Finishes deleting messages from member ${member.nickname}.`);
+    // Release the lock.
+    delete membersWithOngoingMessageDeletion[member.id];
+}
+
 module.exports = {
     AddRole,
     Connect,
+    DeleteMessagesByMember,
     GetAllMatchingTextChannels,
     GetBanCourtCategoryChannel,
     GetCategoryChannelByName,
