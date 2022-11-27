@@ -97,24 +97,24 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('presidential-election');
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on November 1st. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on December 1st. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
     await message.react('❤️');
     const candidates = [
 	'Dannykun',
 	'Aperture',
-	'Hank',
-	'Jeff',
-	'TheBuschman (Waldo)',
 	'PalmTiger',
+	'Hank',
+	'TheBuschman (Waldo)',
+	'Jeff',
+	'Reefer',
 	'Sky312line',
-	'Egon',
-	'William J. Burns (Lopt)',
+	'Lopt',
 	'Brett',
-	'EviL',
-	'Navie',
-	'Scarrab',
-	'Neff',
-	'JhdiRay',
+	'Egon',
+	'lego jar jar',
+	'God of Ducks',
+	'Nikx',
+	'Vee',
     ];
     for (const candidate of candidates) {
 	await MakeOnePresidentVoteOption(channel, candidate);
@@ -130,14 +130,13 @@ async function HandleAmnestyVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('amnesty-vote');
     const message = await channel.send(
-	`__**Amnesty for Members of Hail's Group**__\n\n` +
-	`There is going to be a huge raid soon, with Hail's group teaming up with The Government. The Government has an overwhelming strategic interest in having them as our guests for the duration of the raid.\n\n` +
-        `But there is an issue where some members of Hail's group such as I USE CS WITH MY WALLS have been banned. The reasons for these bans were always shaky. We banned them merely for being our opponents inside the game, and not for breaking any particular rule. This is now limiting us to the point where we want to give ourselves a chance to reconsider on a one-time basis.\n\n` +
-	`Going forward, it is culturally imperative that we not ban people just for playing against us in the game. Today's opponent is tomorrow's critical raiding partner. Our community is a public place, with secure comms for the top members.\n\n` +
-	`These matters will always be decided by the Generals, not by Jeff. If we choose to grant this amnesty, then we can always ban them again later if they individually do anything wrong. Vote YES to enable this huge planned raid and to become the center of gravity for Rustopia US Large.`);
+	`__**Amnesty for JT**__\n\n` +
+	`Should we unban JT?\n\n` +
+        `Votes Yes to unban JT. Vote No to keep JT banned, or if you disagree with this vote being held in the first place.\n\n` +
+	`A 2/3 majority is needed for this motion to pass. These matters will always be decided by the Generals, not by Jeff. If we choose to grant this amnesty, then we can always ban him again later.`);
     await message.react('✅');
     await message.react('❌');
-    const voteSectionId = '1033499911590776843';
+    const voteSectionId = '1043778293612163133';
     await channel.setParent(voteSectionId);
 }
 
