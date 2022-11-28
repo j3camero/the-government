@@ -116,9 +116,9 @@ async function UpdateTrial(cu) {
     if (member) {
 	if (cu.peak_rank >= 10 && voteCount >= 5 && yesPercentage >= 0.8) {
 	    await channel.createOverwrite(member, {
-		CONNECT: false,
+		CONNECT: true,
 		SEND_MESSAGES: false,
-		VIEW_CHANNEL: false,
+		VIEW_CHANNEL: true,
 	    });
 	    if (!(member.id in bannedFromBanCourt)) {
 		await channel.send(threeTicks + 'The defendant has been removed from the courtroom.' + threeTicks);
@@ -141,6 +141,7 @@ async function UpdateTrial(cu) {
 		    voteCount,
 		    yesPercentage,
 		    member.lastMessage);
+	console.log(cu.peak_rank, voteCount, yesPercentage, member.lastMessage);
 	if (cu.peak_rank >= 10 && voteCount >= 10 && yesPercentage >= 0.9 && member.lastMessage) {
 	    await channel.send(threeTicks + 'Deleting messages sent by the Defendant within the last hour.' + threeTicks);
 	    await DiscordUtil.DeleteMessagesByMember(member, 24 * 3600);
