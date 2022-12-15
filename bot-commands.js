@@ -121,6 +121,26 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
 }
 
+async function HandleOfficerVoteCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.create('expand-the-franchise');
+    const message = await channel.send(
+	`__**Should Officers vote for President?**__\n` +
+	`**Proposal:** Officers gain the right to vote but not run in presidential elections. The candidates will be the 15 Generals as usual. Vote YES to let Officers vote in the next #presidential-election. Vote NO to keep the status quo.\n\n` +
+	`**Advantage:** the Presidential election has been driving the plotline in a way that Jeff never could before. The wipe day plan used to be Jeff's job but now he cannot touch it because the election has such legitimacy. With Officers voting, the election results will be even bigger and more legitimate than ever. There is a certain feeling of ownership that comes with voting, that has caused the Generals to act more boldly in the last 6 months. The goal is to expand that feeling of ownership to the Officers so that they act more boldly as well. We have big boots to fill as the map tech kicks in over coming months, so we need to elevate and train more bold leaders urgently.\n\n` +
+        `**Disadvantage:** the legitimacy of the vote could be hurt if we get Officers voting then not showing up to play. Check #ranks to see that 90% of Officers & Generals are active.\n\n` +
+	`A majority is needed for this motion to pass. The vote ends Dec 20, 2022.`);
+    await message.react('✅');
+    await message.react('❌');
+    const voteSectionId = '1043778293612163133';
+    await channel.setParent(voteSectionId);
+}
+
 async function HandleAmnestyVoteCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
@@ -450,6 +470,7 @@ async function Dispatch(discordMessage) {
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!amnestyvote': HandleAmnestyVoteCommand,
+	'!officervote': HandleOfficerVoteCommand,
 	'!tax': yen.HandleTaxCommand,
 	'!tip': yen.HandleTipCommand,
 	'!trial': Ban.HandleBanCommand,
