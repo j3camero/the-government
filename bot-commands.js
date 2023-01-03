@@ -108,24 +108,24 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('presidential-election');
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President on December 1st. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in January 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
     await message.react('❤️');
     const candidates = [
 	'Dannykun',
-	'Aperture',
 	'PalmTiger',
-	'Hank',
-	'TheBuschman (Waldo)',
-	'Jeff',
+	'scientist.exe',
+	'Aperture',
+	'Neff',
+	'Ducks',
 	'Reefer',
+	'Jeff',
 	'Sky312line',
-	'Lopt',
-	'Brett',
 	'Egon',
-	'lego jar jar',
-	'God of Ducks',
+	'Beary Berry',
+	'TheBuschman (Waldo)',
+	'Brett',
+	'Lopt',
 	'Nikx',
-	'Vee',
     ];
     for (const candidate of candidates) {
 	await MakeOnePresidentVoteOption(channel, candidate);
