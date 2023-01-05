@@ -171,22 +171,25 @@ async function HandleAmnestyVoteCommand(discordMessage) {
     await channel.setParent(voteSectionId);
 }
 
-async function HandleRecoilVoteCommand(discordMessage) {
+async function HandleTermLengthVoteCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
 	// Auth: this command for developer use only.
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create('recoil-vote');
+    const channel = await guild.channels.create('president-term');
     const message = await channel.send(
-	'__**Official Recoil Vote**__\n' +
-	'The Rust dev team has heard our pleas. They have agreed to respect the results of this vote.\n\n' +
-	'Vote YES to roll out the new Recoil system on June 2.\n\n' +
-	'Vote NO to scrap the proposed changes.\n\n' +
-	'The devs have heard us loud and clear. After many denials, they now admit the need to urgently rethink the recoil changes. To make a final decision, they decided to have the poll in the largest community of active Rust players.\n\n' +
-	'                         --The Government'
+	'__**Presidential Term of Service**__\n' +
+	'Vote YES to turn Mr. President back into a General at the end of each wipe day. The main reason for Mr. President to exist is to pick the build spot in case the map is a surprise on wipe day. With their job done, the first rain (2 AM on wipe night) will cleanse Mr. President of their title.\n\n' +
+	'Vote NO to keep Mr. President for the full month, until the beginning of the next presidential election.\n\n' +
+	'The convention that the Generals choose now will be the one used going forward. It will apply to next month and the one after that, not only this month. We will not have this vote again next month.\n\n' +
+	'This vote will end with the first rain of the new wipe (2 AM Eastern after wipe day). It requires a simple majority to pass (50% + 1).'
     );
+    await message.react('✅');
+    await message.react('❌');
+    const voteSectionId = '1043778293612163133';
+    await channel.setParent(voteSectionId);
 }
 
 async function HandleVoiceActiveUsersCommand(discordMessage) {
@@ -476,13 +479,13 @@ async function Dispatch(discordMessage) {
 	'!pay': yen.HandlePayCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
-	'!recoilvote': HandleRecoilVoteCommand,
 	'!rules': rules.HandleRulesCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!amnestyvote': HandleAmnestyVoteCommand,
 	'!officervote': HandleOfficerVoteCommand,
 	'!tax': yen.HandleTaxCommand,
+	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
 	'!trial': Ban.HandleBanCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
