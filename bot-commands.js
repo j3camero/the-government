@@ -234,11 +234,11 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `Here are your secret orders for the month of December. Report to the server Rustopia US Large.\n\n`;
-	ordersMessage += '```client.connect USLarge.Rustopia.gg:28015```\n\n';
-	ordersMessage += `Get the build location in Voice Chat then run directly there. Help build the Community base then build your own small base close by. We are putting up a big community wall on wipe day.\n\n`;
-	ordersMessage += `The Government's new Rust+ map app is in alpha release at https://rustgovernment.com\n\n`;
-	ordersMessage += `It's like the regular Rust+ app except multiple gov teams can all see each others' locations on the map. It is brand new so give it a try and check back later in the month when all the bugs are fixed :-)\n\n`;
+	ordersMessage += `Here are your secret orders for the month of January. Report to the server Reddit.com/r/PlayRust - US Monthly.\n\n`;
+	ordersMessage += '```client.connect 45.88.229.77:28015```\n\n';
+	ordersMessage += `Get the build location in Voice Chat then run directly there. Help build the Community base then build your own small base close by.\n\n`;
+	ordersMessage += `The Automated Base Map is live now at https://rustgovernment.com\n\n`;
+	ordersMessage += `Now you can be part of The Government without talking to anyone. Check the base map before every raid. Make sure you pair with the map so that your bases are protected.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
