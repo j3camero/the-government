@@ -5,6 +5,7 @@ const diff = require('diff');
 const DiscordUtil = require('./discord-util');
 const FilterUsername = require('./filter-username');
 const RandomPin = require('./random-pin');
+const RoleID = require('./role-id');
 const rules = require('./rules');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
@@ -443,6 +444,31 @@ async function HandleNickCommand(discordMessage) {
     await discordMessage.channel.send(`Changed name to ${newName}`);
 }
 
+// Do as if the user just joined the discord. For manually resolving people who
+// occasionally fall through the cracks of the automated onboarding process.
+async function HandleBoopCommand(discordMessage) {
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length < 2) {
+	await discordMessage.channel.send(`ERROR: wrong number of arguments. USAGE: !nick NewNicknam3`);
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send(`ERROR: must mention a member to boop. Example: !boop @Jeff`);
+	return;
+    }
+    const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+    if (cu) {
+	await discordMessage.channel.send(`Member already exists.`);
+    } else {
+	// We have no record of this Discord user. Create a new record in the cache.
+	console.log('New Discord user detected.');
+	await UserCache.CreateNewDatabaseUser(mentionedMember);
+	await DiscordUtil.AddRole(mentionedMember, RoleID.Verified);
+	await discordMessage.channel.send(`Successfully booped.`);
+    }
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -463,6 +489,7 @@ async function Dispatch(discordMessage) {
 	'!bal': yen.HandleYenCommand,
 	'!balance': yen.HandleYenCommand,
 	'!ban': Ban.HandleBanCommand,
+	'!boop': HandleBoopCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
 	'!convert': yen.HandleConvertCommand,

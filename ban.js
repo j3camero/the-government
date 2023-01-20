@@ -281,6 +281,10 @@ async function HandleBanCommand(discordMessage) {
 	return;
     }
     const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
+    if (!mentionedUser) {
+	await discordMessage.channel.send(`Couldn't find that member. Maybe they left.`);
+	return;
+    }
     if (mentionedUser.ban_vote_end_time) {
 	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial.`);
 	return;

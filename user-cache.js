@@ -73,8 +73,9 @@ function GetCachedUserByDiscordId(discord_id) {
     for (const [commissarId, user] of Object.entries(commissarUserCache)) {
 	if (user.discord_id === discord_id) {
 	    return user;
-	}	
+	}
     }
+    return null;
 }
 
 async function GetOrCreateUserByDiscordId(discordMember) {
