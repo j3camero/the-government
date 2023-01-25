@@ -181,28 +181,29 @@ function CompareRooms(a, b) {
     if (a.name === 'Main' && b.name !== 'Main') {
 	return -1;
     }
-    // Rooms named Generals Only sort down.
-    if (a.name === 'Generals Only' && b.name !== 'Generals Only') {
-	return 1;
-    }
-    if (a.name !== 'Generals Only' && b.name === 'Generals Only') {
-	return -1;
-    }
-    // Rooms named Officers Only sort down.
-    if (a.name === 'Officers Only' && b.name !== 'Officers Only') {
-	return 1;
-    }
-    if (a.name !== 'Officers Only' && b.name === 'Officers Only') {
-	return -1;
-    }
-    // Rooms with higher capacity sort down.
+    // Rooms with lower capacity sort up.
     if (a.userLimit > b.userLimit) {
 	return 1;
     }
     if (a.userLimit < b.userLimit) {
 	return -1;
     }
-    return 0;
+    // Rooms named Officers Only go next.
+    if (a.name !== 'Officers Only' && b.name === 'Officers Only') {
+	return 1;
+    }
+    if (a.name === 'Officers Only' && b.name !== 'Officers Only') {
+	return -1;
+    }
+    // Rooms named Generals Only go next.
+    if (a.name !== 'Generals Only' && b.name === 'Generals Only') {
+	return 1;
+    }
+    if (a.name === 'Generals Only' && b.name !== 'Generals Only') {
+	return -1;
+    }
+    // Should all other criteria fail to break the tie, then alphabetic ordering is the last resort.
+    return a.name.localeCompare(b.name);
 }
 
 // Checks the see if any rooms need to be moved in the ordering, and does so.

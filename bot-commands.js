@@ -162,10 +162,11 @@ async function HandleAmnestyVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('amnesty-vote');
     const message = await channel.send(
-	`__**Amnesty for JT**__\n\n` +
-	`Should we unban JT?\n\n` +
-        `Votes Yes to unban JT. Vote No to keep JT banned, or if you disagree with this vote being held in the first place.\n\n` +
-	`A 2/3 majority is needed for this motion to pass. These matters will always be decided by the Generals, not by Jeff. If we choose to grant this amnesty, then we can always ban him again later.`);
+	`__**Amnesty for PIMP**__\n\n` +
+	`Should we unban PIMP?\n\n` +
+        `Vote Yes to unban PIMP. Vote No to keep PIMP banned, or if you disagree with this vote being held in the first place.\n\n` +
+        `The reason for considering this motion is to show respect for our friends HS. The Government has a strategic interest in keeping cooperation from HS in our plot to slam Rustopia hard next wipe. They have not asked us for this favor but it is likely to be perceived as a gesture of goodwill between the groups.\n\n` +
+	`A 2/3 majority is needed for this motion to pass. These matters will always be decided by the Generals. If we choose to grant this amnesty, then we can always ban him again later.`);
     await message.react('✅');
     await message.react('❌');
     const voteSectionId = '1043778293612163133';
@@ -254,7 +255,6 @@ async function HandleOrdersCommand(discordMessage) {
 
 async function HandleBadgeCommand(discordMessage) {
     const authorMember = discordMessage.member;
-    console.log(discordMessage.member);
     const authorUser = await UserCache.GetCachedUserByDiscordId(authorMember.id);
     if (!authorUser) {
 	return;
