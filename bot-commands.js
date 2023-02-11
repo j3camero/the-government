@@ -236,11 +236,12 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `Here are your secret orders for the month of January. Report to the server Reddit.com/r/PlayRust - US Monthly.\n\n`;
-	ordersMessage += '```client.connect 45.88.229.77:28015```\n\n';
+	ordersMessage += `Here are your secret orders for the month of February. Report to the server Rustopia.gg - US Large\n\n`;
+	ordersMessage += '```client.connect USLarge.Rustopia.gg```\n\n';
 	ordersMessage += `Get the build location in Voice Chat then run directly there. Help build the Community base then build your own small base close by.\n\n`;
-	ordersMessage += `The Automated Base Map is live now at https://rustgovernment.com\n\n`;
-	ordersMessage += `Now you can be part of The Government without talking to anyone. Check the base map before every raid. Make sure you pair with the map so that your bases are protected.\n\n`;
+	ordersMessage += `The Automated Base Map is live now at https://rustcult.com\n\n`;
+	ordersMessage += `Now you can be part of The Government without talking to anyone. Check the base map before every raid. Make sure you pair with the map so that your bases are protected. If you get raided and your base wasn't on the map that is on you!\n\n`;
+	ordersMessage += `Message a General to make sure you have a Wipe Badge in Discord so you can see all the comms.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
