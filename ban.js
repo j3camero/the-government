@@ -114,7 +114,9 @@ async function UpdateTrial(cu) {
     const voteCount = yesVoteCount + noVoteCount;
     const yesPercentage = voteCount > 0 ? yesVoteCount / voteCount : 0;
     if (member) {
-	if (cu.peak_rank >= 10 && voteCount >= 5 && yesPercentage >= 0.8) {
+	if (cu.peak_rank >= 10 && voteCount >= 5 && yesPercentage >= 0.909) {
+	    const before = channel.permissionOverwrites.get(member.id);
+	    console.log(before);
 	    await channel.createOverwrite(member, {
 		CONNECT: true,
 		SEND_MESSAGES: false,
@@ -141,9 +143,8 @@ async function UpdateTrial(cu) {
 		    voteCount,
 		    yesPercentage,
 		    member.lastMessage);
-	console.log(cu.peak_rank, voteCount, yesPercentage, member.lastMessage);
 	if (cu.peak_rank >= 10 && voteCount >= 10 && yesPercentage >= 0.9 && member.lastMessage) {
-	    await channel.send(threeTicks + 'Deleting messages sent by the Defendant within the last hour.' + threeTicks);
+	    await channel.send(threeTicks + 'Deleting messages sent by the Defendant within the last 24h.' + threeTicks);
 	    await DiscordUtil.DeleteMessagesByMember(member, 24 * 3600);
 	}
     }
