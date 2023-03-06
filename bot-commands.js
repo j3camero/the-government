@@ -77,7 +77,7 @@ async function HandleServerVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
     const message = await channel.send(
-	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for February 2023.\n\n' +
+	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for March 2023.\n\n' +
 	'Every top 100 US monthly vanilla server is included.'
     );
     await message.react('❤️');
@@ -91,8 +91,8 @@ async function HandleServerVoteCommand(discordMessage) {
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 56, 11);
     await MakeOneServerVoteOption(channel, 'Rustopia.gg - US Small', 'https://www.battlemetrics.com/servers/rust/14876730', 66, 21);
     await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 112, 12);
-    await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 611, 4);
-    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Main', 'https://www.battlemetrics.com/servers/rust/6324892', 2, 44);
+    //await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 611, 4);
+    //await MakeOneServerVoteOption(channel, 'Rustoria.co - US Main', 'https://www.battlemetrics.com/servers/rust/6324892', 2, 44);
 }
 
 async function MakeOnePresidentVoteOption(channel, playerName) {
@@ -109,24 +109,23 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('presidential-election');
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in February 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in March 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. Mr. or Madam President receives tax revenue from automated taxes, to spend as they see fit in support of the team.');
     await message.react('❤️');
     const candidates = [
 	'scientist.exe',
-	'Dannykuunn',
+	'Hansel (Aperture)',
+	'DannyKuunn',
+	'Nikki',
 	'PalmTiger',
-	'Aperture',
+	'HoneyBadger',
 	'Neff',
+	'Adam',
+	'Bear!!',
 	'Beary Berry',
-	'Nikx',
-	'Ducks',
-	'Mancrog',
-	'Jeff',
 	'Dex',
-	'PN',
-	'Mequista',
-	'Sky312line',
+	'magoo',
 	'Egon',
+	'Ducks',
     ];
     for (const candidate of candidates) {
 	await MakeOnePresidentVoteOption(channel, candidate);
@@ -147,6 +146,26 @@ async function HandleOfficerVoteCommand(discordMessage) {
 	`**Advantage:** the Presidential election has been driving the plotline in a way that Jeff never could before. The wipe day plan used to be Jeff's job but now he cannot touch it because the election has such legitimacy. With Officers voting, the election results will be even bigger and more legitimate than ever. There is a certain feeling of ownership that comes with voting, that has caused the Generals to act more boldly in the last 6 months. The goal is to expand that feeling of ownership to the Officers so that they act more boldly as well. We have big boots to fill as the map tech kicks in over coming months, so we need to elevate and train more bold leaders urgently.\n\n` +
         `**Disadvantage:** the legitimacy of the vote could be hurt if we get Officers voting then not showing up to play. Check #ranks to see that 90% of Officers & Generals are active.\n\n` +
 	`A majority is needed for this motion to pass. The vote ends Dec 20, 2022.`);
+    await message.react('✅');
+    await message.react('❌');
+    const voteSectionId = '1043778293612163133';
+    await channel.setParent(voteSectionId);
+}
+
+async function HandlePrivateRoomVoteCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.create('private-comms-for-generals');
+    const message = await channel.send(
+	`__**Should Generals Have Private Comms?**__\n` +
+	`Recently we have tried an experiment where all 15 Generals have their own private comms. Access is controlled by the Badge system.\n\n` +
+	`Vote YES to continue the experiment.\n\n` +
+        `Vote NO to delete all private comms except the Raid channel.\n\n` +
+	`The Generals decide. A simple majority is needed for this motion to pass. The vote ends March 2, 2023.`);
     await message.react('✅');
     await message.react('❌');
     const voteSectionId = '1043778293612163133';
@@ -236,11 +255,11 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `Here are your secret orders for the month of February. Report to the server Rustopia.gg - US Large\n\n`;
+	ordersMessage += `Here are your secret orders for the month of March 2023. Report to the server Rustopia.gg - US Large\n\n`;
 	ordersMessage += '```client.connect USLarge.Rustopia.gg```\n\n';
 	ordersMessage += `Get the build location in Voice Chat then run directly there. Help build the Community base then build your own small base close by.\n\n`;
 	ordersMessage += `The Automated Base Map is live now at https://rustcult.com\n\n`;
-	ordersMessage += `Now you can be part of The Government without talking to anyone. Check the base map before every raid. Make sure you pair with the map so that your bases are protected. If you get raided and your base wasn't on the map that is on you!\n\n`;
+	ordersMessage += `Make sure you pair with the map so that your bases are protected. If you get raided and your base wasn't on the map that is on you! With 89 people pairing the map in February and 100+ expected in March, the strategy is to assemble a horde of players who use the map to raid everyone who isn't us. There's no reason we can't take over multiple top servers at the same time using this strategy.\n\n`;
 	ordersMessage += `Message a General to make sure you have a Wipe Badge in Discord so you can see all the comms.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
@@ -471,6 +490,57 @@ async function HandleBoopCommand(discordMessage) {
     }
 }
 
+async function HandleCreateCommitteeCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 3) {
+	await discordMessage.channel.send(`USAGE: !createcommittee CommitteeName @LeaderName`);
+	return;
+    }
+    const n = tokens[1];
+    const guild = discordMessage.guild;
+    const committee = await guild.roles.create({
+	data: {
+	    name: `${n} Committee`,
+	},
+    });
+    await discordMessage.channel.send(`Created ${committee.name}`);
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send(`No mentioned member.`);
+	return;
+    }
+    await mentionedMember.roles.add(committee);
+    await discordMessage.channel.send(`Gave ${committee.name} to ${mentionedMember.nickname}`);
+    const badge = await guild.roles.create({
+	data: {
+	    name: `${n} Badge`,
+	},
+    });
+    await discordMessage.channel.send(`Created ${badge.name}`);
+    const bitrate = 384000;
+    const perms = ['CONNECT', 'VIEW_CHANNEL'];
+    const options = {
+	bitrate,
+	permissionOverwrites: [
+	    { id: guild.roles.everyone, deny: perms },
+	    { id: RoleID.Admin, allow: perms },
+	    { id: RoleID.General, allow: perms },
+	    { id: RoleID.Bots, allow: perms },
+	    { id: committee.id, allow: perms },
+	    { id: badge.id, allow: perms },
+	],
+	type: 'voice',
+	userLimit: 99,
+    };
+    const room = await guild.channels.create(`${n} ★`, options);
+    await discordMessage.channel.send(`Created voice chat room ${room.name}`);
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -495,6 +565,7 @@ async function Dispatch(discordMessage) {
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
 	'!convert': yen.HandleConvertCommand,
+	'!createcommittee': HandleCreateCommitteeCommand,
 	'!detain': Ban.HandleBanCommand,
 	'!fuck': Ban.HandleBanCommand,
 	'!gender': HandleGenderCommand,
@@ -513,6 +584,7 @@ async function Dispatch(discordMessage) {
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!amnestyvote': HandleAmnestyVoteCommand,
 	'!officervote': HandleOfficerVoteCommand,
+	'!privateroomvote': HandlePrivateRoomVoteCommand,
 	'!tax': yen.HandleTaxCommand,
 	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
