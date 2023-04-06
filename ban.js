@@ -1,3 +1,4 @@
+const BadWords = require('./bad-words');
 const DiscordUtil = require('./discord-util');
 const moment = require('moment');
 const UserCache = require('./user-cache');
@@ -28,12 +29,16 @@ async function UpdateTrial(cu) {
 	member = null;
     }
     const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
-    const roomName = cu.nickname;
+    let roomName = cu.nick || cu.nickname || 'John Doe';
+    if (BadWords.ContainsBadWords(roomName)) {
+	roomName = `case-${cu.commissarId}`;
+    }
     // Update or create the courtroom: a text chat room under the Ban Court category.
     let channel;
     if (cu.ban_vote_chatroom) {
 	channel = await guild.channels.resolve(cu.ban_vote_chatroom);
     } else {
+	console.log(roomName);
 	channel = await guild.channels.create(roomName, { type: 'text' });
 	await channel.setParent(banCourtCategory);
     }

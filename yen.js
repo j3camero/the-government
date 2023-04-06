@@ -346,12 +346,12 @@ async function UpdateYenChannel() {
     const channel = await guild.channels.resolve(yenChannelId);
     await channel.bulkDelete(99);
     await DiscordUtil.SendLongList(lines, channel);
-    const jeffSteamInventoryValue = 87581;
+    const jeffSteamInventoryValue = 92745;
     const reserveRatio = jeffSteamInventoryValue / totalYen;
     const formattedReserveRatio = parseInt(reserveRatio * 100);
     let message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
-    message += `Liquidation value of Jeff's Rust skins (Jan 2023): ¥ ${jeffSteamInventoryValue}\n`;
+    message += `Liquidation value of Jeff's Rust skins (March 2023): ¥ ${jeffSteamInventoryValue}\n`;
     message += `Reserve ratio: ${formattedReserveRatio}%\n`;
     await channel.send(threeTicks + message + threeTicks);
 }

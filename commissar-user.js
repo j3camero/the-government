@@ -276,8 +276,9 @@ class CommissarUser {
     }
 
     getNicknameWithInsignia() {
+	const name = this.nick || this.nickname || 'John Doe';
 	const insignia = this.getInsignia();
-	return `${this.nickname} ${insignia}`;
+	return `${name} ${insignia}`;
     }
 
     getNicknameOrTitleWithInsignia() {
