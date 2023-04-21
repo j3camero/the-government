@@ -255,12 +255,12 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `Here are your secret orders for the month of March 2023. Report to the server Rustopia.gg - US Large\n\n`;
+	ordersMessage += `Here are your secret orders for the month of April 2023. Report to the server Rustopia.gg - US Large\n\n`;
 	ordersMessage += '```client.connect USLarge.Rustopia.gg```\n\n';
 	ordersMessage += `Get the build location in Voice Chat then run directly there. Help build the Community base then build your own small base close by.\n\n`;
 	ordersMessage += `The Automated Base Map is live now at https://rustcult.com\n\n`;
-	ordersMessage += `Make sure you pair with the map so that your bases are protected. If you get raided and your base wasn't on the map that is on you! With 89 people pairing the map in February and 100+ expected in March, the strategy is to assemble a horde of players who use the map to raid everyone who isn't us. There's no reason we can't take over multiple top servers at the same time using this strategy.\n\n`;
-	ordersMessage += `Message a General to make sure you have a Wipe Badge in Discord so you can see all the comms.\n\n`;
+	ordersMessage += `Make sure you pair with the map so that your bases are protected. If you get raided and your base wasn't on the map that is on you! With 108 people pairing the map in March, the strategy is to assemble a horde of players who use the map to raid everyone who isn't us. We can take over multiple top servers at the same time using this strategy.\n\n`;
+	ordersMessage += `Coming next month is better zoom and more polished menus. In June a major feature update will drop that we are currently building in the background.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
