@@ -176,6 +176,15 @@ function GetCachedUserByBanVoteMessageId(messageId) {
     return null;
 }
 
+function GetCachedUserByBanVoteChannelId(channelId) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.ban_vote_chatroom === channelId) {
+	    return user;
+	}
+    }
+    return null;
+}
+
 function GetUsersSortedByLastSeen(inactivityLimitInDays) {
     const users = [];
     const seconds = 86400 * inactivityLimitInDays;
@@ -219,6 +228,7 @@ module.exports = {
     ForEach,
     GetAllCitizenCommissarIds,
     GetAllNicknames,
+    GetCachedUserByBanVoteChannelId,
     GetCachedUserByBanVoteMessageId,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,

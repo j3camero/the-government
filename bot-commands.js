@@ -77,20 +77,20 @@ async function HandleServerVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create('server-vote');
     const message = await channel.send(
-	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for April 2023.\n\n' +
+	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for May 2023.\n\n' +
 	'Every top 100 US monthly vanilla server is included.'
     );
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 16, 15);
-    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 1, 30);
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 1, 16);
-    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 13, 16);
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 24, 33);
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 2, 27);
+    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 4, 27);
+    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 14, 30);
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 18, 33);
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 20, 28);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 39, 11);
-    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 46, 11);
-    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 56, 11);
+    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 51, 11);
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 63, 12);
     await MakeOneServerVoteOption(channel, 'Rustopia.gg - US Small', 'https://www.battlemetrics.com/servers/rust/14876730', 66, 21);
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 112, 12);
+    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 67, 11);
     //await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 611, 4);
     //await MakeOneServerVoteOption(channel, 'Rustoria.co - US Main', 'https://www.battlemetrics.com/servers/rust/6324892', 2, 44);
 }
@@ -112,20 +112,35 @@ async function HandlePresidentVoteCommand(discordMessage) {
     const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in April 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
     await message.react('❤️');
     const candidates = [
-	'scientist.exe',
-	'Nikki',
 	'DannyKuunn',
 	'PalmTiger',
+	'Nikki',
 	'Aperture',
-	'TinkerBell',
-	'HoneyBadger',
 	'Beary Berry',
-	'Neff',
-	'Dex',
 	'Ducks',
+	'Karma',
+	'Sky312line',
+	'SuperB',
+	'TinkerBell (Bear)',
+	'Neff',
+	'Scarrab',
+	'c0mm'
+    ];
+    for (const candidate of candidates) {
+	await MakeOnePresidentVoteOption(channel, candidate);
+    }
+}
+
+async function HandlePresidentVoteFixCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.resolve('1100498416162844772');
+    const candidates = [
 	'EviL',
-	'Skyline',
-	'magoo',
     ];
     for (const candidate of candidates) {
 	await MakeOnePresidentVoteOption(channel, candidate);
@@ -257,15 +272,23 @@ async function HandleOrdersCommand(discordMessage) {
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
 	ordersMessage += `Here are your secret orders for the month of April 2023. Report to the server Rustopia.gg - US Large\n\n`;
 	ordersMessage += '```client.connect USLarge.Rustopia.gg```\n\n';
-	ordersMessage += `Get the build location in Voice Chat then run directly there. Help build the Community base then build your own small base close by.\n\n`;
-	ordersMessage += `The Automated Base Map is live now at https://rustcult.com\n\n`;
-	ordersMessage += `Make sure you pair with the map so that your bases are protected. If you get raided and your base wasn't on the map that is on you! With 108 people pairing the map in March, the strategy is to assemble a horde of players who use the map to raid everyone who isn't us. We can take over multiple top servers at the same time using this strategy.\n\n`;
-	ordersMessage += `Coming next month is better zoom and more polished menus. In June a major feature update will drop that we are currently building in the background.\n\n`;
+	ordersMessage += `The center of the build spot is the bottom left corner of F14, please build in this area to be enveloped within Gov walls.\n\n`;
+	ordersMessage += `1. The closest spawn-beach spawns to the build location are  D8, D7, D6, and G6. This will be 7 grids north of the build spot.\n\n`;
+	ordersMessage += `2. Our closest and main recycler will be at Sattelite E13, with additional recyclers at Harbor C17, and Oxums at I16. Do not go alone, ask others if they are doing any recycling runs and team up. Work together and win.\n\n`;
+	ordersMessage += `3. Use jump checks to ensure that we are shooting the enemy until all members can be on the same team ui. If someone is downed in a friendly fire incident make sure that we work to get their gear back to them unless recovery is impossible.\n\n`;
+	ordersMessage += `4. Do not share the build spot location in voice comms. If someone asks for the location in comms a general will verify that they are indeed a Gov member and get the info to them in dm.\n\n`;
+	ordersMessage += `5. Please do not build close to roads or monuments where it will building block our ability to put up walls around your base and the Gov as a whole.\n\n`;
+	ordersMessage += `Let's go destroy some poor souls and burn their bases to the ground.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
 	try {
-	    await discordMember.send(ordersMessage);
+	    await discordMember.send(ordersMessage, {
+		files: [{
+		    attachment: 'build-area.png',
+		    name: 'build-area.png'
+		}]
+	    });
 	} catch (error) {
 	    console.log('Failed to send orders to', discordMember.nickname);
 	}
@@ -565,6 +588,7 @@ async function Dispatch(discordMessage) {
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
 	'!convert': yen.HandleConvertCommand,
+	'!convict': Ban.HandleConvictCommand,
 	'!createcommittee': HandleCreateCommitteeCommand,
 	'!detain': Ban.HandleBanCommand,
 	'!fuck': Ban.HandleBanCommand,
@@ -582,6 +606,7 @@ async function Dispatch(discordMessage) {
 	'!rules': rules.HandleRulesCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
+	'!presidentvotefix': HandlePresidentVoteFixCommand,
 	'!amnestyvote': HandleAmnestyVoteCommand,
 	'!officervote': HandleOfficerVoteCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,

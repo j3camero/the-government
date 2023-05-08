@@ -377,8 +377,51 @@ async function HandlePardonCommand(discordMessage) {
     }
 }
 
+// End a trial early and hard-ban the defendant. Used for emergency unclogging of the ban court.
+async function HandleConvictCommand(discordMessage) {
+    console.log('CONVICT COMMAND');
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const defendantUser = await UserCache.GetCachedUserByBanVoteChannelId(discordMessage.channel.id);
+    if (!defendantUser) {
+	await discordMessage.channel.send('This is not a ban courtroom?');
+	return;
+    }
+    await defendantUser.setBanConvictionTime(moment().format());
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    try {
+	const defendantMember = await guild.members.resolve(defendantUser.discord_id);
+	if (defendantMember) {
+	    await defendantMember.ban();
+	}
+    } catch (error) {
+	console.log(error);
+    }
+    if (defendantUser.ban_vote_start_time) {
+	await defendantUser.setBanVoteStartTime(null);
+    }
+    if (defendantUser.ban_vote_chatroom) {
+	const channel = await guild.channels.resolve(defendantUser.ban_vote_chatroom);
+	if (channel) {
+	    await channel.delete();
+	    await defendantUser.setBanVoteChatroom(null);
+	}
+    }
+    await defendantUser.setBanVoteMessage(null);
+    await defendantUser.setGoodStanding(false);
+    try {
+	await discordMessage.channel.send(`Convicted ${defendantUser.getNicknameWithInsignia()}!`);
+    } catch (error) {
+	// In case the command was issued inside the courtroom, which no longer exists.
+    }
+}
+
 module.exports = {
     HandleBanCommand,
+    HandleConvictCommand,
     HandlePardonCommand,
     HandlePossibleReaction,
     UpdateTrial,
