@@ -15,8 +15,6 @@ const huddles = [
     { name: 'Duo', userLimit: 2, position: 2000 },
     { name: 'Trio', userLimit: 3, position: 3000 },
     { name: 'Quad', userLimit: 4, position: 4000 },
-    //{ name: 'High Five', userLimit: 5, position: 5000 },
-    //{ name: 'Six Pack', userLimit: 6, position: 6000 },
     { name: 'Squad', userLimit: 8, position: 7000 },
 ];
 
@@ -25,7 +23,8 @@ function GetAllMatchingVoiceChannels(guild, huddle) {
     // Necessary in case a string key is passed in. Object keys are
     // sometimes showing up as strings.
     for (const [id, channel] of guild.channels.cache) {
-	if (channel.type === 'voice' &&
+	//console.log('CHANNEL', channel.type, channel.name, channel.userLimit);
+	if (channel.type === 2 &&
 	    channel.name === huddle.name &&
 	    channel.userLimit === parseInt(huddle.userLimit)) {
 	    matchingChannels.push(channel);
@@ -46,11 +45,12 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	    { id: RoleID.Grunt, allow: perms },
 	    { id: RoleID.Bots, allow: perms },
 	],
+	name: huddle.name,
 	type: 'voice',
 	userLimit: huddle.userLimit,
     };
     console.log('Creating channel.');
-    await guild.channels.create(huddle.name, options);
+    await guild.channels.create(options);
     console.log('Done');
 }
 

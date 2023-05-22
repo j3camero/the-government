@@ -513,57 +513,6 @@ async function HandleBoopCommand(discordMessage) {
     }
 }
 
-async function HandleCreateCommitteeCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const tokens = discordMessage.content.split(' ');
-    if (tokens.length !== 3) {
-	await discordMessage.channel.send(`USAGE: !createcommittee CommitteeName @LeaderName`);
-	return;
-    }
-    const n = tokens[1];
-    const guild = discordMessage.guild;
-    const committee = await guild.roles.create({
-	data: {
-	    name: `${n} Committee`,
-	},
-    });
-    await discordMessage.channel.send(`Created ${committee.name}`);
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(`No mentioned member.`);
-	return;
-    }
-    await mentionedMember.roles.add(committee);
-    await discordMessage.channel.send(`Gave ${committee.name} to ${mentionedMember.nickname}`);
-    const badge = await guild.roles.create({
-	data: {
-	    name: `${n} Badge`,
-	},
-    });
-    await discordMessage.channel.send(`Created ${badge.name}`);
-    const bitrate = 384000;
-    const perms = ['CONNECT', 'VIEW_CHANNEL'];
-    const options = {
-	bitrate,
-	permissionOverwrites: [
-	    { id: guild.roles.everyone, deny: perms },
-	    { id: RoleID.Admin, allow: perms },
-	    { id: RoleID.General, allow: perms },
-	    { id: RoleID.Bots, allow: perms },
-	    { id: committee.id, allow: perms },
-	    { id: badge.id, allow: perms },
-	],
-	type: 'voice',
-	userLimit: 99,
-    };
-    const room = await guild.channels.create(`${n} ★`, options);
-    await discordMessage.channel.send(`Created voice chat room ${room.name}`);
-}
-
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -589,7 +538,6 @@ async function Dispatch(discordMessage) {
 	'!committee': HandleCommitteeCommand,
 	'!convert': yen.HandleConvertCommand,
 	'!convict': Ban.HandleConvictCommand,
-	'!createcommittee': HandleCreateCommitteeCommand,
 	'!detain': Ban.HandleBanCommand,
 	'!fuck': Ban.HandleBanCommand,
 	'!gender': HandleGenderCommand,

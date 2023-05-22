@@ -106,11 +106,12 @@ async function HandleArtilleryCommand(discordMessage) {
 
     const buf = canvas.toBuffer();
     await fs.writeFileSync('elevation.png', buf);
-    await discordMessage.channel.send(`Elevation ${elevationAngleString} % - Direction ${bearingRounded}`, {
+    await discordMessage.channel.send({
+	content: `Elevation ${elevationAngleString} % - Direction ${bearingRounded}`,
 	files: [{
 	    attachment: 'elevation.png',
 	    name: 'elevation.png'
-	}]
+	}],
     });
 }
 

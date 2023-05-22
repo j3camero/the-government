@@ -62,7 +62,7 @@ async function UpdateMemberAppearance(member) {
 	throw 'Invalid rank detected. This can indicate serious problems.';
     }
     const displayName = cu.getNicknameOrTitleWithInsignia();
-    if (member.nickname !== displayName && member.user.id !== member.guild.ownerID) {
+    if (member.nickname !== displayName && member.user.id !== member.guild.ownerId) {
 	console.log(`Updating nickname ${displayName}.`);
 	member.setNickname(displayName);
     }
@@ -95,7 +95,7 @@ async function UpdateVoiceActiveMembersForMainDiscordGuild() {
 	if (channel.id === afkLoungeId) {
 	    continue;
 	}
-	if (channel.type !== 'voice') {
+	if (channel.type !== 2) {
 	    continue;
 	}
 	const channelActive = [];
@@ -136,34 +136,6 @@ function HowManyPeopleInVoiceChat(guild) {
 	}
     }
     return count;
-}
-
-// Updates the visibility of the secret Raid voice chat channel.
-async function UpdateRaidChannelVisibility() {
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const pop = HowManyPeopleInVoiceChat(guild);
-    const channel = await guild.channels.resolve('967407726424625232');
-    if (!channel) {
-	throw 'Oh fuck the raid channel is missing!';
-    }
-    const perms = ['CONNECT', 'VIEW_CHANNEL'];
-    if (pop >= 3) {
-	if (channel.permissionOverwrites.size !== 5) {
-	    await channel.overwritePermissions([
-		{ id: RoleID.Bots, allow: perms },
-		{ id: RoleID.General, allow: perms },
-		{ id: RoleID.Marshal, allow: perms },
-		{ id: RoleID.Officer, allow: perms },
-		{ id: guild.roles.everyone, deny: perms },
-	    ]);
-	}
-    } else {
-	if (channel.permissionOverwrites.size !== 1) {
-	    await channel.overwritePermissions([
-		{ id: guild.roles.everyone, deny: perms },
-	    ]);
-	}
-    }
 }
 
 async function UpdateHarmonicCentrality() {
@@ -246,6 +218,7 @@ async function HourlyUpdate() {
     endTime = new Date().getTime();
     elapsed = endTime - startTime;
     console.log(`UpdateHarmonicCentrality: ${elapsed} ms`);
+    setTimeout(HourlyUpdate, 60 * 60 * 1000);
 }
 
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
@@ -283,6 +256,7 @@ async function RoutineUpdate() {
     endTime = new Date().getTime();
     elapsed = endTime - startTime;
     console.log(`UpdateAllCitizens: ${elapsed} ms`);
+    setTimeout(RoutineUpdate, 60 * 1000);
 }
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
@@ -347,7 +321,7 @@ async function Start() {
     });
 
     // Respond to bot commands.
-    discordClient.on('message', async (message) => {
+    discordClient.on('messageCreate', async (message) => {
 	const cu = await UserCache.GetCachedUserByDiscordId(message.author.id);
 	if (!cu) {
 	    // Shouldn't happen. Bail and hope for recovery.
@@ -373,7 +347,6 @@ async function Start() {
 	    await newVoiceState.member.voice.kick();
 	}
 	await huddles.ScheduleUpdate();
-	//await UpdateRaidChannelVisibility();
     });
 
     // When a user changes their username or other user details.
@@ -418,17 +391,12 @@ async function Start() {
     discordClient.on('error', console.log);
     discordClient.on('warning', console.log);
 
-    // Set up heartbeat events. These run at fixed intervals of time.
-    const oneSecond = 1000;
-    const oneMinute = 60 * oneSecond;
-    const fifteenMinutes = 15 * oneMinute;
-    const oneHour = 60 * oneMinute;
-    // Set up the auto-scheduled routines to run on autopilot.
-    setInterval(RoutineUpdate, oneMinute);
-    setInterval(HourlyUpdate, oneHour);
+    // Routine update schedules itself to run again after it finishes.
+    // That way it avoids running over itself if it runs longer than a minute.
     await RoutineUpdate();
-    //await HourlyUpdate();
-    // Don't run the hourly update on startup for now because it takes a while to run.
+    // Delay the first hourly update until a few minutes after the bot starts,
+    // because it takes a while to run.
+    setTimeout(HourlyUpdate, 5 * 60 * 1000);
 }
 
 Start();

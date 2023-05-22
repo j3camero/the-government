@@ -8,6 +8,13 @@ const Sleep = require('./sleep');
 // Create the Discord client. Does not connect yet.
 const client = new Discord.Client({
     fetchAllMembers: true,
+    intents: [
+	//Discord.GatewayIntentBits.Connect,
+	Discord.GatewayIntentBits.Guilds,
+	Discord.GatewayIntentBits.GuildMembers,
+	Discord.GatewayIntentBits.GuildMessages,
+	Discord.GatewayIntentBits.MessageContent,
+    ],
 });
 
 // Set to true once the guild roles have been cached once.

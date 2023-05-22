@@ -9,11 +9,6 @@ const threeTicks = '```';
 const banCommandRank = 5;  // General 1
 const banVoteRank = 9;  // Lieutenant
 
-// Keep track of Discord members that have been removed from Ban Court due to consensus vote.
-// This is done in memory which will mean the bot forgets and possibly re-announces the
-// perm change every time it boots. Make this a database column to make it persistent.
-const bannedFromBanCourt = {};
-
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_start_time) {
 	// No trial to update.
@@ -120,26 +115,23 @@ async function UpdateTrial(cu) {
     const yesPercentage = voteCount > 0 ? yesVoteCount / voteCount : 0;
     if (member) {
 	if (cu.peak_rank >= 10 && voteCount >= 5 && yesPercentage >= 0.909) {
-	    const before = channel.permissionOverwrites.get(member.id);
-	    console.log(before);
-	    await channel.createOverwrite(member, {
-		CONNECT: true,
-		SEND_MESSAGES: false,
-		VIEW_CHANNEL: true,
+	    const before = await channel.permissionOverwrites.resolve(member.id);
+	    await channel.permissionOverwrites.create(member, {
+		Connect: true,
+		SendMessages: false,
+		ViewChannel: true,
 	    });
-	    if (!(member.id in bannedFromBanCourt)) {
+	    if (before.SendMessage) {
 		await channel.send(threeTicks + 'The defendant has been removed from the courtroom.' + threeTicks);
-		bannedFromBanCourt[member.id] = 1;
 	    }
 	} else {
-	    await channel.createOverwrite(member, {
-		CONNECT: true,
-		SEND_MESSAGES: true,
-		VIEW_CHANNEL: true,
+	    await channel.permissionOverwrites.create(member, {
+		Connect: true,
+		SendMessages: true,
+		ViewChannel: true,
 	    });
-	    if (member.id in bannedFromBanCourt) {
+	    if (!before.SendMessages) {
 		await channel.send(threeTicks + 'The defendant has re-entered the courtroom.' + threeTicks);
-		delete bannedFromBanCourt[member.id];
 	    }
 	}
 	console.log('DeleteMessagesByMember consideration',
@@ -172,7 +164,7 @@ async function UpdateTrial(cu) {
 	}
 	await cu.setGoodStanding(false);
 	if (member) {
-	    await member.voice.kick();
+	    await member.voice.disconnect();
 	}
     } else {
 	baselineVoteDurationDays = 1;
