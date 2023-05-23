@@ -33,8 +33,11 @@ async function UpdateTrial(cu) {
     if (cu.ban_vote_chatroom) {
 	channel = await guild.channels.resolve(cu.ban_vote_chatroom);
     } else {
-	console.log(roomName);
-	channel = await guild.channels.create(roomName, { type: 'text' });
+	console.log('Creating new ban court', roomName);
+	channel = await guild.channels.create({
+	    name: roomName,
+	    type: 0,
+	});
 	await channel.setParent(banCourtCategory);
     }
     if (!channel) {
@@ -114,14 +117,14 @@ async function UpdateTrial(cu) {
     const voteCount = yesVoteCount + noVoteCount;
     const yesPercentage = voteCount > 0 ? yesVoteCount / voteCount : 0;
     if (member) {
+	const before = await channel.permissionOverwrites.resolve(member.id);
 	if (cu.peak_rank >= 10 && voteCount >= 5 && yesPercentage >= 0.909) {
-	    const before = await channel.permissionOverwrites.resolve(member.id);
 	    await channel.permissionOverwrites.create(member, {
 		Connect: true,
 		SendMessages: false,
 		ViewChannel: true,
 	    });
-	    if (before.SendMessage) {
+	    if (!before || before.allow.has('SendMessages')) {
 		await channel.send(threeTicks + 'The defendant has been removed from the courtroom.' + threeTicks);
 	    }
 	} else {
@@ -130,7 +133,8 @@ async function UpdateTrial(cu) {
 		SendMessages: true,
 		ViewChannel: true,
 	    });
-	    if (!before.SendMessages) {
+	    if (before && before.deny && before.deny.has('SendMessages')) {
+		console.log(before.allow);
 		await channel.send(threeTicks + 'The defendant has re-entered the courtroom.' + threeTicks);
 	    }
 	}
@@ -283,7 +287,7 @@ async function HandleBanCommand(discordMessage) {
 	await discordMessage.channel.send(`Couldn't find that member. Maybe they left.`);
 	return;
     }
-    if (mentionedUser.ban_vote_end_time) {
+    if (mentionedUser.ban_vote_start_time) {
 	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial.`);
 	return;
     }
@@ -349,7 +353,7 @@ async function HandlePardonCommand(discordMessage) {
 	return;
     }
     const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.user.id);
-    if (mentionedUser.ban_vote_end_time) {
+    if (mentionedUser.ban_vote_start_time) {
 	await mentionedUser.setBanVoteStartTime(null);
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();

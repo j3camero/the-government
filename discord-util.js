@@ -83,7 +83,7 @@ async function RemoveRole(member, role) {
 async function GetCategoryChannelByName(channelName) {
     const guild = await GetMainDiscordGuild();
     for (const [id, channel] of guild.channels.cache) {
-	if (channel.name === channelName && channel.type === 'category') {
+	if (channel.name === channelName && channel.type === 4) {
 	    return channel;
 	}
     }
@@ -98,7 +98,7 @@ async function GetBanCourtCategoryChannel() {
 function GetAllMatchingTextChannels(guild, channelName) {
   const matchingChannels = [];
   guild.channels.cache.forEach((channel) => {
-    if (channel.name === channelName && channel.type === 'text') {
+    if (channel.name === channelName && channel.type === 0) {
       matchingChannels.push(channel);
     }
   });
