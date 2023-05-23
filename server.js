@@ -3,6 +3,7 @@ const BotCommands = require('./bot-commands');
 const Clock = require('./clock');
 const DB = require('./database');
 const deepEqual = require('deep-equal');
+const { ContextMenuCommandBuilder, Events, ApplicationCommandType } = require('discord.js');
 const DiscordUtil = require('./discord-util');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
@@ -387,6 +388,19 @@ async function Start() {
 	await Ban.HandlePossibleReaction(messageReaction, user, false);
     });
 
+    const upvoteMenuBuilder = new ContextMenuCommandBuilder()
+	  .setName('Upvote')
+	  .setType(ApplicationCommandType.User);
+
+    discordClient.on(Events.InteractionCreate, interaction => {
+	if (!interaction.isUserContextMenuCommand()) {
+	    return;
+	}
+	const voter = interaction.user.username;
+	const target = interaction.targetUser.username;
+	console.log(voter, 'voted', target);
+    });
+
     discordClient.on('debug', console.log);
     discordClient.on('error', console.log);
     discordClient.on('warning', console.log);
@@ -396,7 +410,7 @@ async function Start() {
     await RoutineUpdate();
     // Delay the first hourly update until a few minutes after the bot starts,
     // because it takes a while to run.
-    setTimeout(HourlyUpdate, 5 * 60 * 1000);
+    setTimeout(HourlyUpdate, 15 * 60 * 1000);
 }
 
 Start();

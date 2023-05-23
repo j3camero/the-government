@@ -6,6 +6,7 @@
 // introduce auto-scaling to Discord voice chat rooms so there are always
 // the right amount of rooms no matter how busy.
 
+const { PermissionFlagsBits } = require('discord.js');
 const DiscordUtil = require('./discord-util');
 const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
@@ -34,7 +35,7 @@ function GetAllMatchingVoiceChannels(guild, huddle) {
 }
 
 async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
-    const perms = ['CONNECT', 'VIEW_CHANNEL'];
+    const perms = [PermissionFlagsBits.Connect, PermissionFlagsBits.ViewChannel];
     const options = {
 	bitrate,
 	permissionOverwrites: [
@@ -46,7 +47,7 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	    { id: RoleID.Bots, allow: perms },
 	],
 	name: huddle.name,
-	type: 'voice',
+	type: 2,
 	userLimit: huddle.userLimit,
     };
     console.log('Creating channel.');
@@ -212,7 +213,7 @@ function CompareRooms(a, b) {
 async function MoveOneRoomIfNeeded(guild) {
     const rooms = [];
     for (const [id, channel] of guild.channels.cache) {
-	if (channel.type === 'voice' && !channel.parent) {
+	if (channel.type === 2 && !channel.parent) {
 	    rooms.push(channel);
 	}
     }
@@ -248,14 +249,17 @@ let isUpdateNeeded = false;
 setInterval(Update, 5 * 1000);
 
 async function Update() {
+    console.log('huddle update?');
     if (!isUpdateNeeded) {
 	return;
     }
+    console.log('update needed');
     const guild = await DiscordUtil.GetMainDiscordGuild();
     for (const huddle of huddles) {
 	await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
     }
     const roomsInOrder = await MoveOneRoomIfNeeded(guild);
+    console.log('roomsInOrder', roomsInOrder);
     isUpdateNeeded = !roomsInOrder;
 }
 

@@ -2,6 +2,7 @@
 const Artillery = require('./artillery');
 const Ban = require('./ban');
 const diff = require('diff');
+const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
 const FilterUsername = require('./filter-username');
 const RandomPin = require('./random-pin');
@@ -513,6 +514,19 @@ async function HandleBoopCommand(discordMessage) {
     }
 }
 
+async function HandleTranscriptCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const channel = discordMessage.channel;
+    const attachment = await discordTranscripts.createTranscript(channel);
+    await channel.send({
+	files: [attachment],
+    });
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -562,6 +576,7 @@ async function Dispatch(discordMessage) {
 	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
 	'!trial': Ban.HandleBanCommand,
+	'!transcript': HandleTranscriptCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!welp': Ban.HandleBanCommand,
 	'!yen': yen.HandleYenCommand,

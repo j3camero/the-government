@@ -9,10 +9,14 @@ const Sleep = require('./sleep');
 const client = new Discord.Client({
     fetchAllMembers: true,
     intents: [
-	//Discord.GatewayIntentBits.Connect,
+	Discord.GatewayIntentBits.DirectMessages,
 	Discord.GatewayIntentBits.Guilds,
 	Discord.GatewayIntentBits.GuildMembers,
 	Discord.GatewayIntentBits.GuildMessages,
+	Discord.GatewayIntentBits.GuildMessageReactions,
+	Discord.GatewayIntentBits.GuildModeration,
+	Discord.GatewayIntentBits.GuildScheduledEvents,
+	Discord.GatewayIntentBits.GuildVoiceStates,
 	Discord.GatewayIntentBits.MessageContent,
     ],
 });
