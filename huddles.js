@@ -249,17 +249,14 @@ let isUpdateNeeded = false;
 setInterval(Update, 5 * 1000);
 
 async function Update() {
-    console.log('huddle update?');
     if (!isUpdateNeeded) {
 	return;
     }
-    console.log('update needed');
     const guild = await DiscordUtil.GetMainDiscordGuild();
     for (const huddle of huddles) {
 	await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
     }
     const roomsInOrder = await MoveOneRoomIfNeeded(guild);
-    console.log('roomsInOrder', roomsInOrder);
     isUpdateNeeded = !roomsInOrder;
 }
 
