@@ -1,4 +1,5 @@
 const BadWords = require('./bad-words');
+const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
 const moment = require('moment');
 const UserCache = require('./user-cache');
@@ -73,10 +74,12 @@ async function UpdateTrial(cu) {
 		continue;
 	    }
 	    const jurorUser = await UserCache.GetCachedUserByDiscordId(juror.id);
+	    console.log('juror', juror.id, 'jurorUser', jurorUser.rank, jurorUser.citizen, 'roomName', roomName);
 	    if (!jurorUser || !jurorUser.citizen || jurorUser.rank > banVoteRank) {
 		// Remove unauthorized vote. This check will catch unauthorized votes that
 		// made it through the initial filter because the bot was not running.
 		// Also when a juror loses their rank their vote is removed here.
+		console.log('Removing vote from unqualified juror', jurorUser.commissar_id);
 		await reaction.users.remove(juror);
 		continue;
 	    }
@@ -207,6 +210,28 @@ async function UpdateTrial(cu) {
 	} else {
 	    console.log('Not guilty y\'all got to feel me!');
 	}
+	const trialSummary = (
+	    `${threeTicks}` +
+	    `${caseTitle}\n` +
+	    `${underline}\n\n` +
+	    `Voting YES to ban:${yesVoteNames}\n\n` +
+	    `Voting NO against the ban:${noVoteNames}\n\n` +
+	    `${cu.getNicknameWithInsignia()} is ${outcomeString}. ` +
+	    `${nextStateChangeMessage}.${threeTicks}`
+	);
+	await message.edit(trialSummary);
+	await channel.send({ content: trialSummary });
+	const dateString = new Date().toISOString().substring(0, 10).replace(/-/g, '');
+	const attachment = await discordTranscripts.createTranscript(channel, {
+	    filename: `ban-court-${dateString}-${cu.commissar_id}-${roomName}.html`,
+	    poweredBy: false,
+	    saveImages: true,
+	});
+	const transcriptChannel = await guild.channels.resolve('1110429964580433920');
+	await transcriptChannel.send({
+	    content: trialSummary,
+	    files: [attachment],
+	});
 	try {
 	    await channel.delete();
 	} catch (error) {
@@ -315,6 +340,7 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 	return;
     }
     const juror = await UserCache.GetCachedUserByDiscordId(discordUser.id);
+    console.log('Checking juror for conflicting reactions', discordUser.id, juror.commissar_id, juror.rank, juror.citizen);
     if (!juror || juror.rank > banVoteRank) {
 	// Ignore votes from unqualified jurors.
 	await reaction.users.remove(discordUser.id);
@@ -327,7 +353,8 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
     if (clearConflictingReactions) {
 	await reaction.message.fetch();
 	for (const [otherReactionId, otherReaction] of reaction.message.reactions.cache) {
-	    if (otherReaction.emoji !== reaction.emoji) {
+	    if (otherReaction.emoji.name !== reaction.emoji.name) {
+		console.log(otherReaction.emoji.name, reaction.emoji.name, otherReaction.emoji.name !== reaction.emoji.name);
 		await otherReaction.users.remove(discordUser);
 	    }
 	}

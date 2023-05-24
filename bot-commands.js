@@ -520,9 +520,10 @@ async function HandleTranscriptCommand(discordMessage) {
 	// Auth: this command for developer use only.
 	return;
     }
-    const channel = discordMessage.channel;
-    const attachment = await discordTranscripts.createTranscript(channel);
-    await channel.send({
+    const fromChannel = discordMessage.channel;
+    const attachment = await discordTranscripts.createTranscript(fromChannel);
+    const toChannel = discordMessage.guild.channels.resolve('1110429964580433920');
+    await toChannel.send({
 	files: [attachment],
     });
 }
