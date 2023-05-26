@@ -225,7 +225,7 @@ async function UpdateTrial(cu) {
 	const attachment = await discordTranscripts.createTranscript(channel, {
 	    filename: `ban-court-${dateString}-${cu.commissar_id}-${roomName}.html`,
 	    poweredBy: false,
-	    saveImages: true,
+	    saveImages: false,
 	});
 	const transcriptChannel = await guild.channels.resolve('1110429964580433920');
 	await transcriptChannel.send({
