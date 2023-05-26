@@ -319,7 +319,7 @@ async function HandleBanCommand(discordMessage) {
     await discordMessage.channel.send(`${mentionedUser.getRankNameAndInsignia()} has been sent to Ban Court!`);
     const currentTimeIsoString = moment().format();
     await mentionedUser.setBanVoteStartTime(currentTimeIsoString);
-    UpdateTrial(mentionedUser);
+    await UpdateTrial(mentionedUser);
 }
 
 // Handle all incoming Discord reactions. Not all may be votes.
@@ -359,7 +359,7 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 	    }
 	}
     }
-    UpdateTrial(defendant);
+    await UpdateTrial(defendant);
 }
 
 // The given Discord message is already verified to start with the !pardon prefix.
