@@ -145,7 +145,12 @@ async function UpdateHarmonicCentrality() {
 	throw 'ERROR: zero candidates.';
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
+    console.log('BulkCentralityUpdate');
+    startTime = new Date().getTime();
     await UserCache.BulkCentralityUpdate(centralityScoresById);
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`BulkCentralityUpdate: ${elapsed} ms`);
     const mostCentral = await UserCache.GetMostCentralUsers(400);
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
@@ -213,15 +218,6 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
     return matchingRecords;
 }
 
-async function HourlyUpdate() {
-    startTime = new Date().getTime();
-    await UpdateHarmonicCentrality();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`UpdateHarmonicCentrality: ${elapsed} ms`);
-    setTimeout(HourlyUpdate, 60 * 60 * 1000);
-}
-
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
 async function RoutineUpdate() {
     console.log('Routine update');
@@ -252,6 +248,11 @@ async function RoutineUpdate() {
     endTime = new Date().getTime();
     elapsed = endTime - startTime;
     console.log(`ConsolidateTimeMatrix: ${elapsed} ms`);
+    startTime = new Date().getTime();
+    await UpdateHarmonicCentrality();
+    endTime = new Date().getTime();
+    elapsed = endTime - startTime;
+    console.log(`UpdateHarmonicCentrality: ${elapsed} ms`);
     startTime = new Date().getTime();
     await UpdateAllCitizens();
     endTime = new Date().getTime();
@@ -408,9 +409,6 @@ async function Start() {
     // Routine update schedules itself to run again after it finishes.
     // That way it avoids running over itself if it runs longer than a minute.
     await RoutineUpdate();
-    // Delay the first hourly update until a few minutes after the bot starts,
-    // because it takes a while to run.
-    setTimeout(HourlyUpdate, 15 * 60 * 1000);
 }
 
 Start();
