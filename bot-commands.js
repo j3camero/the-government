@@ -149,13 +149,13 @@ async function HandleOfficerVoteCommand(discordMessage) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create('expand-the-franchise');
+    const channel = await guild.channels.create({ name: 'halflife-180' });
     const message = await channel.send(
-	`__**Should Officers vote for President?**__\n` +
-	`**Proposal:** Officers gain the right to vote but not run in presidential elections. The candidates will be the 15 Generals as usual. Vote YES to let Officers vote in the next #presidential-election. Vote NO to keep the status quo.\n\n` +
-	`**Advantage:** the Presidential election has been driving the plotline in a way that Jeff never could before. The wipe day plan used to be Jeff's job but now he cannot touch it because the election has such legitimacy. With Officers voting, the election results will be even bigger and more legitimate than ever. There is a certain feeling of ownership that comes with voting, that has caused the Generals to act more boldly in the last 6 months. The goal is to expand that feeling of ownership to the Officers so that they act more boldly as well. We have big boots to fill as the map tech kicks in over coming months, so we need to elevate and train more bold leaders urgently.\n\n` +
-        `**Disadvantage:** the legitimacy of the vote could be hurt if we get Officers voting then not showing up to play. Check #ranks to see that 90% of Officers & Generals are active.\n\n` +
-	`A majority is needed for this motion to pass. The vote ends Dec 20, 2022.`);
+	`__**Should the rank decay halflife be increased from 90 to 180 days?**__\n` +
+	`**Proposal:** rank points decay over time so only active members keep high ranks. Vote YES to slow down the rate of decay by half. Vote NO to keep the status quo.\n\n` +
+	`**Advantage:** the effect of increasing the halflife from 90 to 180 will be to slow down the rate of change in the #ranks. It will take new members longer to rank up. Inactive members will take longer to decay out of their ranks.\n\n` +
+        `**Disadvantage:** the rank algorithm will be slower to recognize hard-working new members with high ranks.\n\n` +
+	`A majority is needed for this motion to pass. The vote ends June 1, 2023.`);
     await message.react('✅');
     await message.react('❌');
     const voteSectionId = '1043778293612163133';
