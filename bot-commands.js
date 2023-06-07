@@ -189,12 +189,12 @@ async function HandleAmnestyVoteCommand(discordMessage) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create('amnesty-vote');
+    const channel = await guild.channels.create({ name: 'amnesty-vote' });
     const message = await channel.send(
-	`__**Amnesty for PIMP**__\n\n` +
-	`Should we unban PIMP?\n\n` +
-        `Vote Yes to unban PIMP. Vote No to keep PIMP banned, or if you disagree with this vote being held in the first place.\n\n` +
-        `The reason for considering this motion is to show respect for our friends HS. The Government has a strategic interest in keeping cooperation from HS in our plot to slam Rustopia hard next wipe. They have not asked us for this favor but it is likely to be perceived as a gesture of goodwill between the groups.\n\n` +
+	`__**Amnesty for weighedsea**__\n\n` +
+	`Should we unban weighedsea?\n\n` +
+        `Vote Yes to unban weighedsea. Vote No to keep weighedsea banned, or if you disagree with this vote being held in the first place.\n\n` +
+        `This guy was banned about a year ago. What we can determine is that he was banned during the Broken Dairy Queen Shooting Saga, early on, for calling it out as a lie. I guess in that moment it seemed insensitive. In light of the situation later blowing up in Broken's face as an obvious fabrication, it now looks like we banned weighed for nothing.\n\n` +
 	`A 2/3 majority is needed for this motion to pass. These matters will always be decided by the Generals. If we choose to grant this amnesty, then we can always ban him again later.`);
     await message.react('✅');
     await message.react('❌');
@@ -265,23 +265,18 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send(`Sending orders to ${name}`);
 	const rankNameAndInsignia = user.getRankNameAndInsignia();
 	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `Here are your secret orders for the month of April 2023. Report to the server Rustopia.gg - US Large\n\n`;
-	ordersMessage += '```client.connect USLarge.Rustopia.gg```\n\n';
-	ordersMessage += `The center of the build spot is the bottom left corner of F14, please build in this area to be enveloped within Gov walls.\n\n`;
-	ordersMessage += `1. The closest spawn-beach spawns to the build location are  D8, D7, D6, and G6. This will be 7 grids north of the build spot.\n\n`;
-	ordersMessage += `2. Our closest and main recycler will be at Sattelite E13, with additional recyclers at Harbor C17, and Oxums at I16. Do not go alone, ask others if they are doing any recycling runs and team up. Work together and win.\n\n`;
-	ordersMessage += `3. Use jump checks to ensure that we are shooting the enemy until all members can be on the same team ui. If someone is downed in a friendly fire incident make sure that we work to get their gear back to them unless recovery is impossible.\n\n`;
-	ordersMessage += `4. Do not share the build spot location in voice comms. If someone asks for the location in comms a general will verify that they are indeed a Gov member and get the info to them in dm.\n\n`;
-	ordersMessage += `5. Please do not build close to roads or monuments where it will building block our ability to put up walls around your base and the Gov as a whole.\n\n`;
-	ordersMessage += `Let's go destroy some poor souls and burn their bases to the ground.\n\n`;
+	ordersMessage += `Here are your secret orders for the month of April 2023. Report to the server Rusty Moose |US Monthly|\n\n`;
+	ordersMessage += '```client.connect monthly.us.moose.gg:28010```\n\n';
+	ordersMessage += `Get the build spot in voice chat. Help build the community base then build your own small base nearby. We all farm scrap for a community T3 together.\n\n`;
+	ordersMessage += `Pair with https://rustcult.com to automatically protect your base from getting raided by the gov.\n\n`;
 	ordersMessage += `Yours truly,\n`;
 	ordersMessage += `The Government  <3`;
 	const discordMember = await guild.members.fetch(user.discord_id);
 	try {
 	    await discordMember.send(ordersMessage, {
 		files: [{
-		    attachment: 'build-area.png',
-		    name: 'build-area.png'
+		    attachment: 'may-2023-rustopia-gov-village.png',
+		    name: 'may-2023-rustopia-gov-village.png'
 		}]
 	    });
 	} catch (error) {
