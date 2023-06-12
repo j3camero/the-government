@@ -273,7 +273,11 @@ async function ImplementTaxPlan(plan, recipient, discordMessage) {
 
 async function HandleTaxCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    const ok = (author.commissar_id === 7) || (author.office === 'PREZ');
+    const isFounder = author.commissar_id === 7;
+    const isPrez = author.office === 'PREZ';
+    const isCfo = author.commissar_id === 2922;
+    const ok = isFounder || isPrez || isCfo;
+    console.log('TAX COMMAND', isFounder, isPrez, isCfo);
     if (!author || !ok) {
 	await discordMessage.channel.send('Only the elected President can do that.');
 	return;
