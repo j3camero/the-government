@@ -149,13 +149,11 @@ async function HandleOfficerVoteCommand(discordMessage) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create({ name: 'halflife-180' });
+    const channel = await guild.channels.create({ name: 'rules-vote' });
     const message = await channel.send(
-	`__**Should the rank decay halflife be increased from 90 to 180 days?**__\n` +
-	`**Proposal:** rank points decay over time so only active members keep high ranks. Vote YES to slow down the rate of decay by half. Vote NO to keep the status quo.\n\n` +
-	`**Advantage:** the effect of increasing the halflife from 90 to 180 will be to slow down the rate of change in the #ranks. It will take new members longer to rank up. Inactive members will take longer to decay out of their ranks.\n\n` +
-        `**Disadvantage:** the rank algorithm will be slower to recognize hard-working new members with high ranks.\n\n` +
-	`A majority is needed for this motion to pass. The vote ends June 1, 2023.`);
+	`Should The Government adopt this new rule? Vote YES to add it to #rules. Vote NO to keep the existing #rules. A majority is needed for this motion to pass. The vote ends June 18, 2023.\n\n` +
+	`__**The right to not encounter explicit content**__\n\n` +
+	`Being a flirty character is OK - describing or mentioning particular sexual acts is not. Drawing a sign on your base is OK - posting porn or graphic images in chat is not.`);
     await message.react('✅');
     await message.react('❌');
     const voteSectionId = '1043778293612163133';

@@ -25,7 +25,7 @@ CREATE TABLE users
     friend_category_id VARCHAR(32),  -- ID of the Discord category/section for a user's friends.
     friend_text_chat_id VARCHAR(32),  -- ID of the private Discord text chatroom for a user's friends.
     friend_voice_room_id VARCHAR(32),  -- ID of the private Discord voice room for a user's friends.
-    ban_vote_end_time TIMESTAMP,  -- Time when the vote to ban this user closes.
+    ban_vote_start_time TIMESTAMP,  -- Time when the vote to ban this user started. Resets anytime the trial outcome flips.
     ban_vote_chatroom VARCHAR(32),  -- ID of the Discord text chat room used for a vote to ban this user.
     ban_vote_message VARCHAR(32),  -- ID of the Discord chat message used for a vote to ban this user.
     PRIMARY KEY (commissar_id),
@@ -63,7 +63,17 @@ CREATE TABLE battlemetrics_sessions
     INDEX player_index (player_id, start_time, stop_time)
 );
 
-CREATE TABLE trial_votes
+CREATE TABLE ban_trials
+(
+    trial_id INT NOT NULL AUTO_INCREMENT,
+    defendant_id INT NOT NULL,
+    vote_start_time TIMESTAMP,  -- Time when the vote to ban this user started. Resets anytime the trial outcome flips.
+    chatroom_id VARCHAR(32),  -- ID of the Discord text chat room used for a vote to ban this user.
+    message_id VARCHAR(32),  -- ID of the Discord chat message used for a vote to ban this user.
+    PRIMARY KEY(trial_id)
+);
+
+CREATE TABLE ban_votes
 (
     trial_id INT NOT NULL,
     voter_id INT NOT NULL,
