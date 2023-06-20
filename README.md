@@ -27,7 +27,7 @@ Use this command to shoot rockets in Rust with centimeter accuracy at long range
 !artillery TargetX TargetY TargetZ FiringX FiringY FiringZ
 ```
 Example:
-``
+```
 !artillery -1206 25 2009 -1102 31 1934
 ```
 Paste the above into the Discord and the bot will output a helpful image that shows you how high to aim your rocket launcher to hit the target on the nose. Use the `printpos` command in-game to get the coordinates. Use the NESW markings on the compass to get the coordinates of areas you can't reach, like the bottom-middle of an enemy's base.
