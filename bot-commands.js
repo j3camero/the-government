@@ -118,6 +118,9 @@ async function HandlePresidentVoteCommand(discordMessage) {
     const generalRankUsers = await UserCache.GetMostCentralUsers(15);
     const candidateNames = [];
     for (const user of generalRankUsers) {
+	if (user.commissar_id === 7) {
+	    continue;
+	}
 	const name = user.getNicknameOrTitleWithInsignia();
 	candidateNames.push(name);
     }
