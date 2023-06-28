@@ -538,7 +538,7 @@ async function HandleAfkCommand(discordMessage) {
 		return;
 	}
 	
-	const memberSentTime = sentToAFkTimes[mentionedMember] || 0
+	const memberSentTime = sentToAFkTimes[mentionedMember.id] || 0
 	const diff = Math.abs(new Date().getTime() - memberSentTime);
 	const minutesSinceSentToAfk = Math.floor((diff/1000)/60);
 	
@@ -554,7 +554,7 @@ async function HandleAfkCommand(discordMessage) {
 	} catch(e) {
 		throw new Error(e);
 	} finally {
-		sentToAFkTimes[memberId] = new Date().getTime();
+		sentToAFkTimes[mentionedMember.id] = new Date().getTime();
 	}
 }
 
