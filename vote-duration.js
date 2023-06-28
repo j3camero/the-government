@@ -96,6 +96,8 @@ function EstimateVoteDuration(numVoters, yesVotes, noVotes, baselineDurationDays
 
 module.exports = {
     EstimateVoteDuration,
+    HowManyMoreNoVotes,
+    HowManyMoreYesVotes,
     ProbabilityOfVoteOutcomeChange,
     SimpleMajority,
     SuperMajority,

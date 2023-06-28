@@ -152,7 +152,7 @@ async function UpdateTrial(cu) {
 	    await DiscordUtil.DeleteMessagesByMember(member, 24 * 3600);
 	}
     }
-    const guilty = VoteOutcome(yesVoteCount, noVoteCount);
+    const guilty = VoteDuration.SimpleMajority(yesVoteCount, noVoteCount);
     const outcomeString = guilty ? 'banned' : 'NOT GUILTY';
     const caseTitle = `THE GOVERNMENT v ${cu.getNicknameWithInsignia()}`;
     const underline = new Array(caseTitle.length + 1).join('-');
@@ -163,7 +163,7 @@ async function UpdateTrial(cu) {
     let nextStateChangeMessage;
     if (guilty) {
 	baselineVoteDurationDays = 5;
-	const n = HowManyMoreNo(yesVoteCount, noVoteCount);
+	const n = VoteDuration.HowManyMoreNoVotes(yesVoteCount, noVoteCount, VoteDuration.SimpleMajority);
 	nextStateChangeMessage = `${n} more NO votes to unban`;
 	if (cu.good_standing) {
 	    // Vote outcome flipped. Reset the clock.
@@ -175,7 +175,7 @@ async function UpdateTrial(cu) {
 	}
     } else {
 	baselineVoteDurationDays = 1;
-	const n = HowManyMoreYes(yesVoteCount, noVoteCount);
+	const n = VoteDuration.HowManyMoreYesVotes(yesVoteCount, noVoteCount, VoteDuration.SimpleMajority);
 	nextStateChangeMessage = `${n} more YES votes to ban`;
 	if (!cu.good_standing) {
 	    // Vote outcome flipped. Reset the clock.
@@ -185,7 +185,7 @@ async function UpdateTrial(cu) {
     }
     await cu.setBanVoteStartTime(startTime.format());
     const fivePercent = 0.05;
-    const durationDays = VoteDuration.EstimateVoteDuration(totalVoters, yesVoteCount, noVoteCount, baselineVoteDurationDays, fivePercent, VoteDuration.SuperMajority);
+    const durationDays = VoteDuration.EstimateVoteDuration(totalVoters, yesVoteCount, noVoteCount, baselineVoteDurationDays, fivePercent, VoteDuration.SimpleMajority);
     const durationSeconds = durationDays * 86400;
     const endTime = startTime.add(durationSeconds, 'seconds');
     if (currentTime.isAfter(endTime)) {
@@ -256,39 +256,6 @@ async function UpdateTrial(cu) {
 	);
 	await message.edit(trialMessage);
     }
-}
-
-function VoteOutcome(yes, no) {
-    if (yes === 0) {
-	return false;
-    }
-    const voteRatio = yes / (no + yes);
-    const threshold = 2 / 3;
-    return voteRatio >= threshold;
-}
-
-// How many more no votes needed to overturn a conviction?
-function HowManyMoreNo(yes, no) {
-    const n = 42;
-    for (let i = 0; i < n; ++i) {
-	if (!VoteOutcome(yes, no + i)) {
-	    return i;
-	}
-    }
-    // Shouldn't get here.
-    return 0;
-}
-
-// How many more yes votes needed to secure a conviction?
-function HowManyMoreYes(yes, no) {
-    const n = 42;
-    for (let i = 0; i < n; ++i) {
-	if (VoteOutcome(yes + i, no)) {
-	    return i;
-	}
-    }
-    // Shouldn't get here.
-    return 0;
 }
 
 // The given Discord message is already verified to start with the !ban prefix.

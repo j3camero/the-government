@@ -315,6 +315,9 @@ async function Start() {
     // Emitted whenever a member is banned from a guild.
     discordClient.on('guildBanAdd', async (guild, user) => {
 	console.log('Someone got banned.');
+	if (!user) {
+	    return;
+	}
 	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
 	if (!cu) {
 	    return;
