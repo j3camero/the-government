@@ -523,7 +523,7 @@ const sentToAFkTimes = {};
 async function HandleAfkCommand(discordMessage) {
 	const authorId = discordMessage.author.id;
     const author = await UserCache.GetCachedUserByDiscordId(authorId);
-	if (author.rank > 5) {
+	if (author.rank > 5 || author == null) {
 		await discordMessage.channel.send(
 			`Error: Only generals can do that.`
 		)
