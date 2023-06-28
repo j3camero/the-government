@@ -538,13 +538,13 @@ async function HandleAfkCommand(discordMessage) {
 		return;
 	}
 	
-	const memberSentTime = sentToAFkTimes[mentionedMember.id] || 0
+	const memberSentTime = sentToAFkTimes[mentionedMember.id] || 0;
 	const diff = Math.abs(new Date().getTime() - memberSentTime);
 	const minutesSinceSentToAfk = Math.floor((diff/1000)/60);
 	
 	if (minutesSinceSentToAfk < 10) {
 		await discordMessage.channel.send(
-			`Error: ${mentionedMember.nickname} cannot be sent to AFK channel more than once, every 10 minutes.`
+			`Error: ${mentionedMember.nickname} cannot be sent to idle lounge more than once, every 10 minutes.`
 		);
 		return;
 	}
@@ -552,6 +552,13 @@ async function HandleAfkCommand(discordMessage) {
 	try {
 		await DiscordUtil.moveMemberToAfk(mentionedMember);
 	} catch(e) {
+		// Note: Error code for member no in voice channel.
+		if (e.code === 40032) {
+			await discordMessage.channel.send(
+				`${mentionedMember.nickname} is not in a voice channel, cannot be sent to idle lounge.`
+			);
+			return;
+		}
 		throw new Error(e);
 	} finally {
 		sentToAFkTimes[mentionedMember.id] = new Date().getTime();
