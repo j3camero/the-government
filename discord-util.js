@@ -269,6 +269,12 @@ async function DeleteMessagesByMember(member, maxAgeInSeconds) {
     delete membersWithOngoingMessageDeletion[member.id];
 }
 
+async function moveMemberToAfk(member) {
+    const afkLoungeId = '703716669452714054';
+    await member.voice.setChannel(afkLoungeId, `${member.nickname} has been sent to the AFK channel.`);
+    return;
+}
+
 module.exports = {
     AddRole,
     Connect,
@@ -285,4 +291,5 @@ module.exports = {
     RemoveRole,
     SendLongList,
     UpdateHarmonicCentralityChatChannel,
+    moveMemberToAfk
 };

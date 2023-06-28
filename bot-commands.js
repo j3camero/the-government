@@ -518,6 +518,37 @@ async function HandleTranscriptCommand(discordMessage) {
     });
 }
 
+const sentToAFkTimes = {};
+
+async function HandleAfkCommand(discordMessage) {
+	const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+	if (!mentionedMember) {
+		await discordMessage.channel.send(
+		'Error: `!afk` only one person can be sent to afk at a time.\n' +
+		'Example: `!afk @nickname`\n'
+		);
+		return;
+	}
+	
+	const diff = Math.abs(new Date() - sentToAFkTimes[mentionedMember]);
+	const minutesSinceSentToAfk = Math.floor((diff/1000)/60);
+
+	if (minutesSinceSentToAfk < 10) {
+		await discordMessage.channel.send(
+			`Error: ${mentionedMember.nickname} cannot be sent to AFK channel more than once, every 10 minutes.`
+		);
+		return;
+	}
+
+	try {
+		await DiscordUtil.moveMemberToAfk(mentionedMember)
+	} catch(e) {
+		throw new Error(e)
+	} finally {
+		sentToAFkTimes[memberId] = new Date()
+	}
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -530,6 +561,7 @@ async function HandleUnknownCommand(discordMessage) {
 // If so, control is dispatched to the appropriate command-specific handler function.
 async function Dispatch(discordMessage) {
     const handlers = {
+	'!afk': HandleAfkCommand,
 	'!apprehend': Ban.HandleBanCommand,
 	'!arrest': Ban.HandleBanCommand,
 	'!art': Artillery,
