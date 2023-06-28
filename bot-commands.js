@@ -550,11 +550,11 @@ async function HandleAfkCommand(discordMessage) {
 	}
 
 	try {
-		await DiscordUtil.moveMemberToAfk(mentionedMember)
+		await DiscordUtil.moveMemberToAfk(mentionedMember);
 	} catch(e) {
-		throw new Error(e)
+		throw new Error(e);
 	} finally {
-		sentToAFkTimes[memberId] = new Date()
+		sentToAFkTimes[memberId] = new Date();
 	}
 }
 
