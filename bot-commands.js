@@ -552,7 +552,7 @@ async function HandleAfkCommand(discordMessage) {
 	try {
 		await DiscordUtil.moveMemberToAfk(mentionedMember);
 	} catch(e) {
-		// Note: Error code for member no in voice channel.
+		// Note: Error code for member not in voice channel.
 		if (e.code === 40032) {
 			await discordMessage.channel.send(
 				`${mentionedMember.nickname} is not in a voice channel, cannot be sent to idle lounge.`
