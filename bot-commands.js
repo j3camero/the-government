@@ -544,7 +544,7 @@ async function HandleAfkCommand(discordMessage) {
 	
 	if (minutesSinceSentToAfk < 10) {
 		await discordMessage.channel.send(
-			`${mentionedMember.nickname} cannot be sent to idle lounge more than once, every 10 minutes.`
+			`${mentionedMember.nickname} cannot be sent to idle lounge more than once every 10 minutes.`
 		);
 		return;
 	}
