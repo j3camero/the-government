@@ -538,9 +538,10 @@ async function HandleAfkCommand(discordMessage) {
 		return;
 	}
 	
-	const diff = Math.abs(new Date() - sentToAFkTimes[mentionedMember]);
+	
+	const diff = Math.abs(new Date() - sentToAFkTimes[mentionedMember] || 0);
 	const minutesSinceSentToAfk = Math.floor((diff/1000)/60);
-
+	
 	if (minutesSinceSentToAfk < 10) {
 		await discordMessage.channel.send(
 			`Error: ${mentionedMember.nickname} cannot be sent to AFK channel more than once, every 10 minutes.`
