@@ -521,6 +521,14 @@ async function HandleTranscriptCommand(discordMessage) {
 const sentToAFkTimes = {};
 
 async function HandleAfkCommand(discordMessage) {
+	const authorId = discordMessage.author.id;
+    const author = await UserCache.GetCachedUserByDiscordId(authorId);
+	if (author.rank > 5) {
+		await discordMessage.channel.send(
+			`Error: Only generals can do that.`
+		)
+		return
+	}
 	const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
 	if (!mentionedMember) {
 		await discordMessage.channel.send(
