@@ -542,7 +542,7 @@ async function HandleAfkCommand(discordMessage) {
 	const diff = Math.abs(new Date().getTime() - memberSentTime);
 	const minutesSinceSentToAfk = Math.floor((diff/1000)/60);
 	
-	if (minutesSinceSentToAfk < 10) {
+	if (minutesSinceSentToAfk < 30) {
 		await discordMessage.channel.send(
 			`${mentionedMember.nickname} cannot be sent to idle lounge more than once every 10 minutes.`
 		);
