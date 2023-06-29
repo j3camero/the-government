@@ -518,6 +518,53 @@ async function HandleTranscriptCommand(discordMessage) {
     });
 }
 
+const sentToAFkTimes = {};
+
+async function HandleAfkCommand(discordMessage) {
+	const authorId = discordMessage.author.id;
+    const author = await UserCache.GetCachedUserByDiscordId(authorId);
+	if (!author || author.rank > 5) {
+		await discordMessage.channel.send(
+			`Error: Only generals can do that.`
+		)
+		return
+	}
+	const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+	if (!mentionedMember) {
+		await discordMessage.channel.send(
+		'Error: `!afk` only one person can be sent to afk at a time.\n' +
+		'Example: `!afk @nickname`\n'
+		);
+		return;
+	}
+	
+	const memberSentTime = sentToAFkTimes[mentionedMember.id] || 0;
+	const diff = Math.abs(new Date().getTime() - memberSentTime);
+	const minutesSinceSentToAfk = Math.floor((diff/1000)/60);
+	
+	if (minutesSinceSentToAfk < 30) {
+		await discordMessage.channel.send(
+			`${mentionedMember.nickname} cannot be sent to idle lounge more than once every 30 minutes.`
+		);
+		return;
+	}
+
+	try {
+		await DiscordUtil.moveMemberToAfk(mentionedMember);
+	} catch(e) {
+		// Note: Error code for member not in voice channel.
+		if (e.code === 40032) {
+			await discordMessage.channel.send(
+				`${mentionedMember.nickname} is not in a voice channel, cannot be sent to idle lounge.`
+			);
+			return;
+		}
+		throw new Error(e);
+	} finally {
+		sentToAFkTimes[mentionedMember.id] = new Date().getTime();
+	}
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -530,6 +577,7 @@ async function HandleUnknownCommand(discordMessage) {
 // If so, control is dispatched to the appropriate command-specific handler function.
 async function Dispatch(discordMessage) {
     const handlers = {
+	'!afk': HandleAfkCommand,
 	'!apprehend': Ban.HandleBanCommand,
 	'!arrest': Ban.HandleBanCommand,
 	'!art': Artillery,
