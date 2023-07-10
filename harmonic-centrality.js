@@ -83,18 +83,8 @@ function ConvertDistanceMatrixToHarmonicCentrality(d, candidates) {
 }
 
 async function HarmonicCentrality(candidates) {
-    console.log('Getting time matrix');
-    startTime = new Date().getTime();
     const relationships = await DB.GetTimeMatrix();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`DB.GetTimeMatrix: ${elapsed} ms`);
-    console.log('Floyd Warshall');
-    startTime = new Date().getTime();
     const d = FloydWarshall(relationships, candidates);
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`Floyd Warshall: ${elapsed} ms`);
     const h = ConvertDistanceMatrixToHarmonicCentrality(d, candidates);
     return h;
 }

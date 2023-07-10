@@ -1,5 +1,6 @@
 while true
 do
+    git pull
     NOW=$(date '+%Y%m%d%H%M%S')
     FILENAME="$NOW.log"
     echo "Starting bot. Check $FILENAME for output."
