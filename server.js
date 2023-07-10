@@ -1,3 +1,4 @@
+const AutoUpdate = require('./auto-update');
 const Ban = require('./ban');
 const BotCommands = require('./bot-commands');
 const Clock = require('./clock');
@@ -145,12 +146,7 @@ async function UpdateHarmonicCentrality() {
 	throw 'ERROR: zero candidates.';
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
-    console.log('BulkCentralityUpdate');
-    startTime = new Date().getTime();
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`BulkCentralityUpdate: ${elapsed} ms`);
     const mostCentral = await UserCache.GetMostCentralUsers(400);
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
@@ -223,41 +219,18 @@ async function RoutineUpdate() {
     console.log('Routine update');
     startTime = new Date().getTime();
     await Rank.UpdateUserRanks();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`UpdateUserRanks: ${elapsed} ms`);
-    startTime = new Date().getTime();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`UpdateVoiceActiveMembersForMainDiscordGuild: ${elapsed} ms`);
-    startTime = new Date().getTime();
     await huddles.ScheduleUpdate();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`huddles: ${elapsed} ms`);
-    startTime = new Date().getTime();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
     await DB.WriteTimeTogetherRecords(timeCappedRecords);
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`Time Matrix: ${elapsed} ms`);
-    startTime = new Date().getTime();
     await DB.ConsolidateTimeMatrix();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`ConsolidateTimeMatrix: ${elapsed} ms`);
-    startTime = new Date().getTime();
     await UpdateHarmonicCentrality();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
-    console.log(`UpdateHarmonicCentrality: ${elapsed} ms`);
-    startTime = new Date().getTime();
     await UpdateAllCitizens();
+    await AutoUpdate();
     endTime = new Date().getTime();
     elapsed = endTime - startTime;
-    console.log(`UpdateAllCitizens: ${elapsed} ms`);
+    console.log(`Update Time: ${elapsed} ms`);
     setTimeout(RoutineUpdate, 60 * 1000);
 }
 

@@ -1,7 +1,7 @@
 {
-  "name": "secretclan",
+  "name": "the-government",
   "version": "1.0.0",
-  "description": "Software for managing a gaming clan.",
+  "description": "Discord bot for managing a gaming clan.",
   "main": "server.js",
   "engines": {
     "node": ">=0.14.15"
@@ -12,10 +12,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/j3camero/secretclan.git"
+    "url": "git+https://github.com/j3camero/the-government.git"
   },
   "keywords": [
-    "commissar",
+    "government",
     "clan",
     "gaming",
     "discord",
@@ -24,9 +24,9 @@
   "author": "Jeff Cameron",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/j3camero/secretclan/issues"
+    "url": "https://github.com/j3camero/the-government/issues"
   },
-  "homepage": "https://github.com/j3camero/secretclan#readme",
+  "homepage": "https://github.com/j3camero/the-government",
   "dependencies": {
     "aws-sdk": "^2.780.0",
     "binomial-cdf": "^2.0.0",
