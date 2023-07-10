@@ -38,7 +38,7 @@
     "exchange-rates-api": "^1.1.0",
     "gamedig": "^2.0.23",
     "mocha": "^6.2.0",
-    "moment": "^2.29.1",
+    "moment": "^2.29.4",
     "mysql": "^2.17.1",
     "passport": "^0.3.2",
     "passport-discord": "^0.1.4",
