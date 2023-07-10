@@ -19,5 +19,6 @@ module.exports = {
     StaffSergeant: '918218594091937792',
     Unverified: '899662939928268851',
     Verified: '898265784005062656',
+    WipeBadge: '1067177647857209436',
     RetiredGeneral: '1055270328395378688',
 };

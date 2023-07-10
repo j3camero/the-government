@@ -246,6 +246,91 @@ async function HandleVoiceActiveUsersCommand(discordMessage) {
     await discordMessage.channel.send(`${voiceActiveUsers} users active in voice chat in the last ${daysToLookback} days.`);
 }
 
+async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
+    const name = user.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`Sending special mission orders to ${name}`);
+    const rankNameAndInsignia = user.getRankNameAndInsignia();
+    let content = `${rankNameAndInsignia},\n`;
+    content += '```client.connect USLarge.Rustopia.gg:28015```\n';  // Only one newline after triple backticks.
+    content += `The center of the build spot is grid I25, please build in this area to be enveloped within the projected Government walls shown in blue. It's on spawn beach.\n\n`;
+    content += `Our closest and main recycler will be the gas station at J24. Do not go alone, ask others if they are doing any recycling runs and team up. Work together and win.\n\n`;
+    content += `Use jump checks to ensure that we are shooting the enemy until all members can be on the same team UI. If someone is downed in a friendly fire incident, make sure that we work to get their gear back to them unless recovery is impossible.\n\n`;
+    content += `Do not share the build spot location in voice comms. If someone asks for the location in comms a general will verify that they are indeed a Gov member and get the info to them in direct messages.\n\n`;
+    content += `Non-Generals should be focused on getting their starter bases down. Only Generals will be involved in building the community base. If you were willing to donate anything to the cause, please let a General know and get the donation to them rather than trying to depot in the unfinished structure.\n\n`;
+    content += `The community base will be opened once the base is inhabitable. If you are not a General, you will not have a bag in the community base until it is open to the public. Please do not build directly across from the entrance of the community base as a second smaller one is going to be built for new recruits.\n\n`;
+    content += `Use this command > !nick [New Name Here] < to ensure your Discord name matches your in-game name. This will help resolve confusion and ensure you can be contacted in the event someone needs to get a hold of you.\n\n`;
+    content += `Please review the wipe meeting notes found here when you are able: https://discord.com/channels/305840605328703500/1124690217366995114/1126354620277587982\n\n`;
+    content += `Pair with https://rustcult.com to automatically protect your base from getting raided by the gov. During night in-game is a great time to do it.\n\n`;
+    content += `Yours truly,\n`;
+    content += `The Government  <3`;
+    console.log('Content length', content.length, 'characters.');
+    try {
+	await discordMember.send({
+	    content,
+	    files: [{
+		attachment: 'july_wall_projection.png',
+		name: 'july_wall_projection.png'
+	    }]
+	});
+    } catch (error) {
+	console.log('Failed to send orders to', name);
+    }
+}
+
+async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
+    const name = user.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`Sending orders to ${name}`);
+    const rankNameAndInsignia = user.getRankNameAndInsignia();
+    let content = `${rankNameAndInsignia},\n\n`;
+    content += `Here are your secret orders for the month of July 2023. Report to the server Rustopia.gg - US Large\n`;
+    content += '```client.connect USLarge.Rustopia.gg:28015```\n';  // Only one newline after triple backticks.
+    content += `Another glorious wipe is upon us and you are invited to join us in the destruction of our enemies and the taking of all their loot. Haven't played Rust in a while? No better time than right now as we need your help smashing an entire server to bits. Haven't played with the Gov in a while? good to see you, we missed you and are glad you found your way back. Jump in the discord now and we will be there. Don't see us? We are in a wipe channel that you need a wipe badge for. Message some online generals, get your wipe badge, and get in comms to watch some bases explode and some base owners perish.\n\n`;
+    content += `Pair with https://rustcult.com to automatically protect your base from getting raided by the gov.\n\n`;
+    content += `Yours truly,\n`;
+    content += `The Government  <3`;
+    try {
+	await discordMember.send(content);
+    } catch (error) {
+	console.log('Failed to send orders to', name);
+    }
+}
+
+async function SendOrdersToOneCommissarUser(user, discordMessage) {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const discordMember = await guild.members.fetch(user.discord_id);
+    const hasWipeBadge = await DiscordUtil.GuildMemberHasRole(discordMember, RoleID.WipeBadge);
+    if (hasWipeBadge) {
+	await SendWipeBadgeOrders(user, discordMessage, discordMember);
+    } else {
+	await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
+    }
+}
+
+async function SendOrdersToTheseCommissarUsers(users, discordMessage) {
+    await discordMessage.channel.send(`Sending orders to ${users.length} members. Restart the bot now if this is not right.`);
+    await Sleep(10 * 1000);
+    for (const user of users) {
+	await SendOrdersToOneCommissarUser(user, discordMessage);
+	await Sleep(5 * 1000);
+    }
+}
+
+async function HandleOrdersTestCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const jeff = await UserCache.GetCachedUserByDiscordId('268593188137074688');
+    const evil = await UserCache.GetCachedUserByDiscordId('299004800555810817');
+    const waldo = await UserCache.GetCachedUserByDiscordId('308763469195247626');
+    const aperture = await UserCache.GetCachedUserByDiscordId('325455587699589145');
+    const baggy = await UserCache.GetCachedUserByDiscordId('347406818424913920');
+    const jhdiray = await UserCache.GetCachedUserByDiscordId('300146989402685441');
+    const users = [jeff, evil, waldo, aperture, baggy, jhdiray];
+    await SendOrdersToTheseCommissarUsers(users, discordMessage);
+}
+
 async function HandleOrdersCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
@@ -262,35 +347,9 @@ async function HandleOrdersCommand(discordMessage) {
 	await discordMessage.channel.send('Invalid arguments.\nUSAGE: !orders daysToLookback');
 	return;
     }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
     const daysToLookback = parseFloat(daysToLookbackAsText);
     const recentActiveUsers = UserCache.GetUsersSortedByLastSeen(daysToLookback);
-    await discordMessage.channel.send(`Sending orders to ${recentActiveUsers.length} members. Restart the bot now if this is not right.`);
-    await Sleep(10 * 1000);
-    for (const user of recentActiveUsers) {
-	const name = user.getNicknameOrTitleWithInsignia();
-	await discordMessage.channel.send(`Sending orders to ${name}`);
-	const rankNameAndInsignia = user.getRankNameAndInsignia();
-	let ordersMessage = `${rankNameAndInsignia},\n\n`;
-	ordersMessage += `Here are your secret orders for the month of April 2023. Report to the server Rusty Moose |US Monthly|\n\n`;
-	ordersMessage += '```client.connect monthly.us.moose.gg:28010```\n\n';
-	ordersMessage += `Get the build spot in voice chat. Help build the community base then build your own small base nearby. We all farm scrap for a community T3 together.\n\n`;
-	ordersMessage += `Pair with https://rustcult.com to automatically protect your base from getting raided by the gov.\n\n`;
-	ordersMessage += `Yours truly,\n`;
-	ordersMessage += `The Government  <3`;
-	const discordMember = await guild.members.fetch(user.discord_id);
-	try {
-	    await discordMember.send(ordersMessage, {
-		files: [{
-		    attachment: 'may-2023-rustopia-gov-village.png',
-		    name: 'may-2023-rustopia-gov-village.png'
-		}]
-	    });
-	} catch (error) {
-	    console.log('Failed to send orders to', discordMember.nickname);
-	}
-	await Sleep(5 * 1000);
-    }
+    await SendOrdersToTheseCommissarUsers(recentActiveUsers, discordMessage);
 }
 
 async function HandleBadgeCommand(discordMessage) {
@@ -608,6 +667,7 @@ async function Dispatch(discordMessage) {
 	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
 	'!orders': HandleOrdersCommand,
+	'!orderstest': HandleOrdersTestCommand,
 	'!pardon': Ban.HandlePardonCommand,
 	'!pay': yen.HandlePayCommand,
 	'!ping': HandlePingCommand,
