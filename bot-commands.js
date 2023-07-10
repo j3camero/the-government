@@ -145,20 +145,26 @@ async function HandlePresidentVoteFixCommand(discordMessage) {
     }
 }
 
-async function HandleOfficerVoteCommand(discordMessage) {
+async function HandleHypeCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
 	// Auth: this command for developer use only.
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create({ name: 'rules-vote' });
-    const message = await channel.send(
-	`Should The Government adopt this new rule? Vote YES to add it to #rules. Vote NO to keep the existing #rules. A majority is needed for this motion to pass. The vote ends June 18, 2023.\n\n` +
-	`__**The right to not encounter explicit content**__\n\n` +
-	`Being a flirty character is OK - describing or mentioning particular sexual acts is not. Drawing a sign on your base is OK - posting porn or graphic images in chat is not.`);
-    await message.react('✅');
-    await message.react('❌');
+    const channel = await guild.channels.create({ name: 'hype' });
+    let message;
+    message = await channel.send(
+	`__**Wipe Hype!**__\n` +
+	`Mr. President needs a show of hands for Wipe Day, for planning purposes. It's not a commitment. Try your best to guess and if you can't make it day-of that is OK.\n\n` +
+	`Click ⌛ if you think you'll be on the minute of the wipe`);
+    await message.react('⌛');
+    message = await channel.send(
+	`Click 🔆 if you think you will be there wipe day, but not the minute of the wipe`);
+    await message.react('🔆');
+    message = await channel.send(
+	`Click 📅 if you might get on wipe week, but not wipe day`);
+    await message.react('📅');
     const voteSectionId = '1043778293612163133';
     await channel.setParent(voteSectionId);
 }
@@ -578,6 +584,7 @@ async function HandleUnknownCommand(discordMessage) {
 async function Dispatch(discordMessage) {
     const handlers = {
 	'!afk': HandleAfkCommand,
+	'!amnestyvote': HandleAmnestyVoteCommand,
 	'!apprehend': Ban.HandleBanCommand,
 	'!arrest': Ban.HandleBanCommand,
 	'!art': Artillery,
@@ -596,6 +603,7 @@ async function Dispatch(discordMessage) {
 	'!gender': HandleGenderCommand,
 	'!goodbye': Ban.HandleBanCommand,
 	'!howhigh': Artillery,
+	'!hype': HandleHypeCommand,
 	'!indict': Ban.HandleBanCommand,
 	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
@@ -608,8 +616,6 @@ async function Dispatch(discordMessage) {
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!presidentvotefix': HandlePresidentVoteFixCommand,
-	'!amnestyvote': HandleAmnestyVoteCommand,
-	'!officervote': HandleOfficerVoteCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
 	'!tax': yen.HandleTaxCommand,
 	'!termlengthvote': HandleTermLengthVoteCommand,
