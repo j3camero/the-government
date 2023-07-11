@@ -1,37 +1,24 @@
+const DiscordUtil = require('./discord-util');
+const fs = require('fs');
 
-const rulesChannelId = '987549333144633355';
+const rulesChannelId = '614764682758062080';
 
-async function HandleRulesCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
+async function UpdateRulesIfChanged() {
+    const rulesDotTxt = fs.readFileSync('rules.txt').toString();
+    console.log('Loaded rules.txt length:', rulesDotTxt.length);
+    if (rulesDotTxt.length < 10) {
+	console.log('New rules too short. Bailing.');
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const rulesChannel = await guild.channels.resolve(rulesChannelId);
-    const messages = await rulesChannel.messages.fetch();
-    const rulesMessage = messages.first();
-    const oldText = rulesMessage.content;
-    const newText = discordMessage.content.substring(7);
-    const diffs = diff.diffLines(oldText, newText);
-    let diffText = '```diff\n';
-    for (const d of diffs) {
-	const lines = d.value.split('\n');
-	for (let i = 0; i < d.count; i++) {
-	    const line = lines[i];
-	    if (d.added) {
-		diffText += '+';
-	    }
-	    if (d.removed) {
-		diffText += '-';
-	    }
-	    diffText += line + '\n';
-	}
+    const channel = await guild.channels.fetch(rulesChannelId);
+    if (!channel) {
+	console.log(`Can't find the rules channel.`);
+	return;
     }
-    diffText += '```';
-    await discordMessage.channel.send(diffText);
+    await channel.bulkDelete(3);
+    await channel.send(rulesDotTxt);
 }
 
 module.exports = {
-    HandleRulesCommand,
+    UpdateRulesIfChanged,
 };
