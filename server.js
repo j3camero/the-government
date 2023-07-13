@@ -12,6 +12,7 @@ const moment = require('moment');
 const Rank = require('./rank');
 const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
+const rules = require('./rules');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
 
@@ -382,6 +383,8 @@ async function Start() {
     discordClient.on('error', console.log);
     discordClient.on('warning', console.log);
 
+    // If the rules have changed, update them.
+    await rules.UpdateRulesIfChanged();
     // Routine update schedules itself to run again after it finishes.
     // That way it avoids running over itself if it runs longer than a minute.
     await RoutineUpdate();

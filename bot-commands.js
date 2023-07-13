@@ -7,7 +7,6 @@ const DiscordUtil = require('./discord-util');
 const FilterUsername = require('./filter-username');
 const RandomPin = require('./random-pin');
 const RoleID = require('./role-id');
-const rules = require('./rules');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
 const yen = require('./yen');
@@ -672,7 +671,6 @@ async function Dispatch(discordMessage) {
 	'!pay': yen.HandlePayCommand,
 	'!ping': HandlePingCommand,
 	'!pingpublic': HandlePingPublicChatCommand,
-	'!rules': rules.HandleRulesCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!presidentvotefix': HandlePresidentVoteFixCommand,
