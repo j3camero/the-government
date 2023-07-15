@@ -12,11 +12,11 @@ No matter how mad you get - don't do it! Even if someone does it to you. No door
 
 **The right to build your own base, and decide who gets the code**
 
-You decide what to keep, and what to share with the group. This stops other members from grubbing your stuff while you're offline.
+You decide what to keep, and what to share with the group. Trading (or withholding) valuable items, intel, and BPs is legal.
 
-**The right to keep your own BPs**
+**The right to not get shot by turrets**
 
-You should share Blueprints freely with the clan. But we can't make you. Trading (or withholding) valuable BPs is legal.
+If you add turrets to your base, do it behind compound walls. If you use turrets to control a road or monument, add a gate bypass if possible. You can't "auth everyone". Citizens can destroy private turrets shooting into public areas (excluding monuments).
 
 **The right to a mature adult environment**
 
