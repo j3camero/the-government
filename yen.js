@@ -275,7 +275,7 @@ async function HandleTaxCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     const isFounder = author.commissar_id === 7;
     const isPrez = author.office === 'PREZ';
-    const isCfo = author.commissar_id === 2922;
+    const isCfo = author.commissar_id === 2799;  // EviL ID is 2799. TODO: update this to look for the CFO badge.
     const ok = isFounder || isPrez || isCfo;
     console.log('TAX COMMAND', isFounder, isPrez, isCfo);
     if (!author || !ok) {
