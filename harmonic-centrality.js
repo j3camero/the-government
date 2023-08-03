@@ -77,7 +77,7 @@ function ConvertDistanceMatrixToHarmonicCentrality(d, candidates) {
 		c += 1 / GetDistance(d, i, j);
 	    }
 	});
-	h[i] = c * 1.33;
+	h[i] = c * 1.00;
     });
     return h;
 }
