@@ -18,6 +18,10 @@ You decide what to keep, and what to share with the group. Trading (or withholdi
 
 If you add turrets to your base, do it behind compound walls. If you use turrets to control a road or monument, add a gate bypass if possible. You can't "auth everyone". Citizens can destroy private turrets shooting into public areas (excluding monuments).
 
+**The right to identify yourself**
+
+Make your Discord name match your Steam name by typing the command `!nick YourNameHere`. Link your Steam profile to get the ID Badge role. This helps us recognize you and builds your reputation.
+
 **The right to a mature adult environment**
 
 No young children. There is no hard age limit. The criteria are behavior and sound of voice. Rust can be a harsh game, so we don't want to risk hurting any children.
