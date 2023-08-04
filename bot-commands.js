@@ -568,6 +568,69 @@ async function HandleBoopCommand(discordMessage) {
     }
 }
 
+// Removes any office that the mentioned user has.
+async function HandleImpeachCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send(`ERROR: who to impeach? Example: !impeach @Jeff`);
+	return;
+    }
+    const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+    if (!cu) {
+	await discordMessage.channel.send(`No user record for that discord member.`);
+    }
+    await cu.setOffice(null);
+    const name = cu.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`Impeached ${name}`);
+}
+
+// Appoints the mentioned member as Mr. President
+async function HandlePrezCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send(`ERROR: who to appoint? Example: !prez @Jeff`);
+	return;
+    }
+    const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+    if (!cu) {
+	await discordMessage.channel.send(`No user record for that discord member.`);
+    }
+    const name = cu.getNicknameOrTitleWithInsignia();
+    await cu.setOffice('PREZ');
+    await discordMessage.channel.send(`${name} is now President`);
+}
+
+// Appoints the mentioned member as Mr. Vice President
+async function HandleVeepCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send(`ERROR: who to appoint? Example: !veep @Jeff`);
+	return;
+    }
+    const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+    if (!cu) {
+	await discordMessage.channel.send(`No user record for that discord member.`);
+    }
+    const name = cu.getNicknameOrTitleWithInsignia();
+    await cu.setOffice('VEEP');
+    await discordMessage.channel.send(`${name} is now Vice President`);
+}
+
 async function HandleTranscriptCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
@@ -662,6 +725,9 @@ async function Dispatch(discordMessage) {
 	'!goodbye': Ban.HandleBanCommand,
 	'!howhigh': Artillery,
 	'!hype': HandleHypeCommand,
+	'!impeach': HandleImpeachCommand,
+	'!prez': HandlePrezCommand,
+	'!veep': HandleVeepCommand,
 	'!indict': Ban.HandleBanCommand,
 	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
