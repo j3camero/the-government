@@ -350,7 +350,7 @@ async function UpdateYenChannel() {
     const channel = await guild.channels.resolve(yenChannelId);
     await channel.bulkDelete(99);
     await DiscordUtil.SendLongList(lines, channel);
-    const jeffSteamInventoryValue = 109925;
+    const jeffSteamInventoryValue = 141226;
     const reserveRatio = jeffSteamInventoryValue / totalYen;
     const formattedReserveRatio = parseInt(reserveRatio * 100);
     let message = '';
