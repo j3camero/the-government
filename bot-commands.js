@@ -250,16 +250,19 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending special mission orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n`;
+    content += `Here are your secret orders for the month of July 2023. Report to the server Rustopia.gg - US Large\n`;
     content += '```client.connect USLarge.Rustopia.gg:28015```\n';  // Only one newline after triple backticks.
-    content += `The center of the build spot is grid I25, please build in this area to be enveloped within the projected Government walls shown in blue. It's on spawn beach.\n\n`;
-    content += `Our closest and main recycler will be the gas station at J24. Do not go alone, ask others if they are doing any recycling runs and team up. Work together and win.\n\n`;
-    content += `Use jump checks to ensure that we are shooting the enemy until all members can be on the same team UI. If someone is downed in a friendly fire incident, make sure that we work to get their gear back to them unless recovery is impossible.\n\n`;
-    content += `Do not share the build spot location in voice comms. If someone asks for the location in comms a general will verify that they are indeed a Gov member and get the info to them in direct messages.\n\n`;
-    content += `Non-Generals should be focused on getting their starter bases down. Only Generals will be involved in building the community base. If you were willing to donate anything to the cause, please let a General know and get the donation to them rather than trying to depot in the unfinished structure.\n\n`;
-    content += `The community base will be opened once the base is inhabitable. If you are not a General, you will not have a bag in the community base until it is open to the public. Please do not build directly across from the entrance of the community base as a second smaller one is going to be built for new recruits.\n\n`;
-    content += `Use this command > !nick [New Name Here] < to ensure your Discord name matches your in-game name. This will help resolve confusion and ensure you can be contacted in the event someone needs to get a hold of you.\n\n`;
-    content += `Please review the wipe meeting notes found here when you are able: https://discord.com/channels/305840605328703500/1124690217366995114/1126354620277587982\n\n`;
-    content += `Pair with https://rustcult.com to automatically protect your base from getting raided by the gov. During night in-game is a great time to do it.\n\n`;
+    content += `The build spot is C19.\n\n`;
+    if (user.rank <= 5) {
+	content += `Generals Code 9127\n`;
+    }
+    if (user.rank <= 9) {
+	content += `Officer Code 1472\n`;
+    }
+    if (user.rank <= 13) {
+	content += `Grunt Code 8378\n\n`;
+    }
+    content += `If you didn't bring it in, don't take it out. That's the new rule for Community Base. A lot of gov members are planning to use Community as a Main Base this wipe. Everyone is welcome to join us.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
@@ -267,8 +270,8 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
 	await discordMember.send({
 	    content,
 	    files: [{
-		attachment: 'july_wall_projection.png',
-		name: 'july_wall_projection.png'
+		attachment: 'layout.png',
+		name: 'layout.png'
 	    }]
 	});
     } catch (error) {
@@ -283,8 +286,7 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
     let content = `${rankNameAndInsignia},\n\n`;
     content += `Here are your secret orders for the month of July 2023. Report to the server Rustopia.gg - US Large\n`;
     content += '```client.connect USLarge.Rustopia.gg:28015```\n';  // Only one newline after triple backticks.
-    content += `Another glorious wipe is upon us and you are invited to join us in the destruction of our enemies and the taking of all their loot. Haven't played Rust in a while? No better time than right now as we need your help smashing an entire server to bits. Haven't played with the Gov in a while? good to see you, we missed you and are glad you found your way back. Jump in the discord now and we will be there. Don't see us? We are in a wipe channel that you need a wipe badge for. Message some online generals, get your wipe badge, and get in comms to watch some bases explode and some base owners perish.\n\n`;
-    content += `Pair with https://rustcult.com to automatically protect your base from getting raided by the gov.\n\n`;
+    content += `This wipe is special because lots of gov members will live together out of community base, treating it like their Main Base. We hope to snowball really quickly as a group. It is going to be a really fun wipe so hop in and join us!\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     try {
@@ -326,7 +328,7 @@ async function HandleOrdersTestCommand(discordMessage) {
     const aperture = await UserCache.GetCachedUserByDiscordId('325455587699589145');
     const baggy = await UserCache.GetCachedUserByDiscordId('347406818424913920');
     const jhdiray = await UserCache.GetCachedUserByDiscordId('300146989402685441');
-    const users = [jeff, evil, waldo, aperture, baggy, jhdiray];
+    const users = [jeff, evil, aperture];
     await SendOrdersToTheseCommissarUsers(users, discordMessage);
 }
 
