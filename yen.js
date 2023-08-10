@@ -355,7 +355,7 @@ async function UpdateYenChannel() {
     const formattedReserveRatio = parseInt(reserveRatio * 100);
     let message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
-    message += `Liquidation value of Jeff's Rust skins (March 2023): ¥ ${jeffSteamInventoryValue}\n`;
+    message += `Liquidation value of Jeff's Rust skins (August 2023): ¥ ${jeffSteamInventoryValue}\n`;
     message += `Reserve ratio: ${formattedReserveRatio}%\n`;
     await channel.send(threeTicks + message + threeTicks);
 }
