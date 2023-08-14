@@ -322,7 +322,7 @@ async function Overflow(guild) {
 	if (superiorCount >= overflowLimit) {
 	    continue;
 	}
-	const pop = channel.members.length;
+	const pop = channel.members.size;
 	if (pop > bestDestinationPop) {
 	    bestDestination = channel;
 	    bestDestinationPop = pop;
