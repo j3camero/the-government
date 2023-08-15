@@ -24,7 +24,6 @@ function GetAllMatchingVoiceChannels(guild, huddle) {
     // Necessary in case a string key is passed in. Object keys are
     // sometimes showing up as strings.
     for (const [id, channel] of guild.channels.cache) {
-	//console.log('CHANNEL', channel.type, channel.name, channel.userLimit);
 	if (channel.type === 2 &&
 	    channel.name === huddle.name &&
 	    channel.userLimit === parseInt(huddle.userLimit)) {
@@ -241,6 +240,136 @@ async function MoveOneRoomIfNeeded(guild) {
     return true;
 }
 
+function CompareMembersByHarmonicCentrality(a, b) {
+    const au = UserCache.GetCachedUserByDiscordId(a.id);
+    const bu = UserCache.GetCachedUserByDiscordId(b.id);
+    const aScore = au ? (au.harmonic_centrality || 0) : 0;
+    const bScore = bu ? (bu.harmonic_centrality || 0) : 0;
+    if (aScore < bScore) {
+	return 1;
+    }
+    if (bScore < aScore) {
+	return -1;
+    }
+    return 0;
+}
+
+function GetLowestRankingMembersFromVoiceChannel(channel, n) {
+    const sortableMembers = [];
+    for (const [id, member] of channel.members) {
+	sortableMembers.push(member);
+    }
+    sortableMembers.sort(CompareMembersByHarmonicCentrality);
+    if (sortableMembers.length <= n) {
+	return sortableMembers;
+    }
+    return sortableMembers.slice(-n);
+}
+
+// Enforces a population cap on the Main voice chat rooms by moving low-ranking members around.
+// Returns true if it had to move anyone, and false if no moves are needed.
+async function Overflow(guild) {
+    console.log(`Overflow`);
+    const mainChannels = [];
+    for (const [id, channel] of guild.channels.cache) {
+	if (channel.type === 2 && !channel.parent && channel.name === 'Main') {
+	    mainChannels.push(channel);
+	}
+    }
+    console.log(`${mainChannels.length} Main voice channels detected.`);
+    const overflowLimit = 20;
+    console.log(`overflowLimit ${overflowLimit}`);
+    const overflowMembers = [];
+    for (const channel of mainChannels) {
+	const pop = channel.members.size;
+	console.log('Main room with pop', pop);
+	if (pop <= overflowLimit) {
+	    continue;
+	}
+	const howManyExtra = pop - overflowLimit;
+	const lowest = GetLowestRankingMembersFromVoiceChannel(channel, howManyExtra);
+	for (const member of lowest) {
+	    overflowMembers.push(member);
+	}
+    }
+    console.log(`${overflowMembers.length} overflow members detected.`);
+    if (overflowMembers.length === 0) {
+	console.log(`No overflow. Bailing.`);
+	return false;
+    }
+    // If we get here then there are overflow members. Get only the
+    // highest ranking one and try to move them.
+    overflowMembers.sort(CompareMembersByHarmonicCentrality);
+    const memberToMove = overflowMembers[0];
+    const cu = UserCache.GetCachedUserByDiscordId(memberToMove.id);
+    const name = cu.getNicknameOrTitleWithInsignia();
+    // Now identify which is the best other Main room to move them to.
+    // For now choose the fullest other Main room the member is
+    // allowed to join. In the future personalize this so it uses the
+    // coplay time to choose the most familiar group to place the member with.
+    console.log(`Looking for destination for ${name}`);
+    let bestDestination;
+    let bestDestinationPop = 0;
+    for (const channel of mainChannels) {
+	let superiorCount = 0;
+	for (const [id, member] of channel.members) {
+	    const voiceUser = UserCache.GetCachedUserByDiscordId(member.id);
+	    if (voiceUser.harmonic_centrality > cu.harmonic_centrality) {
+		superiorCount++;
+	    }
+	}
+	console.log(`superiorCount ${superiorCount}`);
+	if (superiorCount >= overflowLimit) {
+	    continue;
+	}
+	const pop = channel.members.size;
+	if (pop > bestDestinationPop) {
+	    bestDestination = channel;
+	    bestDestinationPop = pop;
+	}
+    }
+    // If a good destination was found then move the member.
+    if (bestDestination) {
+	console.log(`Best destination found. Moving member.`);
+	await memberToMove.voice.setChannel(bestDestination);
+	return true;
+    }
+    console.log('No suitable destination found for member.');
+    // Buddy rule. Never move a member into a room where they are alone.
+    if (overflowMembers.length < 2) {
+	console.log('Bailing due to buddy rule.');
+	return false;
+    }
+    // If we end up with at least 2 overflow members and nowhere to put them,
+    // then move them to an empty Main room together.
+    console.log('Trying to find an empty main channel to populate.');
+    let emptyMainChannel;
+    for (const channel of mainChannels) {
+	if (channel.members.size === 0) {
+	    emptyMainChannel = channel;
+	    break;
+	}
+    }
+    if (!emptyMainChannel) {
+	// No empty Main channel. This is usually temporary.
+	// Return true to try again in a short time and hopefully
+	// there will be an empty Main channel by then.
+	console.log(`Failed to find an empty Main channel. Bailing.`);
+	return true;
+    }
+    console.log(`Overflow moving 2 members into an empty Main channel together.`);
+    const [dumb, dumber] = overflowMembers.slice(-2);
+    if (dumb) {
+	console.log('Moving 1st member to empty Main channel.');
+	await dumb.voice.setChannel(emptyMainChannel);
+    }
+    if (dumber) {
+	console.log('Moving 2nd member to empty Main channel.');
+	await dumber.voice.setChannel(emptyMainChannel);
+    }
+    return true;
+}
+
 // To avoid race conditions on the cheap, use a system of routine updates.
 // To schedule an update, a boolean flag is flipped. That way, the next time
 // the cycle goes around, it knows that an update is needed. Redundant or
@@ -256,8 +385,9 @@ async function Update() {
     for (const huddle of huddles) {
 	await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
     }
+    const overflowMovedAnyone = await Overflow(guild);
     const roomsInOrder = await MoveOneRoomIfNeeded(guild);
-    isUpdateNeeded = !roomsInOrder;
+    isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
 }
 
 function ScheduleUpdate() {
