@@ -77,14 +77,15 @@ async function HandleServerVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
     const message = await channel.send(
-	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for August 2023.\n\n' +
+	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for September 2023.\n\n' +
 	'Every top 100 US monthly vanilla server is included.'
     );
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 3, 27);
-    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 4, 27);
     await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 21, 30);
+    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 3, 27);
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5, 27);
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 18, 33);
+    await MakeOneServerVoteOption(channel, 'US Rustinity 2x Monthly Large Vanilla+', 'https://www.battlemetrics.com/servers/rust/10477772', 18, 11);
     await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 20, 28);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 39, 11);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 51, 11);
