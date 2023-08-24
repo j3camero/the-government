@@ -1,4 +1,5 @@
 // Routines for handling bot commands like !ping and !ban.
+const anon = require('./anon');
 const Artillery = require('./artillery');
 const Ban = require('./ban');
 const diff = require('diff');
@@ -709,6 +710,7 @@ async function Dispatch(discordMessage) {
     const handlers = {
 	'!afk': HandleAfkCommand,
 	'!amnestyvote': HandleAmnestyVoteCommand,
+	'!anon': anon.HandleAnonCommand,
 	'!apprehend': Ban.HandleBanCommand,
 	'!arrest': Ban.HandleBanCommand,
 	'!art': Artillery,

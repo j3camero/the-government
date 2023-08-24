@@ -1,3 +1,4 @@
+const anon = require('./anon');
 const AutoUpdate = require('./auto-update');
 const Ban = require('./ban');
 const BotCommands = require('./bot-commands');
@@ -308,6 +309,7 @@ async function Start() {
 	}
 	await cu.setCitizen(true);
 	await BotCommands.Dispatch(message);
+	await anon.CheckForMessageInAnonChannel(message);
     });
 
     // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
