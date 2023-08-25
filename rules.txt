@@ -29,3 +29,7 @@ No auto-aim, ESP, or other cheats. Being the very best means we win straight-up.
 **The right to a fair trial**
 
 If you get banned, a trial is held in Ban Court. All bans must be approved by a majority vote of the top 50 Government members, which makes unfair bans easy to overturn.
+
+**The right to decision-making in balloting activities, free from external influence**
+
+All members have the autonomy to decide on server votes, ban court votes, policy votes, and vote-related activities. Any attempts to exert influence, pressure, bribe, or coerce any members in these matters violate this right.
