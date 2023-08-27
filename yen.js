@@ -136,7 +136,6 @@ async function UpdateTaxChannel() {
     const taxChannelId = '1012023632312156311';
     const channel = await guild.channels.resolve(taxChannelId);
     await channel.bulkDelete(99);
-    let message = '';
     const taxBase = await CalculateInactivityTaxBase();
     const taxForecast = await CalculateInactivityTaxForecast();
     const n = Object.keys(taxBase).length;
@@ -158,6 +157,7 @@ async function UpdateTaxChannel() {
 	}
 	return 0;
     });
+    let message = '';
     if (n === 0) {
 	message = 'There is no tax revenue to spend at this time.';
 	await channel.send(threeTicks + message + threeTicks);
@@ -167,10 +167,13 @@ async function UpdateTaxChannel() {
     message += '--------------\n';
     message += 'Tax is how we keep the yen in circulation. Members inactive from VC longer than 90 days have their yen taxed at a slow rate. You can avoid tax completely by connecting to VC every 3 months.\n\n';
     message += 'Currently available tax revenues:\n\n';
+    await channel.send(threeTicks + message + threeTicks);
+    const lines = [];
     for (const taxpayer of sortedTaxBase) {
-	message += `¥ ${taxpayer.tax} ${taxpayer.name}\n`;
+	lines.push(`¥ ${taxpayer.tax} ${taxpayer.name}`);
     }
-    message += '-----\n';
+    await DiscordUtil.SendLongList(lines, channel);
+    message = '-----\n';
     message += `¥ ${totalTax} Total\n\n`;
     message += `Expected new Government revenues over the next 30 days: ¥ ${taxForecast}\n\n`;
     message += 'Mr. or Madam President is responsible for Government spending. They are encouraged to spend all available tax revenue to bring inactive yen back into circulation. To spend tax money,\n\n';
