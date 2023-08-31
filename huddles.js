@@ -289,6 +289,7 @@ function SetOverflowLimit(newLimit) {
     return newLimit;
 }
 
+// Sets a channel to be accessible to everyone.
 async function SetOpenPerms(channel) {
     const perms = [PermissionFlagsBits.Connect, PermissionFlagsBits.ViewChannel];
     await channel.permissionOverwrites.set([
@@ -296,12 +297,12 @@ async function SetOpenPerms(channel) {
     ]);
 }
 
-async function SetPermsByRank(channel, rankLimit) {
+// Calculates the rank-level perms to use for rank-limiting a voice channel.
+function CalculatePermsByRank(channel, rankLimit) {
     const connect = PermissionFlagsBits.Connect;
     const view = PermissionFlagsBits.ViewChannel;
     const perms = [
-	{ id: channel.guild.roles.everyone, allow: [view] },
-	{ id: channel.guild.roles.everyone, deny: [connect] },
+	{ id: channel.guild.roles.everyone.id, allow: [view], deny: [connect] },
 	{ id: RoleID.Bots, allow: [view, connect] },
 	{ id: RoleID.Marshal, allow: [view, connect] },
     ];
@@ -313,12 +314,48 @@ async function SetPermsByRank(channel, rankLimit) {
 	    if (rankIndex < rankLimit) {
 		perms.push({ id: mainRole, allow: [view, connect] });
 	    } else {
-		perms.push({ id: mainRole, allow: [view] });
-		perms.push({ id: mainRole, deny: [connect] });
+		perms.push({ id: mainRole, allow: [view], deny: [connect] });
 	    }
 	}
 	++rankIndex;
     }
+    return perms;
+}
+
+// Calculates the individual member perms to use for rank-limiting a voice channel.
+async function CalculateIndividualPerms(rankLimit, scoreThreshold) { 
+    const eligibleUsers = UserCache.GetUsersWithRankAndScoreHigherThan(rankLimit, scoreThreshold);
+    eligibleUsers.sort((a, b) => {
+	if (a.last_seen < b.last_seen) {
+	    return 1;
+	}
+	if (a.last_seen > b.last_seen) {
+	    return -1;
+	}
+	return 0;
+    });
+    const howManyTop = 20;
+    const mostRecentUsers = eligibleUsers.length < howManyTop ? eligibleUsers : eligibleUsers.slice(0, howManyTop);
+    const connect = PermissionFlagsBits.Connect;
+    const view = PermissionFlagsBits.ViewChannel;
+    const perms = [];
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    for (const user of mostRecentUsers) {
+	const member = await guild.members.fetch(user.discord_id);
+	if (member) {
+	    perms.push({ id: member.id, allow: [connect, view] });
+	}
+    }
+    return perms;
+}
+
+// Sets perms to rank-limit a voice chat room.
+// Uses a combination of rank-level perms and individual perms to efficiently
+// impose a rank limit on a channel with a resolution down to the individual.
+async function SetRankLimit(channel, rankLimit, scoreThreshold) {
+    const rankPerms = CalculatePermsByRank(channel, rankLimit);
+    const individualPerms = await CalculateIndividualPerms(rankLimit, scoreThreshold);
+    const perms = rankPerms.concat(individualPerms);
     await channel.permissionOverwrites.set(perms);
 }
 
@@ -350,12 +387,7 @@ async function Overflow(guild) {
 	    const pivotMember = lowest[0];
 	    const pivotUser = UserCache.GetCachedUserByDiscordId(pivotMember.id);
 	    if (pivotUser) {
-		const pivotRank = pivotUser.rank;
-		if (pivotRank && pivotRank > 0 && pivotRank < RankMetadata.length) {
-		    await SetPermsByRank(channel, pivotRank);
-		} else {
-		    await SetOpenPerms(channel);
-		}
+		await SetRankLimit(channel, pivotUser.rank, pivotUser.harmonic_centrality);
 	    } else {
 		await SetOpenPerms(channel);
 	    }
