@@ -8,6 +8,7 @@
 
 const { PermissionFlagsBits } = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
 
@@ -266,6 +267,98 @@ function GetLowestRankingMembersFromVoiceChannel(channel, n) {
     return sortableMembers.slice(-n);
 }
 
+let overflowLimit = 20;
+
+function SetOverflowLimit(newLimit) {
+    const maxLimit = 90;
+    if (!newLimit) {
+	newLimit = maxLimit;
+    }
+    try {
+	newLimit = parseInt(newLimit);
+    } catch (error) {
+	newLimit = maxLimit;
+    }
+    if (newLimit > maxLimit) {
+	newLimit = maxLimit;
+    }
+    if (newLimit < 2) {
+	newLimit = maxLimit;
+    }
+    overflowLimit = newLimit;
+    return newLimit;
+}
+
+// Sets a channel to be accessible to everyone.
+async function SetOpenPerms(channel) {
+    const perms = [PermissionFlagsBits.Connect, PermissionFlagsBits.ViewChannel];
+    await channel.permissionOverwrites.set([
+	{ id: channel.guild.roles.everyone, allow: perms },
+    ]);
+}
+
+// Calculates the rank-level perms to use for rank-limiting a voice channel.
+function CalculatePermsByRank(channel, rankLimit) {
+    const connect = PermissionFlagsBits.Connect;
+    const view = PermissionFlagsBits.ViewChannel;
+    const perms = [
+	{ id: channel.guild.roles.everyone.id, allow: [view], deny: [connect] },
+	{ id: RoleID.Bots, allow: [view, connect] },
+	{ id: RoleID.Marshal, allow: [view, connect] },
+    ];
+    let rankIndex = 0;
+    for (const rank of RankMetadata) {
+	if (rank.count) {
+	    const mainRole = rank.roles[0];
+	    // Watch out for which way this is ordered. Lower ranks have higher indices.
+	    if (rankIndex < rankLimit) {
+		perms.push({ id: mainRole, allow: [view, connect] });
+	    } else {
+		perms.push({ id: mainRole, allow: [view], deny: [connect] });
+	    }
+	}
+	++rankIndex;
+    }
+    return perms;
+}
+
+// Calculates the individual member perms to use for rank-limiting a voice channel.
+async function CalculateIndividualPerms(rankLimit, scoreThreshold) { 
+    const eligibleUsers = UserCache.GetUsersWithRankAndScoreHigherThan(rankLimit, scoreThreshold);
+    eligibleUsers.sort((a, b) => {
+	if (a.last_seen < b.last_seen) {
+	    return 1;
+	}
+	if (a.last_seen > b.last_seen) {
+	    return -1;
+	}
+	return 0;
+    });
+    const howManyTop = 20;
+    const mostRecentUsers = eligibleUsers.length < howManyTop ? eligibleUsers : eligibleUsers.slice(0, howManyTop);
+    const connect = PermissionFlagsBits.Connect;
+    const view = PermissionFlagsBits.ViewChannel;
+    const perms = [];
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    for (const user of mostRecentUsers) {
+	const member = await guild.members.fetch(user.discord_id);
+	if (member) {
+	    perms.push({ id: member.id, allow: [connect, view] });
+	}
+    }
+    return perms;
+}
+
+// Sets perms to rank-limit a voice chat room.
+// Uses a combination of rank-level perms and individual perms to efficiently
+// impose a rank limit on a channel with a resolution down to the individual.
+async function SetRankLimit(channel, rankLimit, scoreThreshold) {
+    const rankPerms = CalculatePermsByRank(channel, rankLimit);
+    const individualPerms = await CalculateIndividualPerms(rankLimit, scoreThreshold);
+    const perms = rankPerms.concat(individualPerms);
+    await channel.permissionOverwrites.set(perms);
+}
+
 // Enforces a population cap on the Main voice chat rooms by moving low-ranking members around.
 // Returns true if it had to move anyone, and false if no moves are needed.
 async function Overflow(guild) {
@@ -277,19 +370,27 @@ async function Overflow(guild) {
 	}
     }
     console.log(`${mainChannels.length} Main voice channels detected.`);
-    const overflowLimit = 20;
     console.log(`overflowLimit ${overflowLimit}`);
     const overflowMembers = [];
     for (const channel of mainChannels) {
 	const pop = channel.members.size;
 	console.log('Main room with pop', pop);
-	if (pop <= overflowLimit) {
-	    continue;
-	}
-	const howManyExtra = pop - overflowLimit;
-	const lowest = GetLowestRankingMembersFromVoiceChannel(channel, howManyExtra);
-	for (const member of lowest) {
-	    overflowMembers.push(member);
+	if (pop < overflowLimit) {
+	    await SetOpenPerms(channel);
+	} else {
+	    const howManyExtra = pop - overflowLimit;
+	    const lowest = GetLowestRankingMembersFromVoiceChannel(channel, howManyExtra + 1);
+	    const extra = lowest.slice(1);
+	    for (const member of extra) {
+		overflowMembers.push(member);
+	    }
+	    const pivotMember = lowest[0];
+	    const pivotUser = UserCache.GetCachedUserByDiscordId(pivotMember.id);
+	    if (pivotUser) {
+		await SetRankLimit(channel, pivotUser.rank, pivotUser.harmonic_centrality);
+	    } else {
+		await SetOpenPerms(channel);
+	    }
 	}
     }
     console.log(`${overflowMembers.length} overflow members detected.`);
@@ -396,4 +497,5 @@ function ScheduleUpdate() {
 
 module.exports = {
     ScheduleUpdate,
+    SetOverflowLimit,
 };

@@ -5,6 +5,7 @@ const diff = require('diff');
 const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
 const FilterUsername = require('./filter-username');
+const huddles = require('./huddles');
 const RandomPin = require('./random-pin');
 const RoleID = require('./role-id');
 const Sleep = require('./sleep');
@@ -695,6 +696,22 @@ async function HandleAfkCommand(discordMessage) {
 	}
 }
 
+async function HandleOverflowCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 2) {
+	await discordMessage.channel.send('USAGE: !overflow 20');
+	return;
+    }
+    const newLimit = tokens[1];
+    const finalLimit = huddles.SetOverflowLimit(newLimit);
+    await discordMessage.channel.send(`Overflow limit set to ${finalLimit}`);
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -734,6 +751,7 @@ async function Dispatch(discordMessage) {
 	'!indict': Ban.HandleBanCommand,
 	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
+	'!overflow': HandleOverflowCommand,
 	'!orders': HandleOrdersCommand,
 	'!orderstest': HandleOrdersTestCommand,
 	'!pardon': Ban.HandlePardonCommand,

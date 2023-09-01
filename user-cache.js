@@ -221,6 +221,25 @@ function CountVoiceActiveUsers(inactivityLimitInDays) {
     return count;
 }
 
+function GetUsersWithRankAndScoreHigherThan(rankIndex, scoreThreshold) {
+    const matches = [];
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (!user) {
+	    continue;
+	}
+	if (!user.last_seen || !user.good_standing || !user.citizen) {
+	    continue;
+	}
+	if (user.rank !== rankIndex) {
+	    continue;
+	}
+	if (user.harmonic_centrality > scoreThreshold) {
+	    matches.push(user);
+	}
+    }
+    return matches;
+}
+
 module.exports = {
     BulkCentralityUpdate,
     CountVoiceActiveUsers,
@@ -235,5 +254,6 @@ module.exports = {
     GetMostCentralUsers,
     GetOrCreateUserByDiscordId,
     GetUsersSortedByLastSeen,
+    GetUsersWithRankAndScoreHigherThan,
     LoadAllUsersFromDatabase,
 };
