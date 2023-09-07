@@ -291,10 +291,17 @@ function SetOverflowLimit(newLimit) {
 
 // Sets a channel to be accessible to everyone.
 async function SetOpenPerms(channel) {
-    const perms = [PermissionFlagsBits.Connect, PermissionFlagsBits.ViewChannel];
-    await channel.permissionOverwrites.set([
-	{ id: channel.guild.roles.everyone, allow: perms },
-    ]);
+    const connect = PermissionFlagsBits.Connect;
+    const view = PermissionFlagsBits.ViewChannel;
+    const perms = [
+	{ id: channel.guild.roles.everyone.id, deny: [connect, view] },
+	{ id: RoleID.Grunt, allow: [connect, view] },
+	{ id: RoleID.Officer, allow: [connect, view] },
+	{ id: RoleID.General, allow: [connect, view] },
+	{ id: RoleID.Marshal, allow: [connect, view] },
+	{ id: RoleID.Bots, allow: [view, connect] },
+    ];
+    await channel.permissionOverwrites.set(perms);
 }
 
 // Calculates the rank-level perms to use for rank-limiting a voice channel.
