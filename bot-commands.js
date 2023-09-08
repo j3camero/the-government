@@ -252,29 +252,29 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending special mission orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n`;
-    content += `Here are your secret orders for the month of July 2023. Report to the server Rustopia.gg - US Large\n`;
-    content += '```client.connect USLarge.Rustopia.gg:28015```\n';  // Only one newline after triple backticks.
-    content += `The build spot is C19.\n\n`;
+    content += `Here are your secret orders for the month of September 2023. Report to the server US Rustinity 2x Monthly Large\n`;
+    content += '```client.connect 199.231.233.88:28015```\n';  // Only one newline after triple backticks.
+    content += `Join voice chat to get the build spot.\n\n`;
     if (user.rank <= 5) {
-	content += `Generals Code 9127\n`;
+	content += `Generals Code 7369\n`;
     }
     if (user.rank <= 9) {
-	content += `Officer Code 1472\n`;
+	content += `Officer Code 5219\n`;
     }
     if (user.rank <= 13) {
-	content += `Grunt Code 8378\n\n`;
+	content += `Grunt Code 3930\n\n`;
     }
-    content += `If you didn't bring it in, don't take it out. That's the new rule for Community Base. A lot of gov members are planning to use Community as a Main Base this wipe. Everyone is welcome to join us.\n\n`;
+    content += `The Government is expected to steamroll this 2x server. Everyone is welcome to join us.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
     try {
 	await discordMember.send({
 	    content,
-	    files: [{
-		attachment: 'layout.png',
-		name: 'layout.png'
-	    }]
+	    //files: [{
+	//	attachment: 'layout.png',
+	//	name: 'layout.png'
+	  //  }]
 	});
     } catch (error) {
 	console.log('Failed to send orders to', name);
@@ -286,9 +286,9 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of July 2023. Report to the server Rustopia.gg - US Large\n`;
-    content += '```client.connect USLarge.Rustopia.gg:28015```\n';  // Only one newline after triple backticks.
-    content += `This wipe is special because lots of gov members will live together out of community base, treating it like their Main Base. We hope to snowball really quickly as a group. It is going to be a really fun wipe so hop in and join us!\n\n`;
+    content += `Here are your secret orders for the month of September 2023. Report to the server US Rustinity 2x Monthly Large\n`;
+    content += '```client.connect 199.231.233.88:28015```\n';  // Only one newline after triple backticks.
+    content += `The Government is expected to steamroll this 2x server. Come have some fun with a relaxed wipe.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     try {
