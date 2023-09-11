@@ -10,6 +10,7 @@ const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
 const Rank = require('./rank');
+const RaidAlert = require('./raid-alert');
 const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
 const rules = require('./rules');
@@ -385,6 +386,8 @@ async function Start() {
 
     // If the rules have changed, update them.
     await rules.UpdateRulesIfChanged();
+    // Start crawling for raid alerts.
+    await RaidAlert.Init();
     // Routine update schedules itself to run again after it finishes.
     // That way it avoids running over itself if it runs longer than a minute.
     await RoutineUpdate();
