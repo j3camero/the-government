@@ -1,3 +1,4 @@
+const BaseLocation = require('./base-location');
 const DiscordUtil = require('./discord-util');
 const fetch = require('./fetch');
 
@@ -74,7 +75,7 @@ function AddTwoLeaderboardRecords(before, after) {
 }
 
 async function ExpiredSessionDetected(session) {
-    if (session.diff.totalrocketequivalent > 1.9) {
+    if (session.sessionBoom.totalrocketequivalent > 1.9) {
         return;
     }
     if (session.message) {
@@ -176,13 +177,15 @@ async function UpdateSessionMessage(session) {
     const raidEquiv = Math.round(session.sessionBoom.totalrocketequivalent);
     const wipeEquiv = Math.round(session.wipeBoom.totalrocketequivalent);
     const threeBackticks = '```';
-    const content = (
-	threeBackticks + '\n' +
-	session.name + '\n' +
-	BoomStatsToString(session.sessionBoom) + '\n' +
-	'Duration ' + MakeDurationString(session.duration) + '\n' +
-	`Wipe total rocket equiv ${wipeEquiv}` +
-        threeBackticks);
+    let content = threeBackticks + '\n' + session.name + '\n';
+    content += BoomStatsToString(session.sessionBoom) + '\n';
+    content += 'Duration ' + MakeDurationString(session.duration) + '\n';
+    content += `Wipe total rocket equiv ${wipeEquiv}\n`;
+    const baseLocationString = BaseLocation.GetBaseLocationStringBySteamId(session.steamId);
+    if (baseLocationString) {
+	content += 'Attacker Base Location:\n' + baseLocationString;
+    }
+    content += threeBackticks;
     session.message = await channel.send(content);
 }
 
