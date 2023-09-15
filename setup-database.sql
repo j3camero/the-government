@@ -80,3 +80,11 @@ CREATE TABLE ban_votes
     vote INT NOT NULL,  -- 1 = GUILTY, 0 = NOT GUILTY
     PRIMARY KEY(trial_id, voter_id)
 );
+
+CREATE TABLE discord_invites
+(
+    code VARCHAR(32),
+    inviter_id VARCHAR(32),
+    uses INT,
+    PRIMARY KEY(code)
+);

@@ -12,6 +12,7 @@ const moment = require('moment');
 const Rank = require('./rank');
 const RaidAlert = require('./raid-alert');
 const RankMetadata = require('./rank-definitions');
+const recruiting = require('./recruiting');
 const RoleID = require('./role-id');
 const rules = require('./rules');
 const TimeTogetherStream = require('./time-together-stream');
@@ -229,6 +230,7 @@ async function RoutineUpdate() {
     await DB.ConsolidateTimeMatrix();
     await UpdateHarmonicCentrality();
     await UpdateAllCitizens();
+    await recruiting.ScanInvitesForChanges();
     await AutoUpdate();
     endTime = new Date().getTime();
     elapsed = endTime - startTime;
@@ -275,6 +277,7 @@ async function Start() {
 		await DiscordUtil.AddRole(member, RoleID.Verified);
 	    }
 	}
+	await recruiting.ScanInvitesForChanges();
     });
 
     // Emitted whenever a member leaves a guild, or is kicked.
@@ -388,6 +391,10 @@ async function Start() {
     await rules.UpdateRulesIfChanged();
     // Start crawling for raid alerts.
     await RaidAlert.Init();
+    // Update recruiting leaderboard.
+    await recruiting.InitCache();
+    await recruiting.ScanInvitesForChanges();
+    //await recruiting.UpdateRecruitingLeaderboard();
     // Routine update schedules itself to run again after it finishes.
     // That way it avoids running over itself if it runs longer than a minute.
     await RoutineUpdate();
