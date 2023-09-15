@@ -133,7 +133,7 @@ async function GetPublicChatChannel() {
 // Send a message to the main Discord server's #public channel.
 async function MessagePublicChatChannel(discordMessage) {
     const channel = await GetPublicChatChannel();
-    channel.send(discordMessage);
+    await channel.send(discordMessage);
 }
 
 async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
