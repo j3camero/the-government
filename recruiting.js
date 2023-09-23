@@ -43,7 +43,7 @@ async function ScanInvitesForChanges() {
 	    const cu = await UserCache.GetCachedUserByDiscordId(invite.inviterId);
 	    if (cu) {
 		const name = cu.getNicknameOrTitleWithInsignia();
-		await DiscordUtil.MessagePublicChatChannel(`Good job ${name} for recruiting a new member`);
+		await DiscordUtil.MessagePublicChatChannel(`${name} got a recruiting point. #top-recruiters`);
 	    }
 	}
     }
@@ -70,7 +70,7 @@ async function UpdateRecruitingLeaderboard(idToHighlight) {
 	}
 	const name = cu.getNicknameOrTitleWithInsignia();
 	const formattedRecruitCount = recruitCount.toString().padStart(5);
-	const plus = discordId === idToHighlight ? '+' : '';
+	const plus = discordId === idToHighlight ? '+' : ' ';
 	const line = `${plus}${formattedRecruitCount} ${name}`;
 	lines.push(line);
 	rankIndex++;
