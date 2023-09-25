@@ -10,7 +10,6 @@ const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
 const Rank = require('./rank');
-const RaidAlert = require('./raid-alert');
 const RankMetadata = require('./rank-definitions');
 const recruiting = require('./recruiting');
 const RoleID = require('./role-id');
@@ -389,8 +388,6 @@ async function Start() {
 
     // If the rules have changed, update them.
     await rules.UpdateRulesIfChanged();
-    // Start crawling for raid alerts.
-    await RaidAlert.Init();
     // Update recruiting leaderboard.
     await recruiting.InitCache();
     await recruiting.ScanInvitesForChanges();
