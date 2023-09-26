@@ -1,6 +1,7 @@
 // Routines for handling bot commands like !ping and !ban.
 const Artillery = require('./artillery');
 const Ban = require('./ban');
+const BaseLocation = require('./base-location');
 const diff = require('diff');
 const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
@@ -78,7 +79,7 @@ async function HandleServerVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
     const message = await channel.send(
-	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for September 2023.\n\n' +
+	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for October 2023.\n\n' +
 	'Every top 100 US monthly vanilla server is included.'
     );
     await message.react('❤️');
@@ -762,6 +763,7 @@ async function Dispatch(discordMessage) {
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!presidentvotefix': HandlePresidentVoteFixCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
+	'!reloadbaselocations': BaseLocation.ReloadFromFile,
 	'!tax': yen.HandleTaxCommand,
 	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
