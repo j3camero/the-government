@@ -1,7 +1,6 @@
 // Routines for handling bot commands like !ping and !ban.
 const Artillery = require('./artillery');
 const Ban = require('./ban');
-const BaseLocation = require('./base-location');
 const diff = require('diff');
 const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
@@ -763,7 +762,6 @@ async function Dispatch(discordMessage) {
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!presidentvotefix': HandlePresidentVoteFixCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
-	'!reloadbaselocations': BaseLocation.ReloadFromFile,
 	'!tax': yen.HandleTaxCommand,
 	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
