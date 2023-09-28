@@ -59,8 +59,6 @@ async function UpdateTrial(cu) {
 	await message.pin();
     }
     await cu.setBanVoteMessage(message.id);
-    const noVotes = [];
-    const yesVotes = [];
     // Count up all the votes. Remove any unauthorized votes.
     for (const [reactionId, reaction] of message.reactions.cache) {
 	let reactions;
@@ -75,52 +73,24 @@ async function UpdateTrial(cu) {
 		continue;
 	    }
 	    const jurorUser = await UserCache.GetCachedUserByDiscordId(juror.id);
-	    //console.log('juror', juror.id, 'jurorUser', jurorUser.rank, jurorUser.citizen, 'roomName', roomName);
+	    const emoji = reaction.emoji.name;
 	    if (!jurorUser || !jurorUser.citizen || jurorUser.rank > banVoteRank) {
 		// Remove unauthorized vote. This check will catch unauthorized votes that
 		// made it through the initial filter because the bot was not running.
 		// Also when a juror loses their rank their vote is removed here.
 		console.log('Removing vote from unqualified juror', jurorUser.commissar_id);
-		await reaction.users.remove(juror);
 		await BanVoteCache.RecordVoteIfChanged(cu.commissar_id, jurorUser.commissar_id, 0);
-		continue;
-	    }
-	    // Tally one reaction-vote.
-	    const emoji = reaction.emoji.name;
-	    if (emoji === '✅') {
-		yesVotes.push({
-		    score: jurorUser.harmonic_centrality,
-		    name: jurorUser.getNicknameOrTitleWithInsignia(),
-		});
+	    } else if (emoji === '✅') {
 		await BanVoteCache.RecordVoteIfChanged(cu.commissar_id, jurorUser.commissar_id, 1);
 	    } else if (emoji === '❌') {
-		noVotes.push({
-		    score: jurorUser.harmonic_centrality,
-		    name: jurorUser.getNicknameOrTitleWithInsignia(),
-		});
 		await BanVoteCache.RecordVoteIfChanged(cu.commissar_id, jurorUser.commissar_id, 2);
 	    }
+	    await reaction.users.remove(juror);
 	}
     }
-    noVotes.sort((a, b) => b.score - a.score);
-    yesVotes.sort((a, b) => b.score - a.score);
-    const none = '\nNone';
-    let noVoteNames = '';
-    for (const vote of noVotes) {
-	noVoteNames += '\n' + vote.name;
-    }
-    if (noVoteNames === '') {
-	noVoteNames = none;
-    }
-    let yesVoteNames = '';
-    for (const vote of yesVotes) {
-	yesVoteNames += '\n' + vote.name;
-    }
-    if (yesVoteNames === '') {
-	yesVoteNames = none;
-    }
-    const yesVoteCount = yesVotes.length;
-    const noVoteCount = noVotes.length;
+    const voteTotals = BanVoteCache.CountVotesForDefendant(cu.commissar_id);
+    const yesVoteCount = voteTotals[1];
+    const noVoteCount = voteTotals[2];
     const voteCount = yesVoteCount + noVoteCount;
     const yesPercentage = voteCount > 0 ? yesVoteCount / voteCount : 0;
     if (member) {
@@ -144,16 +114,6 @@ async function UpdateTrial(cu) {
 		console.log(before.allow);
 		await channel.send(threeTicks + 'The defendant has re-entered the courtroom.' + threeTicks);
 	    }
-	}
-	console.log('DeleteMessagesByMember consideration',
-		    member.nickname,
-		    cu.peak_rank,
-		    voteCount,
-		    yesPercentage,
-		    member.lastMessage);
-	if (cu.peak_rank >= 10 && voteCount >= 10 && yesPercentage >= 0.9 && member.lastMessage) {
-	    await channel.send(threeTicks + 'Deleting messages sent by the Defendant within the last 24h.' + threeTicks);
-	    await DiscordUtil.DeleteMessagesByMember(member, 24 * 3600);
 	}
     }
     const guilty = VoteDuration.SimpleMajority(yesVoteCount, noVoteCount);
@@ -217,11 +177,11 @@ async function UpdateTrial(cu) {
 	const trialSummary = (
 	    `${threeTicks}` +
 	    `${caseTitle}\n` +
-	    `${underline}\n\n` +
-	    `Voting YES to ban:${yesVoteNames}\n\n` +
+	    `${underline}\n` +
+	    `Voting YES to ban: ${yesVoteCount}\n` +
 	    `Voting NO against the ban:${noVoteNames}\n\n` +
-	    `${cu.getNicknameWithInsignia()} is ${outcomeString}. ` +
-	    `${nextStateChangeMessage}.${threeTicks}`
+	    `${cu.getNicknameWithInsignia()} is ${outcomeString}.` +
+	    `${threeTicks}`
 	);
 	await message.edit(trialSummary);
 	await channel.send({ content: trialSummary });
@@ -252,11 +212,11 @@ async function UpdateTrial(cu) {
 	const trialMessage = (
 	    `${threeTicks}` +
 	    `${caseTitle}\n` +
-	    `${underline}\n\n` +
-	    `Voting YES to ban:${yesVoteNames}\n\n` +
-	    `Voting NO against the ban:${noVoteNames}\n\n` +
+	    `${underline}\n` +
+	    `Voting YES to ban: ${yesVoteCount}\n` +
+	    `Voting NO against the ban: ${noVoteCount}\n\n` +
 	    `${cu.getNicknameWithInsignia()} is currently ${outcomeString}. ` +
-	    `${nextStateChangeMessage}. The vote ends ${timeRemaining}.` +
+	    `The vote ends ${timeRemaining}.` +
 	    `${threeTicks}`
 	);
 	await message.edit(trialMessage);
@@ -337,10 +297,8 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 	} else if (emoji === '❌') {
 	    await BanVoteCache.RecordVoteIfChanged(defendant.commissar_id, juror.commissar_id, 2);
 	}
-    } else {
-	// This is an un-reaction. Set the cached vote to no-vote.
-	await BanVoteCache.RecordVoteIfChanged(defendant.commissar_id, juror.commissar_id, 0);
     }
+    await reaction.users.remove(discordUser);
     await UpdateTrial(defendant);
 }
 
