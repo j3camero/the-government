@@ -333,7 +333,6 @@ async function Start() {
     });
 
     discordClient.on('messageReactionAdd', async (messageReaction, user) => {
-	console.log('react', user.username, messageReaction.emoji.name);
 	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
 	if (!cu) {
 	    return;
@@ -343,12 +342,7 @@ async function Start() {
     });
 
     discordClient.on('messageReactionRemove', async (messageReaction, user) => {
-	console.log('unreact', user.username, messageReaction.emoji.name);
-	const cu = await UserCache.GetCachedUserByDiscordId(user.id);
-	if (!cu) {
-	    return;
-	}
-	await Ban.HandlePossibleReaction(messageReaction, user, false);
+	// Do nothing.
     });
 
     const upvoteMenuBuilder = new ContextMenuCommandBuilder()
