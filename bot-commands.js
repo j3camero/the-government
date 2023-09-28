@@ -567,7 +567,6 @@ async function HandleBoopCommand(discordMessage) {
 	// We have no record of this Discord user. Create a new record in the cache.
 	console.log('New Discord user detected.');
 	await UserCache.CreateNewDatabaseUser(mentionedMember);
-	await DiscordUtil.AddRole(mentionedMember, RoleID.Verified);
 	await discordMessage.channel.send(`Successfully booped.`);
     }
 }

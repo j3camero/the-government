@@ -153,21 +153,6 @@ async function UpdateHarmonicCentrality() {
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
-async function SetGoodStandingIfVerified(cu, member) {
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const role = await DiscordUtil.GetRoleByName(guild, 'Verified');
-    const isVerified = await DiscordUtil.GuildMemberHasRole(member, role);
-    const isOnTrial = cu.ban_vote_start_time;
-    if (isVerified && !isOnTrial) {
-	console.log('Detected Verified role', member.nickname);
-	await cu.setGoodStanding(true);
-	await DiscordUtil.RemoveRole(member, role);
-	await DiscordUtil.RemoveRole(member, RoleID.Unverified);
-	await UpdateMemberAppearance(member);
-	console.log('Done verifying', member.nickname);
-    }
-}
-
 async function UpdateAllCitizens() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     await UserCache.ForEach(async (user) => {
@@ -185,7 +170,6 @@ async function UpdateAllCitizens() {
 		return;
 	    }
 	    await user.setNickname(discordMember.user.username);
-	    await SetGoodStandingIfVerified(user, discordMember);
 	    await UpdateMemberAppearance(discordMember);
 	}
 	// Update ban trial even if the defendant leaves the guild.
@@ -269,12 +253,6 @@ async function Start() {
 	    // We have no record of this Discord user. Create a new record in the cache.
 	    console.log('New Discord user detected.');
 	    await UserCache.CreateNewDatabaseUser(member);
-	    const isCaptchaEnabled = false;
-	    if (isCaptchaEnabled) {
-		await DiscordUtil.AddRole(member, RoleID.Unverified);
-	    } else {
-		await DiscordUtil.AddRole(member, RoleID.Verified);
-	    }
 	}
 	await recruiting.ScanInvitesForChanges();
     });
@@ -347,7 +325,6 @@ async function Start() {
 	}
 	await cu.setNickname(newMember.user.username);
 	await cu.setCitizen(true);
-	await SetGoodStandingIfVerified(cu, newMember);
     });
 
     discordClient.on('messageReactionAdd', async (messageReaction, user) => {
