@@ -28,6 +28,9 @@ CREATE TABLE users
     ban_vote_start_time TIMESTAMP,  -- Time when the vote to ban this user started. Resets anytime the trial outcome flips.
     ban_vote_chatroom VARCHAR(32),  -- ID of the Discord text chat room used for a vote to ban this user.
     ban_vote_message VARCHAR(32),  -- ID of the Discord chat message used for a vote to ban this user.
+    yen INT,  -- How many yen this user has. yen are for-fun currency.
+    inactivity_tax_paid_until TIMESTAMP,  -- Last time this user was taxed.
+    ban_conviction_time TIMESTAMP,  -- When this user was convicted & banned in ban court.
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );
