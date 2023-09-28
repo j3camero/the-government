@@ -53,7 +53,7 @@ CREATE TABLE ban_votes
 (
     defendant_id INT NOT NULL,
     voter_id INT NOT NULL,
-    vote INT NOT NULL,  -- 1 = GUILTY, 0 = NOT GUILTY
+    vote INT NOT NULL,  -- 0 = NOVOTE, 1 = GUILTY, 2 = NOT GUILTY
     PRIMARY KEY(defendant_id, voter_id)
 );
 

@@ -1,4 +1,5 @@
 const BadWords = require('./bad-words');
+const BanVoteCache = require('./ban-vote-cache');
 const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
 const moment = require('moment');
@@ -74,13 +75,14 @@ async function UpdateTrial(cu) {
 		continue;
 	    }
 	    const jurorUser = await UserCache.GetCachedUserByDiscordId(juror.id);
-	    console.log('juror', juror.id, 'jurorUser', jurorUser.rank, jurorUser.citizen, 'roomName', roomName);
+	    //console.log('juror', juror.id, 'jurorUser', jurorUser.rank, jurorUser.citizen, 'roomName', roomName);
 	    if (!jurorUser || !jurorUser.citizen || jurorUser.rank > banVoteRank) {
 		// Remove unauthorized vote. This check will catch unauthorized votes that
 		// made it through the initial filter because the bot was not running.
 		// Also when a juror loses their rank their vote is removed here.
 		console.log('Removing vote from unqualified juror', jurorUser.commissar_id);
 		await reaction.users.remove(juror);
+		await BanVoteCache.RecordVoteIfChanged(cu.commissar_id, jurorUser.commissar_id, 0);
 		continue;
 	    }
 	    // Tally one reaction-vote.
@@ -90,11 +92,13 @@ async function UpdateTrial(cu) {
 		    score: jurorUser.harmonic_centrality,
 		    name: jurorUser.getNicknameOrTitleWithInsignia(),
 		});
+		await BanVoteCache.RecordVoteIfChanged(cu.commissar_id, jurorUser.commissar_id, 1);
 	    } else if (emoji === '❌') {
 		noVotes.push({
 		    score: jurorUser.harmonic_centrality,
 		    name: jurorUser.getNicknameOrTitleWithInsignia(),
 		});
+		await BanVoteCache.RecordVoteIfChanged(cu.commissar_id, jurorUser.commissar_id, 2);
 	    }
 	}
     }
@@ -240,6 +244,7 @@ async function UpdateTrial(cu) {
 	await cu.setBanVoteStartTime(null);
 	await cu.setBanVoteChatroom(null);
 	await cu.setBanVoteMessage(null);
+	await BanVoteCache.DeleteVotesForDefendant(cu.commissar_id);
 	console.log('Trial cleanup done. Justice prevails!');
     } else {
 	// Ban trial is still underway. Update it.
@@ -311,6 +316,7 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
     if (!juror || juror.rank > banVoteRank) {
 	// Ignore votes from unqualified jurors.
 	await reaction.users.remove(discordUser.id);
+	await BanVoteCache.RecordVoteIfChanged(defendant.commissar_id, juror.commissar_id, 0);
 	return;
     }
     // Remove any other reactions by the same user to the same message.
@@ -325,6 +331,15 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
 		await otherReaction.users.remove(discordUser);
 	    }
 	}
+	const emoji = reaction.emoji.name;
+	if (emoji === '✅') {
+	    await BanVoteCache.RecordVoteIfChanged(defendant.commissar_id, juror.commissar_id, 1);
+	} else if (emoji === '❌') {
+	    await BanVoteCache.RecordVoteIfChanged(defendant.commissar_id, juror.commissar_id, 2);
+	}
+    } else {
+	// This is an un-reaction. Set the cached vote to no-vote.
+	await BanVoteCache.RecordVoteIfChanged(defendant.commissar_id, juror.commissar_id, 0);
     }
     await UpdateTrial(defendant);
 }
@@ -360,6 +375,7 @@ async function HandlePardonCommand(discordMessage) {
     }
     await mentionedUser.setBanVoteMessage(null);
     await mentionedUser.setGoodStanding(true);
+    await BanVoteCache.DeleteVotesForDefendant(mentionedUser.commissar_id);
     try {
 	await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameWithInsignia()}!`);
     } catch (error) {
@@ -402,6 +418,7 @@ async function HandleConvictCommand(discordMessage) {
     }
     await defendantUser.setBanVoteMessage(null);
     await defendantUser.setGoodStanding(false);
+    await BanVoteCache.DeleteVotesForDefendant(defendantUser.commissar_id);
     try {
 	await discordMessage.channel.send(`Convicted ${defendantUser.getNicknameWithInsignia()}!`);
     } catch (error) {

@@ -1,5 +1,6 @@
 const AutoUpdate = require('./auto-update');
 const Ban = require('./ban');
+const BanVoteCache = require('./ban-vote-cache');
 const BotCommands = require('./bot-commands');
 const Clock = require('./clock');
 const DB = require('./database');
@@ -214,6 +215,7 @@ async function RoutineUpdate() {
     await UpdateHarmonicCentrality();
     await UpdateAllCitizens();
     await recruiting.ScanInvitesForChanges();
+    await BanVoteCache.ExpungeVotesWithNoOngoingTrial();
     await AutoUpdate();
     endTime = new Date().getTime();
     elapsed = endTime - startTime;
@@ -230,6 +232,9 @@ async function Start() {
     console.log('Database connected. Loading commissar user data.');
     await UserCache.LoadAllUsersFromDatabase();
     console.log('Commissar user data loaded.');
+    console.log('Loading ban votes from database.');
+    await BanVoteCache.LoadVotesFromDatabase();
+    console.log('Ban votes loaded into cache.');
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
     discordClient.on('guildMemberAdd', async (member) => {
