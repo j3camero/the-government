@@ -49,39 +49,12 @@ CREATE TABLE time_together
     INDEX user_index (lo_user_id, hi_user_id)
 );
 
-CREATE TABLE battlemetrics_sessions
-(
-    id INT NOT NULL AUTO_INCREMENT,
-    battlemetrics_id VARCHAR(64),
-    start_time DATETIME,
-    stop_time DATETIME,
-    first_time BOOLEAN,
-    in_game_name VARCHAR(64),
-    server_id BIGINT NOT NULL,
-    player_id BIGINT NOT NULL,
-    identifier_id BIGINT NOT NULL,
-    PRIMARY KEY (id),
-    UNIQUE bmid_unique (battlemetrics_id),
-    INDEX server_index (server_id, start_time, stop_time),
-    INDEX player_index (player_id, start_time, stop_time)
-);
-
-CREATE TABLE ban_trials
-(
-    trial_id INT NOT NULL AUTO_INCREMENT,
-    defendant_id INT NOT NULL,
-    vote_start_time TIMESTAMP,  -- Time when the vote to ban this user started. Resets anytime the trial outcome flips.
-    chatroom_id VARCHAR(32),  -- ID of the Discord text chat room used for a vote to ban this user.
-    message_id VARCHAR(32),  -- ID of the Discord chat message used for a vote to ban this user.
-    PRIMARY KEY(trial_id)
-);
-
 CREATE TABLE ban_votes
 (
-    trial_id INT NOT NULL,
+    defendant_id INT NOT NULL,
     voter_id INT NOT NULL,
     vote INT NOT NULL,  -- 1 = GUILTY, 0 = NOT GUILTY
-    PRIMARY KEY(trial_id, voter_id)
+    PRIMARY KEY(defendant_id, voter_id)
 );
 
 CREATE TABLE discord_invites
