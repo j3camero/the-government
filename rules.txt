@@ -6,6 +6,14 @@ As a Citizen of The Government, you have rights.
 
 Bans will be issued for gay-bashing, racism, sexism, etc.
 
+**The right to fair play**
+
+No auto-aim, ESP, or other cheats. Being the very best means we win straight-up.
+
+**The right to a mature adult environment**
+
+No children. There is no hard age limit. The criteria are behavior, social skills, and/or sound of voice. Rust can be a harsh game, so we don't want to risk hurting any children.
+
 **The right to not be killed or raided by fellow citizens**
 
 No matter how mad you get - don't do it! Even if someone does it to you. No doorcamping, unwanted TK, or raiding other clan members. It makes people quit the wipe, which is an offense against everybody, not only the direct victim.
@@ -18,18 +26,6 @@ You decide what to keep, and what to share with the group. Trading (or withholdi
 
 If you add turrets to your base, do it behind compound walls. If you use turrets to control a road or monument, add a gate bypass if possible. You can't "auth everyone". Citizens can destroy private turrets shooting into public areas (excluding monuments).
 
-**The right to a mature adult environment**
-
-No children. There is no hard age limit. The criteria are behavior, social skills, and/or sound of voice. Rust can be a harsh game, so we don't want to risk hurting any children.
-
-**The right to fair play**
-
-No auto-aim, ESP, or other cheats. Being the very best means we win straight-up.
-
 **The right to a fair trial**
 
-If you get banned, a trial is held in Ban Court. All bans must be approved by a majority vote of the top 50 Government members, which makes unfair bans easy to overturn.
-
-**The right to decision-making in balloting activities, free from external influence**
-
-All members have the autonomy to decide on server votes, ban court votes, policy votes, and vote-related activities. Any attempts to bribe, threaten, coerce, or exert undue pressure by means of practice or communication, that could be reasonably considered to be excessive or persistent violate this right.
+If you get banned, a trial is held in Ban Court. All bans must be approved by a majority vote of the top 50 Government members. Unfair bans are easy to overturn.
