@@ -52,8 +52,9 @@ async function ForEach(innerFunction, userCache) {
 	userCache = commissarUserCache;
     }
     const userList = Object.values(userCache);
+    const n = userList.length;
     // Sequential for loop on purpose, so that we can await each item one after the other.
-    for (let i = 0; i < userList.length; ++i) {
+    for (let i = n - 1; i >= 0; i--) {
 	const user = userList[i];
 	await innerFunction(user);
     }
