@@ -28,7 +28,7 @@ async function UpdateTrial(cu) {
     const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
     let roomName = cu.nick || cu.nickname || 'John Doe';
     if (BadWords.ContainsBadWords(roomName)) {
-	roomName = `case-${cu.commissarId}`;
+	roomName = `case-${cu.commissar_id}`;
     }
     // Update or create the courtroom: a text chat room under the Ban Court category.
     let channel;
