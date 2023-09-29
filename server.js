@@ -202,9 +202,10 @@ async function UpdateAllCitizens() {
 	}
     });
     console.log(`${activeUsers.length} active users ${inactiveUsers.length} inactive users`);
-    const activeSample = RandomSample(activeUsers, 100);
-    const inactiveSample = RandomSample(inactiveUsers, 100);
-    const selectedUsers = activeSample.concat(inactiveSample);
+    //const activeSample = RandomSample(activeUsers, 100);
+    //const inactiveSample = RandomSample(inactiveUsers, 100);
+    //const selectedUsers = activeSample.concat(inactiveSample);
+    const selectedUsers = activeUsers.concat(inactiveUsers);
     console.log(`Updating ${selectedUsers.length} users`);
     const guild = await DiscordUtil.GetMainDiscordGuild();
     for (const cu of selectedUsers) {
