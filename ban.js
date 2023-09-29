@@ -179,7 +179,7 @@ async function UpdateTrial(cu) {
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
-	    `Voting NO against the ban:${noVoteNames}\n\n` +
+	    `Voting NO against the ban:${noVoteCount}\n\n` +
 	    `${cu.getNicknameWithInsignia()} is ${outcomeString}.` +
 	    `${threeTicks}`
 	);
