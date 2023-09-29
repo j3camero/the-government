@@ -220,21 +220,9 @@ async function CalculateTaxPlan(yenToRaise) {
     return plan;
 }
 
-function GetRandomMessageOfThanks() {
-    const thanks = [
-	`The Government thanks the taxpayers for their generosity.`,
-	`Mr. President thanks the taxpayers for their generosity.`,
-	`You gotta keep 'em circulatin'`,
-	`Use 'em or lose 'em.`,
-	`Can I get tree fiddy?`,
-    ];
-    const n = Math.floor(Math.random() * thanks.length);
-    return thanks[n];
-}
-
 async function ImplementTaxPlan(plan, recipient, discordMessage) {
     let totalTax = 0;
-    let message = GetRandomMessageOfThanks() + '\n\n';
+    let message = 'Mr. President thanks the taxpayers for their generosity.\n\n';
     for (const cid in plan) {
 	const tax = plan[cid];
 	totalTax += tax;
@@ -269,7 +257,7 @@ async function ImplementTaxPlan(plan, recipient, discordMessage) {
 	const days = -Math.log(1 - tax / user.yen) / r;
 	const seconds = days * 86400;
 	const newPaidUntil = paidUntil.add(seconds, 'seconds');
-	await Pay(user, recipient, tax, discordMessage);
+	await Pay(user, recipient, tax, null);
 	await user.setInactivityTaxPaidUntil(newPaidUntil.format());
     }
 }
@@ -381,8 +369,10 @@ async function Pay(sender, recipient, amount, discordMessage) {
     const payeeName = recipient.getNicknameOrTitleWithInsignia();
     const sweet = Math.random() < 0.1 ? 'of those sweet sweet ' : '';
     const message = `${senderName} sent ${amount} ${sweet}yen to ${payeeName}`;
-    await discordMessage.channel.send(threeTicks + message + threeTicks);
     await YenLog(message);
+    if (discordMessage) {
+	await discordMessage.channel.send(threeTicks + message + threeTicks);
+    }
 }
 
 async function HandlePayCommandWithAmount(discordMessage, amount) {
