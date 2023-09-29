@@ -154,28 +154,62 @@ async function UpdateHarmonicCentrality() {
     await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
-async function UpdateAllCitizens() {
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    await UserCache.ForEach(async (user) => {
-	if (user.citizen) {
-	    console.log(`Checking user ${user.nickname}`,
-			`(ID:${user.commissar_id}).`);
-	    let discordMember;
-	    try {
-		discordMember = await guild.members.fetch(user.discord_id);
-	    } catch (error) {
-		discordMember = null;
-	    }
-	    if (!discordMember) {
-		await user.setCitizen(false);
-		return;
-	    }
-	    await user.setNickname(discordMember.user.username);
-	    await UpdateMemberAppearance(discordMember);
+async function UpdateUser(cu, guild) {
+    await Ban.UpdateTrial(cu);
+    if (!cu.citizen) {
+	return;
+    }
+    let discordMember;
+    try {
+	discordMember = await guild.members.fetch(cu.discord_id);
+    } catch (error) {
+	discordMember = null;
+    }
+    if (!discordMember) {
+	await cu.setCitizen(false);
+	return;
+    }
+    await cu.setNickname(discordMember.user.username);
+    await UpdateMemberAppearance(discordMember);
+}
+
+function RandomSample(arr, k) {
+    const n = arr.length;
+    if (k >= n) {
+	return arr;
+    }
+    const sample = [];
+    for (let i = 0; i < n && k > 0; i++) {
+	const p = k / (n - i);
+	if (Math.random() <= p) {
+	    sample.push(arr[i]);
+	    k--;
 	}
-	// Update ban trial even if the defendant leaves the guild.
-	await Ban.UpdateTrial(user);
+    }
+    return sample;
+}
+
+async function UpdateAllCitizens() {
+    const recent = moment().subtract(48, 'hours').format();
+    const activeUsers = [];
+    const inactiveUsers = [];
+    await UserCache.ForEach(async (cu) => {
+	const lastSeen = moment(cu.last_seen || '2020-01-01').format();
+	if (lastSeen < recent) {
+	    inactiveUsers.push(cu);
+	} else {
+	    activeUsers.push(cu);
+	}
     });
+    console.log(`${activeUsers.length} active users ${inactiveUsers.length} inactive users`);
+    const activeSample = RandomSample(activeUsers, 100);
+    const inactiveSample = RandomSample(inactiveUsers, 100);
+    const selectedUsers = activeSample.concat(inactiveSample);
+    console.log(`Updating ${selectedUsers.length} users`);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    for (const cu of selectedUsers) {
+	await UpdateUser(cu, guild);
+    }
 }
 
 // Enforces a time cap per 16h period between every pair of members. This stops

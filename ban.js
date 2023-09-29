@@ -11,6 +11,22 @@ const threeTicks = '```';
 const banCommandRank = 5;  // General 1
 const banVoteRank = 9;  // Lieutenant
 
+function SentenceLengthAsString(years) {
+    if (years <= 0) {
+	return '0 days';
+    }
+    const daysPerYear = 365.25;
+    const days = years * daysPerYear;
+    if (days < 50) {
+	return `${Math.round(days)} days`;
+    }
+    const months = 12 * days / daysPerYear;
+    if (months < 23) {
+	return `${Math.round(months)} months`;
+    }
+    return `${Math.round(years)} years`;
+}
+
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_start_time) {
 	// No trial to update.
@@ -116,8 +132,20 @@ async function UpdateTrial(cu) {
 	    }
 	}
     }
+    let outcomeString = 'NOT GUILTY';
     const guilty = VoteDuration.SimpleMajority(yesVoteCount, noVoteCount);
-    const outcomeString = guilty ? 'banned' : 'NOT GUILTY';
+    if (guilty) {
+	// How guilty the defendant is based on the vote margin. Ranges between 0 and 1.
+	// One extra "mercy vote" is added to the denominator. This creates a bias in the
+	// system towards more lenient sentences that wears off as more voters weigh in.
+	// The mercy vote also prevents infinite sentences by avoiding the asymptote in
+	// the tan() function.
+	const howGuilty = (yesVoteCount - noVoteCount) / (yesVoteCount + noVoteCount + 1);
+	const degrees90 = 0.5 * Math.PI;
+	const radians = howGuilty * degrees90;
+	const sentenceYears = Math.tan(radians);
+	outcomeString = 'banned for ' + SentenceLengthAsString(sentenceYears);
+    }
     const caseTitle = `THE GOVERNMENT v ${cu.getNicknameWithInsignia()}`;
     const underline = new Array(caseTitle.length + 1).join('-');
     const currentTime = moment();
@@ -179,7 +207,7 @@ async function UpdateTrial(cu) {
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
-	    `Voting NO against the ban:${noVoteNames}\n\n` +
+	    `Voting NO against the ban:${noVoteCount}\n\n` +
 	    `${cu.getNicknameWithInsignia()} is ${outcomeString}.` +
 	    `${threeTicks}`
 	);
@@ -215,7 +243,7 @@ async function UpdateTrial(cu) {
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
 	    `Voting NO against the ban: ${noVoteCount}\n\n` +
-	    `${cu.getNicknameWithInsignia()} is currently ${outcomeString}. ` +
+	    `${cu.getNicknameWithInsignia()} is ${outcomeString}. ` +
 	    `The vote ends ${timeRemaining}.` +
 	    `${threeTicks}`
 	);
