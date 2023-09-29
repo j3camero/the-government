@@ -253,6 +253,12 @@ async function UpdateTrial(cu) {
 
 // The given Discord message is already verified to start with the !ban prefix.
 async function HandleBanCommand(discordMessage) {
+    const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
+    const banCourtChannelCount = banCourtCategory.children.cache.size;
+    if (banCourtChannelCount >= 50) {
+	await discordMessage.channel.send('Too many ban trials in progress. Get more votes for the ones already underway to speed them up.');
+	return;
+    }
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.rank > banCommandRank) {
 	await discordMessage.channel.send('Only Generals can do that.');

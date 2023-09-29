@@ -223,12 +223,18 @@ async function CalculateTaxPlan(yenToRaise) {
 async function ImplementTaxPlan(plan, recipient, discordMessage) {
     let totalTax = 0;
     let message = 'Mr. President thanks the taxpayers for their generosity.\n\n';
+    const sortable = [];
     for (const cid in plan) {
 	const tax = plan[cid];
 	totalTax += tax;
 	const user = UserCache.GetCachedUserByCommissarId(cid);
 	const name = user.getNicknameOrTitleWithInsignia();
-	message += `- ¥ ${tax} ${name}\n`;
+	const text = `- ¥ ${tax} ${name}\n`;
+	sortable.push({ tax, text });
+    }
+    sortable.sort((a, b) => b.tax - a.tax);
+    for (const line of sortable) {
+	message += line.text;
     }
     message += '  -----\n';
     const recipientName = recipient.getNicknameOrTitleWithInsignia();
