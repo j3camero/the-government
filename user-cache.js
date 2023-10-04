@@ -35,6 +35,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.yen,
 	    row.inactivity_tax_paid_until,
 	    row.ban_conviction_time,
+	    row.ban_pardon_time,
 	);
 	newCache[row.commissar_id] = newUser;
     });

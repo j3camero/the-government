@@ -134,6 +134,7 @@ async function UpdateTrial(cu) {
     }
     let outcomeString = 'NOT GUILTY';
     const guilty = VoteDuration.SimpleMajority(yesVoteCount, noVoteCount);
+    let banPardonTime;
     if (guilty) {
 	// How guilty the defendant is based on the vote margin. Ranges between 0 and 1.
 	// One extra "mercy vote" is added to the denominator. This creates a bias in the
@@ -144,6 +145,8 @@ async function UpdateTrial(cu) {
 	const degrees90 = 0.5 * Math.PI;
 	const radians = howGuilty * degrees90;
 	const sentenceYears = Math.tan(radians);
+	const banLengthInSeconds = Math.round(sentenceYears * 365.25 * 86400);
+	banPardonTime = moment().add(banLengthInSeconds, 'seconds').format();
 	outcomeString = 'banned for ' + SentenceLengthAsString(sentenceYears);
     }
     const caseTitle = `THE GOVERNMENT v ${cu.getNicknameWithInsignia()}`;
@@ -193,6 +196,7 @@ async function UpdateTrial(cu) {
 	}
 	if (guilty && member != null) {
 	    console.log('About to ban a guild member.');
+	    await cu.setBanPardonTime(banPardonTime);
 	    // This line of code actually bans a member of the guild. Test carefully!
 	    await member.ban({
 		days: 0,  // The number of days of message history to delete, not the length of the ban.
@@ -208,7 +212,7 @@ async function UpdateTrial(cu) {
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
 	    `Voting NO against the ban:${noVoteCount}\n\n` +
-	    `${cu.getNicknameWithInsignia()} is ${outcomeString}.` +
+	    `${cu.getNicknameWithInsignia()} is ${outcomeString}` +
 	    `${threeTicks}`
 	);
 	await message.edit(trialSummary);
@@ -389,6 +393,7 @@ async function HandleConvictCommand(discordMessage) {
 	return;
     }
     await defendantUser.setBanConvictionTime(moment().format());
+    await defendantUser.setBanPardonTime(moment().add(365, 'days').format());
     const guild = await DiscordUtil.GetMainDiscordGuild();
     try {
 	const defendantMember = await guild.members.resolve(defendantUser.discord_id);
