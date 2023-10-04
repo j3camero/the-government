@@ -163,7 +163,11 @@ async function UpdateTrial(cu) {
 	}
 	await cu.setGoodStanding(false);
 	if (member) {
-	    await member.voice.disconnect();
+	    try {
+		await member.voice.disconnect();
+	    } catch (error) {
+		console.log('Error while disconnecting a member from voice chat:', error);
+	    }
 	}
     } else {
 	baselineVoteDurationDays = 2;
