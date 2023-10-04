@@ -193,10 +193,10 @@ async function UpdateTrial(cu) {
 	if (guilty) {
 	    // Record the conviction even if the member has left. That way if they rejoin we can kick them back out.
 	    await cu.setBanConvictionTime(currentTime.format());
+	    await cu.setBanPardonTime(banPardonTime);
 	}
 	if (guilty && member != null) {
 	    console.log('About to ban a guild member.');
-	    await cu.setBanPardonTime(banPardonTime);
 	    // This line of code actually bans a member of the guild. Test carefully!
 	    await member.ban({
 		days: 0,  // The number of days of message history to delete, not the length of the ban.
