@@ -31,6 +31,7 @@ CREATE TABLE users
     yen INT,  -- How many yen this user has. yen are for-fun currency.
     inactivity_tax_paid_until TIMESTAMP,  -- Last time this user was taxed.
     ban_conviction_time TIMESTAMP,  -- When this user was convicted & banned in ban court.
+    ban_pardon_time TIMESTAMP,  -- When this user was convicted & banned in ban court.
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );

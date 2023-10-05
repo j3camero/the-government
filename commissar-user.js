@@ -26,7 +26,8 @@ class CommissarUser {
         ban_vote_message,
         yen,
         inactivity_tax_paid_until,
-        ban_conviction_time) {
+        ban_conviction_time,
+        ban_pardon_time) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -48,6 +49,7 @@ class CommissarUser {
 	this.yen = parseInt(yen);
 	this.inactivity_tax_paid_until = inactivity_tax_paid_until;
 	this.ban_conviction_time = ban_conviction_time;
+	this.ban_pardon_time = ban_pardon_time;
     }
 
     async setDiscordId(discord_id) {
@@ -222,6 +224,14 @@ class CommissarUser {
 	}
 	this.ban_conviction_time = ban_conviction_time;
 	await this.updateFieldInDatabase('ban_conviction_time', this.ban_conviction_time);
+    }
+
+    async setBanPardonTime(ban_pardon_time) {
+	if (ban_pardon_time === this.ban_pardon_time) {
+	    return;
+	}
+	this.ban_pardon_time = ban_pardon_time;
+	await this.updateFieldInDatabase('ban_pardon_time', this.ban_pardon_time);
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {
