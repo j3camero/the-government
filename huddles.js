@@ -267,7 +267,7 @@ function GetLowestRankingMembersFromVoiceChannel(channel, n) {
     return sortableMembers.slice(-n);
 }
 
-let overflowLimit = 25;
+let overflowLimit = 30;
 
 function SetOverflowLimit(newLimit) {
     const maxLimit = 90;
