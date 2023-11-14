@@ -78,10 +78,11 @@ async function HandleServerVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
     const message = await channel.send(
-	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for October 2023.\n\n' +
+	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for November 2023.\n\n' +
 	'Every top 100 US monthly vanilla server is included.'
     );
     await message.react('❤️');
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 63, 12);
     await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 21, 30);
     await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 3, 27);
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5, 27);
@@ -90,7 +91,6 @@ async function HandleServerVoteCommand(discordMessage) {
     await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 20, 28);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 39, 11);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 51, 11);
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 63, 12);
     await MakeOneServerVoteOption(channel, 'Rustopia.gg - US Small', 'https://www.battlemetrics.com/servers/rust/14876730', 66, 21);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 67, 11);
     //await MakeOneServerVoteOption(channel, '[US West] Facepunch Hapis', 'https://www.battlemetrics.com/servers/rust/2350362', 611, 4);
@@ -114,7 +114,7 @@ async function HandlePresidentVoteCommand(discordMessage) {
 	name: 'presidential-election',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in September 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in November 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
     await message.react('❤️');
     const generalRankUsers = await UserCache.GetMostCentralUsers(15);
     const candidateNames = [];
@@ -252,19 +252,19 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending special mission orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n`;
-    content += `Here are your secret orders for the month of September 2023. Report to the server US Rustinity 2x Monthly Large\n`;
-    content += '```client.connect 199.231.233.88:28015```\n';  // Only one newline after triple backticks.
-    content += `Join voice chat to get the build spot.\n\n`;
+    content += `Here are your secret orders for the month of November 2023. We are invading a new server that we have never been to before - Rustafied.com - US Long III\n`;
+    content += '```client.connect 104.143.2.103:28015```\n';  // Only one newline after triple backticks.
     if (user.rank <= 5) {
-	content += `Generals Code 7369\n`;
+	content += `Generals Code 1111\n`;
     }
     if (user.rank <= 9) {
-	content += `Officer Code 5219\n`;
+	content += `Officer Code 1111\n`;
     }
     if (user.rank <= 13) {
-	content += `Grunt Code 3930\n\n`;
+	content += `Grunt Code 1111\n\n`;
+	content += `Gate Code 1111\n\n`;
     }
-    content += `The Government is expected to steamroll this 2x server. Everyone is welcome to join us.\n\n`;
+    content += `Run straight to J1. Help build the community base and get a common Tier 2, then build your own small base.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
@@ -286,9 +286,10 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of September 2023. Report to the server US Rustinity 2x Monthly Large\n`;
-    content += '```client.connect 199.231.233.88:28015```\n';  // Only one newline after triple backticks.
-    content += `The Government is expected to steamroll this 2x server. Come have some fun with a relaxed wipe.\n\n`;
+    content += `Here are your secret orders for the month of November 2023. We are invading a new server that we have never been to before - Rustafied.com - US Long III\n`;
+    content += '```client.connect 104.143.2.103:28015```\n';  // Only one newline after triple backticks.
+    content += `Village Gate Code 1111\n\n`;
+    content += `Join VC to learn where to build. Help build the community base and get a common Tier 2, then build your own small base.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     try {
@@ -325,12 +326,7 @@ async function HandleOrdersTestCommand(discordMessage) {
 	return;
     }
     const jeff = await UserCache.GetCachedUserByDiscordId('268593188137074688');
-    const evil = await UserCache.GetCachedUserByDiscordId('299004800555810817');
-    const waldo = await UserCache.GetCachedUserByDiscordId('308763469195247626');
-    const aperture = await UserCache.GetCachedUserByDiscordId('325455587699589145');
-    const baggy = await UserCache.GetCachedUserByDiscordId('347406818424913920');
-    const jhdiray = await UserCache.GetCachedUserByDiscordId('300146989402685441');
-    const users = [jeff, evil, aperture];
+    const users = [jeff];
     await SendOrdersToTheseCommissarUsers(users, discordMessage);
 }
 
