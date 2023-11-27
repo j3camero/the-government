@@ -181,12 +181,13 @@ async function UpdateTaxChannel() {
     await channel.send(threeTicks + message + threeTicks);
 }
 
-// Update the tax channel once per hour.
+// Update the tax channel once after the bot boots.
 setTimeout(async () => {
     await UpdateTaxChannel();
 }, 60 * 1000);
+// Lottery once per hour, which also triggers an update of the tax and yen channels.
 setInterval(async () => {
-    await UpdateTaxChannel();
+    await DoLottery();
 }, 3600 * 1000);
 
 async function CalculateTaxPlan(yenToRaise) {
@@ -220,9 +221,9 @@ async function CalculateTaxPlan(yenToRaise) {
     return plan;
 }
 
-async function ImplementTaxPlan(plan, recipient, discordMessage) {
+async function ImplementTaxPlan(plan, recipient) {
     let totalTax = 0;
-    let message = 'Mr. President thanks the taxpayers for their generosity.\n\n';
+    let longMessage = 'Tax Record\n\n';
     const sortable = [];
     for (const cid in plan) {
 	const tax = plan[cid];
@@ -234,14 +235,15 @@ async function ImplementTaxPlan(plan, recipient, discordMessage) {
     }
     sortable.sort((a, b) => b.tax - a.tax);
     for (const line of sortable) {
-	message += line.text;
+	longMessage += line.text;
     }
-    message += '  -----\n';
+    longMessage += '  -----\n';
     const recipientName = recipient.getNicknameOrTitleWithInsignia();
-    message += `+ ¥ ${totalTax} ${recipientName}\n\n`;
-    message += 'See #tax for more info about tax. Active members are never taxed. You can easily dodge tax by connecting to VC every 3 months. The goal of tax is to give the Government a steady source of revenue by putting inactive yen back into circulation.';
-    await discordMessage.channel.send(threeTicks + message + threeTicks);
-    await YenLog(message);
+    longMessage += `+ ¥ ${totalTax} ${recipientName}\n\n`;
+    longMessage += 'See #tax for more info about tax. Active members are never taxed. You can easily dodge tax by connecting to VC every 3 months. The goal of tax is to give the Government a steady source of revenue by putting inactive yen back into circulation.';
+    await YenLog(longMessage);
+    const shortMessage = `${recipientName} won ${totalTax} yen in the lottery`;
+    await DiscordUtil.MessagePublicChatChannel(threeTicks + shortMessage + threeTicks);
     const r = Math.log(2) / 90;
     for (const cid in plan) {
 	const tax = plan[cid];
@@ -272,7 +274,7 @@ async function HandleTaxCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     const isFounder = author.commissar_id === 7;
     const isPrez = author.office === 'PREZ';
-    const isCfo = author.commissar_id === 2799;  // EviL ID is 2799. TODO: update this to look for the CFO badge.
+    const isCfo = author.commissar_id === 2799;
     const ok = isFounder || isPrez || isCfo;
     console.log('TAX COMMAND', isFounder, isPrez, isCfo);
     if (!author || !ok) {
@@ -310,6 +312,48 @@ async function HandleTaxCommand(discordMessage) {
 	return;
     }
     await ImplementTaxPlan(plan, recipient, discordMessage);
+    await UpdateYenChannel();
+    await UpdateTaxChannel();
+}
+
+async function DoLottery() {
+    console.log('LOTTERY');
+    const taxBase = await CalculateInactivityTaxBase();
+    let totalTaxBase = 0;
+    for (const i in taxBase) {
+	totalTaxBase += taxBase[i];
+    }
+    const maxPrizeYen = 10;
+    const targetPrize = Math.floor(0.1 * totalTaxBase);
+    const prizeYen = Math.min(targetPrize, maxPrizeYen);
+    const plan = await CalculateTaxPlan(prizeYen);
+    if (!plan) {
+	console.log('Could not raise enough tax revenue for lottery.');
+	return;
+    }
+    const membersInVoiceChat = [];
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    for (const [channelId, channel] of guild.channels.cache) {
+	const afkLoungeId = '703716669452714054';
+	if (channel.type === 2 && channel.id !== afkLoungeId) {
+	    for (const [memberId, member] of channel.members) {
+		membersInVoiceChat.push(member.id);
+	    }
+	}
+    }
+    const n = membersInVoiceChat.length;
+    if (n < 2) {
+	console.log('Not enough people in voice chat for lottery.');
+	return;
+    }
+    const randomIndex = Math.floor(Math.random() * n);
+    const winnerId = membersInVoiceChat[randomIndex];
+    const recipient = await UserCache.GetCachedUserByDiscordId(winnerId);
+    if (!recipient) {
+	console.log('Error. Invalid lottery winner.');
+	return;
+    }
+    await ImplementTaxPlan(plan, recipient);
     await UpdateYenChannel();
     await UpdateTaxChannel();
 }
@@ -641,6 +685,7 @@ async function HandleConvertCommand(discordMessage) {
 }
 
 module.exports = {
+    DoLottery,
     HandleConvertCommand,
     HandlePayCommand,
     HandleTaxCommand,
