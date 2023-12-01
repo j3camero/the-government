@@ -131,6 +131,44 @@ async function CalculateInactivityTaxBase() {
     return tax;
 }
 
+async function ChooseRandomInactiveUserWeightedByYen() {
+    let totalTaxBase = 0;
+    const inactiveUsers = [];
+    await UserCache.ForEach((user) => {
+	if (!user.yen) {
+	    // Users with no yen can't pay tax.
+	    return;
+	}
+	if (!user.last_seen) {
+	    // Users that have never been seen for whatever reason don't pay tax.
+	    return;
+	}
+	const lastSeen = moment(user.last_seen);
+	const gracePeriodEnd = lastSeen.add(90, 'days');
+	const currentTime = moment();
+	if (gracePeriodEnd.isAfter(currentTime)) {
+	    // Recently active users don't pay tax. Only inactive ones.
+	    return;
+	}
+	inactiveUsers.push(user);
+	totalTaxBase += user.yen;
+    });
+    if (totalTaxBase === 0) {
+	return null;
+    }
+    inactiveUsers.sort((a, b) => (a.commissar_id - b.commissar_id));
+    const r = Math.random() * totalTaxBase;
+    let cumulativeTax = 0;
+    for (const user of inactiveUsers) {
+	cumulativeTax += user.yen;
+	if (cumulativeTax >= r) {
+	    return user;
+	}
+    }
+    // Shouldn't get here.
+    return null;
+}
+
 async function UpdateTaxChannel() {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const taxChannelId = '1012023632312156311';
@@ -185,7 +223,7 @@ async function UpdateTaxChannel() {
 setTimeout(async () => {
     await UpdateTaxChannel();
 }, 60 * 1000);
-// Lottery once per hour, which also triggers an update of the tax and yen channels.
+// Lottery once an hour.
 setInterval(async () => {
     await DoLottery();
 }, 3600 * 1000);
@@ -223,27 +261,7 @@ async function CalculateTaxPlan(yenToRaise) {
 
 async function ImplementTaxPlan(plan, recipient) {
     let totalTax = 0;
-    let longMessage = 'Tax Record\n\n';
-    const sortable = [];
-    for (const cid in plan) {
-	const tax = plan[cid];
-	totalTax += tax;
-	const user = UserCache.GetCachedUserByCommissarId(cid);
-	const name = user.getNicknameOrTitleWithInsignia();
-	const text = `- ¥ ${tax} ${name}\n`;
-	sortable.push({ tax, text });
-    }
-    sortable.sort((a, b) => b.tax - a.tax);
-    for (const line of sortable) {
-	longMessage += line.text;
-    }
-    longMessage += '  -----\n';
     const recipientName = recipient.getNicknameOrTitleWithInsignia();
-    longMessage += `+ ¥ ${totalTax} ${recipientName}\n\n`;
-    longMessage += 'See #tax for more info about tax. Active members are never taxed. You can easily dodge tax by connecting to VC every 3 months. The goal of tax is to give the Government a steady source of revenue by putting inactive yen back into circulation.';
-    await YenLog(longMessage);
-    const shortMessage = `${recipientName} won ${totalTax} yen in the lottery`;
-    await DiscordUtil.MessagePublicChatChannel(threeTicks + shortMessage + threeTicks);
     const r = Math.log(2) / 90;
     for (const cid in plan) {
 	const tax = plan[cid];
@@ -317,7 +335,6 @@ async function HandleTaxCommand(discordMessage) {
 }
 
 async function DoLottery() {
-    console.log('LOTTERY');
     const taxBase = await CalculateInactivityTaxBase();
     let totalTaxBase = 0;
     for (const i in taxBase) {
@@ -378,6 +395,7 @@ async function UpdateYenChannel() {
     const lines = [];
     let savedMessage;
     let totalYen = 0;
+    let activeYen = 0;
     for (let i = 0; i < n; i++) {
 	const user = users[i];
 	const name = user.getNicknameOrTitleWithInsignia();
@@ -385,7 +403,16 @@ async function UpdateYenChannel() {
 	const line = `${rank}. ¥ ${user.yen} ${name}`;
 	lines.push(line);
 	totalYen += user.yen;
+	if (user.last_seen) {
+	    const lastSeen = moment(user.last_seen);
+	    const gracePeriodEnd = lastSeen.add(90, 'days');
+	    const currentTime = moment();
+	    if (gracePeriodEnd.isAfter(currentTime)) {
+		activeYen += user.yen;
+	    }
+	}
     }
+    const inactiveYen = totalYen - activeYen;
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const yenChannelId = '1007017809492070522';
     const channel = await guild.channels.resolve(yenChannelId);
@@ -394,10 +421,13 @@ async function UpdateYenChannel() {
     const jeffSteamInventoryValue = 121462;
     const reserveRatio = jeffSteamInventoryValue / totalYen;
     const formattedReserveRatio = parseInt(reserveRatio * 100);
+    const formattedActiveYenPercent = parseInt(100 * activeYen / totalYen);
     let message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
-    message += `Liquidation value of Jeff's Rust skins (August 2023): ¥ ${jeffSteamInventoryValue}\n`;
+    message += `Liquidation value of Jeff's Rust skins (Nov 2023): ¥ ${jeffSteamInventoryValue}\n`;
     message += `Reserve ratio: ${formattedReserveRatio}%\n`;
+    message += `All recently active members (90d): ¥ ${activeYen} (${formattedActiveYenPercent}%)\n`;
+    message += `Inactive members: ¥ ${inactiveYen}\n`;
     await channel.send(threeTicks + message + threeTicks);
 }
 
