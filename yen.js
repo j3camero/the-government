@@ -261,7 +261,27 @@ async function CalculateTaxPlan(yenToRaise) {
 
 async function ImplementTaxPlan(plan, recipient) {
     let totalTax = 0;
+    let longMessage = 'Tax Record\n\n';
+    const sortable = [];
+    for (const cid in plan) {
+	const tax = plan[cid];
+	totalTax += tax;
+	const user = UserCache.GetCachedUserByCommissarId(cid);
+	const name = user.getNicknameOrTitleWithInsignia();
+	const text = `- ¥ ${tax} ${name}\n`;
+	sortable.push({ tax, text });
+    }
+    sortable.sort((a, b) => b.tax - a.tax);
+    for (const line of sortable) {
+	longMessage += line.text;
+    }
+    longMessage += '  -----\n';
     const recipientName = recipient.getNicknameOrTitleWithInsignia();
+    longMessage += `+ ¥ ${totalTax} ${recipientName}\n\n`;
+    longMessage += 'See #tax for more info about tax. Active members are never taxed. You can easily dodge tax by connecting to VC every 3 months. The goal of tax is to give the Government a steady source of revenue by putting inactive yen back into circulation.';
+    await YenLog(longMessage);
+    const shortMessage = `${recipientName} won ${totalTax} yen in the lottery`;
+    await DiscordUtil.MessagePublicChatChannel(threeTicks + shortMessage + threeTicks);
     const r = Math.log(2) / 90;
     for (const cid in plan) {
 	const tax = plan[cid];
@@ -335,19 +355,23 @@ async function HandleTaxCommand(discordMessage) {
 }
 
 async function DoLottery() {
+    console.log('LOTTERY');
     const taxBase = await CalculateInactivityTaxBase();
     let totalTaxBase = 0;
     for (const i in taxBase) {
 	totalTaxBase += taxBase[i];
     }
+    console.log('totalTaxBase', totalTaxBase);
     const maxPrizeYen = 10;
     const targetPrize = Math.floor(0.1 * totalTaxBase);
+    console.log('targetPrize', targetPrize);
     const prizeYen = Math.min(targetPrize, maxPrizeYen);
     const plan = await CalculateTaxPlan(prizeYen);
     if (!plan) {
 	console.log('Could not raise enough tax revenue for lottery.');
 	return;
     }
+    console.log('Tax Plan', plan);
     const membersInVoiceChat = [];
     const guild = await DiscordUtil.GetMainDiscordGuild();
     for (const [channelId, channel] of guild.channels.cache) {
@@ -359,17 +383,20 @@ async function DoLottery() {
 	}
     }
     const n = membersInVoiceChat.length;
+    console.log(n, 'people in voice chat');
     if (n < 2) {
 	console.log('Not enough people in voice chat for lottery.');
 	return;
     }
     const randomIndex = Math.floor(Math.random() * n);
     const winnerId = membersInVoiceChat[randomIndex];
+    console.log('winnerId', winnerId);
     const recipient = await UserCache.GetCachedUserByDiscordId(winnerId);
     if (!recipient) {
 	console.log('Error. Invalid lottery winner.');
 	return;
     }
+    console.log('Implementing lottery tax plan');
     await ImplementTaxPlan(plan, recipient);
     await UpdateYenChannel();
     await UpdateTaxChannel();
