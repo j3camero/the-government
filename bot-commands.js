@@ -741,6 +741,7 @@ async function Dispatch(discordMessage) {
 	'!prez': HandlePrezCommand,
 	'!veep': HandleVeepCommand,
 	'!indict': Ban.HandleBanCommand,
+	'!lottery': yen.DoLottery,
 	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
 	'!overflow': HandleOverflowCommand,
