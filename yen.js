@@ -56,8 +56,8 @@ async function CalculateInactivityTaxForecast() {
 	    // Users with no yen can't pay tax.
 	    return;
 	}
-	if (user.yen <= 1) {
-	    // Users with 1 or fewer yen are exempt from the tax.
+	if (user.yen <= 0) {
+	    // Users with 0 yen cannot pay tax.
 	    return;
 	}
 	if (!user.last_seen) {
@@ -96,8 +96,8 @@ async function CalculateInactivityTaxBase() {
 	    // Users with no yen can't pay tax.
 	    return;
 	}
-	if (user.yen <= 1) {
-	    // Users with 1 or fewer yen are exempt from the tax.
+	if (user.yen <= 0) {
+	    // Users with 0 yen cannot pay tax.
 	    return;
 	}
 	if (!user.last_seen) {
