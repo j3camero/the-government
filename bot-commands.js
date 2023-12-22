@@ -244,53 +244,36 @@ async function HandleVoiceActiveUsersCommand(discordMessage) {
     await discordMessage.channel.send(`${voiceActiveUsers} users active in voice chat in the last ${daysToLookback} days.`);
 }
 
-async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
+async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
     const name = user.getNicknameOrTitleWithInsignia();
     await discordMessage.channel.send(`Sending special mission orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
-    let content = `${rankNameAndInsignia},\n`;
-    content += `Here are your secret orders for the month of November 2023. We are invading a new server that we have never been to before - Rustafied.com - US Long III\n`;
-    content += '```client.connect 104.143.2.103:28015```\n';  // Only one newline after triple backticks.
+    let content = `${rankNameAndInsignia},\n\n`;
+    content += `Here are your secret orders for the month of December 2023. Report to Rustafied.com - US Long III\n`;
+    content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
     if (user.rank <= 5) {
 	content += `Generals Code 1111\n`;
     }
     if (user.rank <= 9) {
 	content += `Officer Code 1111\n`;
+	content += `Grunt Code 1111\n`;
     }
     if (user.rank <= 13) {
-	content += `Grunt Code 1111\n\n`;
 	content += `Gate Code 1111\n\n`;
     }
-    content += `Run straight to J1. Help build the community base and get a common Tier 2, then build your own small base.\n\n`;
+    content += `Run straight to A1. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Pair with https://rustcult.com/servers to automatically protect your base from getting raided by the gov. New advancements are coming soon that will revolutionize Rust.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
     try {
 	await discordMember.send({
 	    content,
-	    //files: [{
-	//	attachment: 'layout.png',
-	//	name: 'layout.png'
-	  //  }]
+	    files: [{
+		attachment: 'nov-2023-village-heatmap.png',
+		name: 'nov-2023-village-heatmap.png'
+	    }]
 	});
-    } catch (error) {
-	console.log('Failed to send orders to', name);
-    }
-}
-
-async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
-    const name = user.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`Sending orders to ${name}`);
-    const rankNameAndInsignia = user.getRankNameAndInsignia();
-    let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of November 2023. We are invading a new server that we have never been to before - Rustafied.com - US Long III\n`;
-    content += '```client.connect 104.143.2.103:28015```\n';  // Only one newline after triple backticks.
-    content += `Village Gate Code 1111\n\n`;
-    content += `Join VC to learn where to build. Help build the community base and get a common Tier 2, then build your own small base.\n\n`;
-    content += `Yours truly,\n`;
-    content += `The Government  <3`;
-    try {
-	await discordMember.send(content);
     } catch (error) {
 	console.log('Failed to send orders to', name);
     }
@@ -299,12 +282,7 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
 async function SendOrdersToOneCommissarUser(user, discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const discordMember = await guild.members.fetch(user.discord_id);
-    const hasWipeBadge = await DiscordUtil.GuildMemberHasRole(discordMember, RoleID.WipeBadge);
-    if (hasWipeBadge) {
-	await SendWipeBadgeOrders(user, discordMessage, discordMember);
-    } else {
-	await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
-    }
+    await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
 }
 
 async function SendOrdersToTheseCommissarUsers(users, discordMessage) {
