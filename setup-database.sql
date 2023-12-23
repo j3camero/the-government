@@ -32,6 +32,8 @@ CREATE TABLE users
     inactivity_tax_paid_until TIMESTAMP,  -- Last time this user was taxed.
     ban_conviction_time TIMESTAMP,  -- When this user was convicted & banned in ban court.
     ban_pardon_time TIMESTAMP,  -- When this user was convicted & banned in ban court.
+    presidential_election_vote INT,  -- The commissar_id that this user is voting for in the presidential election. NULL if has not voted.
+    presidential_election_message_id VARCHAR(32),  -- ID of the discord message used to display this user on the presidential election ballot.
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );

@@ -36,6 +36,8 @@ async function LoadAllUsersFromDatabase() {
 	    row.inactivity_tax_paid_until,
 	    row.ban_conviction_time,
 	    row.ban_pardon_time,
+	    row.presidential_election_vote,
+	    row.presidential_election_message_id,
 	);
 	newCache[row.commissar_id] = newUser;
     });
@@ -112,6 +114,7 @@ async function CreateNewDatabaseUser(discordMember) {
 	null, null, null,
 	null, null, null,
 	0,
+	null, null, null, null, null,
     );
     commissarUserCache[commissar_id] = newUser;
     return newUser;
@@ -240,6 +243,21 @@ function GetUsersWithRankAndScoreHigherThan(rankIndex, scoreThreshold) {
 	}
     }
     return matches;
+}
+
+function CountPresidentialElectionVotes() {
+    const votes = {};
+    for (const i in commissarUserCache) {
+	const u = commissarUserCache[i];
+	const v = u.presidential_election_vote;
+	if (v) {
+	    if (!(v in votes)) {
+		votes[v] = 0;
+	    }
+	    votes[v]++;
+	}
+    }
+    return votes;
 }
 
 module.exports = {
