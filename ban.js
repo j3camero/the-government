@@ -263,7 +263,7 @@ async function UpdateTrial(cu) {
 async function HandleBanCommand(discordMessage) {
     const banCourtCategory = await DiscordUtil.GetBanCourtCategoryChannel();
     const banCourtChannelCount = banCourtCategory.children.cache.size;
-    if (banCourtChannelCount >= 50) {
+    if (banCourtChannelCount >= 49) {
 	await discordMessage.channel.send('Too many ban trials in progress. Get more votes for the ones already underway to speed them up.');
 	return;
     }
