@@ -56,8 +56,8 @@ async function CalculateInactivityTaxForecast() {
 	    // Users with no yen can't pay tax.
 	    return;
 	}
-	if (user.yen <= 1) {
-	    // Users with 1 or fewer yen are exempt from the tax.
+	if (user.yen <= 0) {
+	    // Users with 0 yen cannot pay tax.
 	    return;
 	}
 	if (!user.last_seen) {
@@ -96,8 +96,8 @@ async function CalculateInactivityTaxBase() {
 	    // Users with no yen can't pay tax.
 	    return;
 	}
-	if (user.yen <= 1) {
-	    // Users with 1 or fewer yen are exempt from the tax.
+	if (user.yen <= 0) {
+	    // Users with 0 yen cannot pay tax.
 	    return;
 	}
 	if (!user.last_seen) {
@@ -223,9 +223,9 @@ async function UpdateTaxChannel() {
 setTimeout(async () => {
     await UpdateTaxChannel();
 }, 60 * 1000);
-// Lottery once an hour.
+// Update tax channel once an hour.
 setInterval(async () => {
-    await DoLottery();
+    await UpdateTaxChannel();
 }, 3600 * 1000);
 
 async function CalculateTaxPlan(yenToRaise) {
@@ -354,18 +354,28 @@ async function HandleTaxCommand(discordMessage) {
     await UpdateTaxChannel();
 }
 
+// Delay the first lottery by 5 minutes after bot startup to
+// avoid too frequent lotteries while testing bot code, which
+// involves repeatedly restarting the bot.
+let nextLotteryTime = Date.now() + (5 * 60 * 1000);
+
 async function DoLottery() {
     console.log('LOTTERY');
+    const currentTime = Date.now();
+    if (currentTime < nextLotteryTime) {
+	return;
+    }
     const taxBase = await CalculateInactivityTaxBase();
     let totalTaxBase = 0;
     for (const i in taxBase) {
 	totalTaxBase += taxBase[i];
     }
+    const minimumTaxBaseForLottery = 1010;
+    if (totalTaxBase < minimumTaxBaseForLottery) {
+	return;
+    }
     console.log('totalTaxBase', totalTaxBase);
-    const maxPrizeYen = 10;
-    const targetPrize = Math.floor(0.1 * totalTaxBase);
-    console.log('targetPrize', targetPrize);
-    const prizeYen = Math.min(targetPrize, maxPrizeYen);
+    const prizeYen = 10;
     const plan = await CalculateTaxPlan(prizeYen);
     if (!plan) {
 	console.log('Could not raise enough tax revenue for lottery.');
@@ -400,6 +410,11 @@ async function DoLottery() {
     await ImplementTaxPlan(plan, recipient);
     await UpdateYenChannel();
     await UpdateTaxChannel();
+    // Schedule the minimum time for the next lottery to stop it from
+    // happening too often.
+    const oneHour = 60 * 60 * 1000;
+    const randomJitter = (Math.random() * 2 - 1) * (15 * 60 * 1000);
+    nextLotteryTime = currentTime + oneHour + randomJitter;
 }
 
 async function UpdateYenChannel() {

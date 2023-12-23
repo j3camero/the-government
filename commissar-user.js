@@ -27,7 +27,9 @@ class CommissarUser {
         yen,
         inactivity_tax_paid_until,
         ban_conviction_time,
-        ban_pardon_time) {
+        ban_pardon_time,
+        presidential_election_vote,
+        presidential_election_message_id) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -50,6 +52,8 @@ class CommissarUser {
 	this.inactivity_tax_paid_until = inactivity_tax_paid_until;
 	this.ban_conviction_time = ban_conviction_time;
 	this.ban_pardon_time = ban_pardon_time;
+	this.presidential_election_vote = presidential_election_vote;
+	this.presidential_election_message_id = presidential_election_message_id;
     }
 
     async setDiscordId(discord_id) {
@@ -234,6 +238,22 @@ class CommissarUser {
 	await this.updateFieldInDatabase('ban_pardon_time', this.ban_pardon_time);
     }
 
+    async setPresidentialElectionVote(presidential_election_vote) {
+	if (presidential_election_vote === this.presidential_election_vote) {
+	    return;
+	}
+	this.presidential_election_vote = presidential_election_vote;
+	await this.updateFieldInDatabase('presidential_election_vote', this.presidential_election_vote);
+    }
+
+    async setPresidentialElectionMessageId(presidential_election_message_id) {
+	if (presidential_election_message_id === this.presidential_election_message_id) {
+	    return;
+	}
+	this.presidential_election_message_id = presidential_election_message_id;
+	await this.updateFieldInDatabase('presidential_election_message_id', this.presidential_election_message_id);
+    }
+    
     async updateFieldInDatabase(fieldName, fieldValue) {
 	//console.log(`DB update ${fieldName} = ${fieldValue} for ${this.nickname} (ID:${this.commissar_id}).`);
 	const sql = `UPDATE users SET ${fieldName} = ? WHERE commissar_id = ?`;

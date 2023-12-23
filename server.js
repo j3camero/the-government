@@ -17,6 +17,7 @@ const RoleID = require('./role-id');
 const rules = require('./rules');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
+const yen = require('./yen');
 
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
@@ -240,6 +241,7 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
 async function RoutineUpdate() {
     console.log('Routine update');
     startTime = new Date().getTime();
+    await yen.DoLottery();
     await Rank.UpdateUserRanks();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
     await huddles.ScheduleUpdate();

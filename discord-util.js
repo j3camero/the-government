@@ -151,8 +151,8 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
     const lines = [];
     let maxLength = 0;
     for (const user of mostCentralUsers) {
-	const score = user.harmonic_centrality / 100;
-	const scoreString = Math.round(score).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	const score = user.harmonic_centrality / 1000;
+	const scoreString = Math.ceil(score).toString();  // To enable commas add .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 	maxLength = Math.max(scoreString.length, maxLength);
 	const paddedScore = scoreString.padStart(maxLength, ' ');
 	const name = user.getNicknameOrTitleWithInsignia();
