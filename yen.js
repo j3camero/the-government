@@ -370,7 +370,7 @@ async function DoLottery() {
     for (const i in taxBase) {
 	totalTaxBase += taxBase[i];
     }
-    const minimumTaxBaseForLottery = 1010;
+    const minimumTaxBaseForLottery = 100;
     if (totalTaxBase < minimumTaxBaseForLottery) {
 	return;
     }
