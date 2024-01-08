@@ -78,14 +78,14 @@ async function HandleServerVoteCommand(discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
     const message = await channel.send(
-	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for December 2023.\n\n' +
+	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for Jan 2024.\n\n' +
 	'Every top 100 US monthly vanilla server is included.'
     );
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 45);
+    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 36);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 110);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 98);
-    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 41);
+    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 22);
     await MakeOneServerVoteOption(channel, 'Rustopia.gg - US Small', 'https://www.battlemetrics.com/servers/rust/14876730', 128);
     await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 125);
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5);
@@ -111,7 +111,7 @@ async function HandlePresidentVoteCommand(discordMessage) {
 	name: 'presidential-election',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in December 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in Jan 2024. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. This vote ends <t:1704153600:R>.');
     await message.react('❤️');
     const generalRankUsers = await UserCache.GetMostCentralUsers(15);
     const candidateNames = [];
@@ -246,23 +246,23 @@ async function HandleVoiceActiveUsersCommand(discordMessage) {
 
 async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
     const name = user.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`Sending special mission orders to ${name}`);
+    await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of December 2023. Report to Rustafied.com - US Long III\n`;
+    content += `Here are your secret orders for the month of January 2024. Report to Rustafied.com - US Long III\n`;
     content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
     if (user.rank <= 5) {
 	content += `Generals Code 1111\n`;
     }
     if (user.rank <= 9) {
-	content += `Officer Code 1111\n`;
+	content += `Officers Code 1111\n`;
 	content += `Grunt Code 1111\n`;
     }
     if (user.rank <= 13) {
 	content += `Gate Code 1111\n\n`;
     }
-    content += `Run straight to A1. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/servers to automatically protect your base from getting raided by the gov. New advancements are coming soon that will revolutionize Rust.\n\n`;
+    content += `Run straight to D14. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Pair with https://rustcult.com/servers to automatically protect your base from getting raided by the gov.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
