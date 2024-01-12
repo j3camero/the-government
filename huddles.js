@@ -379,11 +379,9 @@ async function Overflow(guild) {
     console.log(`${mainChannels.length} Main voice channels detected.`);
     console.log(`overflowLimit ${overflowLimit}`);
     const overflowMembers = [];
-    let totalPopOfAllMainRooms = 0;
     for (const channel of mainChannels) {
 	const pop = channel.members.size;
 	console.log('Main room with pop', pop);
-	totalPopOfAllMainRooms += pop;
 	if (pop < overflowLimit) {
 	    await SetOpenPerms(channel);
 	} else {
