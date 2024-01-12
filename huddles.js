@@ -13,11 +13,11 @@ const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
 
 const huddles = [
-    { name: 'Main', userLimit: 99, position: 1000 },
-    { name: 'Duo', userLimit: 2, position: 2000 },
-    { name: 'Trio', userLimit: 3, position: 3000 },
-    //{ name: 'Quad', userLimit: 4, position: 4000 },
-    //{ name: 'Squad', userLimit: 8, position: 7000 },
+    { name: 'Main', userLimit: 30, position: 1000 },
+    { name: 'Duo', userLimit: 4, position: 2000 },
+    { name: 'Trio', userLimit: 5, position: 3000 },
+    { name: 'Quad', userLimit: 6, position: 4000 },
+    { name: 'Squad', userLimit: 10, position: 7000 },
 ];
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
@@ -99,9 +99,6 @@ async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {
 	return;
     }
     console.log('Found', matchingChannels.length, 'matching channels.');
-    //for (const channel of matchingChannels) {
-    //	await channel.setPosition(huddle.position);
-    //}
     const emptyChannels = matchingChannels.filter(ch => ch.members.size === 0);
     console.log(emptyChannels.length, 'empty channels of this type.');
     if (emptyChannels.length === 0) {
@@ -267,28 +264,6 @@ function GetLowestRankingMembersFromVoiceChannel(channel, n) {
     return sortableMembers.slice(-n);
 }
 
-let overflowLimit = 28;
-
-function SetOverflowLimit(newLimit) {
-    const maxLimit = 90;
-    if (!newLimit) {
-	newLimit = maxLimit;
-    }
-    try {
-	newLimit = parseInt(newLimit);
-    } catch (error) {
-	newLimit = maxLimit;
-    }
-    if (newLimit > maxLimit) {
-	newLimit = maxLimit;
-    }
-    if (newLimit < 2) {
-	newLimit = maxLimit;
-    }
-    overflowLimit = newLimit;
-    return newLimit;
-}
-
 // Sets a channel to be accessible to everyone.
 async function SetOpenPerms(channel) {
     const connect = PermissionFlagsBits.Connect;
@@ -366,22 +341,27 @@ async function SetRankLimit(channel, rankLimit, scoreThreshold) {
     await channel.permissionOverwrites.set(perms);
 }
 
-// Enforces a population cap on the Main voice chat rooms by moving low-ranking members around.
-// Returns true if it had to move anyone, and false if no moves are needed.
+// Enforces a soft population cap on all voice chat rooms by moving low-ranking
+// members around. Returns true if it had to move anyone, and false if no moves
+// are needed.
 async function Overflow(guild) {
     console.log(`Overflow`);
     const mainChannels = [];
+    const voiceChannels = [];
     for (const [id, channel] of guild.channels.cache) {
+	if (channel.type === 2) {
+	    voiceChannels.push(channel);
+	}
 	if (channel.type === 2 && !channel.parent && channel.name === 'Main') {
 	    mainChannels.push(channel);
 	}
     }
-    console.log(`${mainChannels.length} Main voice channels detected.`);
-    console.log(`overflowLimit ${overflowLimit}`);
+    console.log(`${voiceChannels.length} voice channels detected.`);
     const overflowMembers = [];
-    for (const channel of mainChannels) {
+    for (const channel of voiceChannels) {
 	const pop = channel.members.size;
-	console.log('Main room with pop', pop);
+	const overflowLimit = channel.userLimit - 2;
+	console.log('Voice room with pop', pop, 'limit', overflowLimit);
 	if (pop < overflowLimit) {
 	    await SetOpenPerms(channel);
 	} else {
@@ -411,14 +391,15 @@ async function Overflow(guild) {
     const memberToMove = overflowMembers[0];
     const cu = UserCache.GetCachedUserByDiscordId(memberToMove.id);
     const name = cu.getNicknameOrTitleWithInsignia();
-    // Now identify which is the best other Main room to move them to.
-    // For now choose the fullest other Main room the member is
+    // Now identify which is the best other voice room to move them to.
+    // For now choose the fullest other voice room the member is
     // allowed to join. In the future personalize this so it uses the
     // coplay time to choose the most familiar group to place the member with.
     console.log(`Looking for destination for ${name}`);
     let bestDestination;
     let bestDestinationPop = 0;
-    for (const channel of mainChannels) {
+    for (const channel of voiceChannels) {
+	const overflowLimit = channel.userLimit - 2;
 	let superiorCount = 0;
 	for (const [id, member] of channel.members) {
 	    const voiceUser = UserCache.GetCachedUserByDiscordId(member.id);
@@ -450,7 +431,7 @@ async function Overflow(guild) {
     }
     // If we end up with at least 2 overflow members and nowhere to put them,
     // then move them to an empty Main room together.
-    console.log('Trying to find an empty main channel to populate.');
+    console.log('Trying to find an empty v channel to populate.');
     let emptyMainChannel;
     for (const channel of mainChannels) {
 	if (channel.members.size === 0) {
@@ -504,5 +485,4 @@ function ScheduleUpdate() {
 
 module.exports = {
     ScheduleUpdate,
-    SetOverflowLimit,
 };
