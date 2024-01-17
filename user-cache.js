@@ -38,6 +38,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.ban_pardon_time,
 	    row.presidential_election_vote,
 	    row.presidential_election_message_id,
+	    row.steam_id,
 	);
 	newCache[row.commissar_id] = newUser;
     });
@@ -115,6 +116,7 @@ async function CreateNewDatabaseUser(discordMember) {
 	null, null, null,
 	0,
 	null, null, null, null, null,
+	null,
     );
     commissarUserCache[commissar_id] = newUser;
     return newUser;
