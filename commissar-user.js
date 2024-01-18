@@ -267,6 +267,7 @@ class CommissarUser {
     }
 
     async setSteamName(steam_name) {
+	steam_name = FilterUsername(steam_name);
 	if (steam_name === this.steam_name) {
 	    return;
 	}
@@ -312,7 +313,7 @@ class CommissarUser {
 	    return `${prefix} ${job.title}`;
 	} else {
 	    // User-supplied nickname overrides their Discord-wide nickname.
-	    return this.nick || this.nickname;
+	    return this.steam_name || this.nick || this.nickname;
 	}
     }
 
@@ -326,7 +327,7 @@ class CommissarUser {
     }
 
     getNicknameWithInsignia() {
-	const name = this.nick || this.nickname || 'John Doe';
+	const name = this.steam_name || this.nick || this.nickname || 'John Doe';
 	const insignia = this.getInsignia();
 	return `${name} ${insignia}`;
     }

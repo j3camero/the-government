@@ -72,7 +72,7 @@ async function UpdateMemberAppearance(member) {
     const displayName = cu.getNicknameOrTitleWithInsignia();
     if (member.nickname !== displayName && member.user.id !== member.guild.ownerId) {
 	console.log(`Updating nickname ${displayName}.`);
-	member.setNickname(displayName);
+	await member.setNickname(displayName);
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData, cu.good_standing);
@@ -389,7 +389,7 @@ async function Start() {
     discordClient.on('userUpdate', async (oldUser, newUser) => {
 	console.log('userUpdate', newUser.username);
 	const cu = await UserCache.GetCachedUserByDiscordId(newUser.id);
-	await cu.setNickname(newUser.username);
+	//await cu.setNickname(newUser.username);
     });
 
     // When a guild member changes their nickname or other details.
@@ -399,7 +399,7 @@ async function Start() {
 	if (!cu) {
 	    return;
 	}
-	await cu.setNickname(newMember.user.username);
+	//await cu.setNickname(newMember.user.username);
 	await cu.setCitizen(true);
     });
 
