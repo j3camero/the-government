@@ -8,6 +8,7 @@ CREATE TABLE users
     commissar_id INT NOT NULL AUTO_INCREMENT,  -- Our clan's own set of IDs so we don't have to rely on Discord IDs.
     discord_id VARCHAR(32),  -- Discord ID.
     steam_id VARCHAR(32),  -- Steam ID.
+    steam_name VARCHAR(128),  -- Steam display name.
     battlemetrics_id VARCHAR(32),  -- User ID on Battlemetrics.com.
     nickname VARCHAR(32),  -- Last known nickname.
     nick VARCHAR(32),  -- A user-supplied preferred nickname.

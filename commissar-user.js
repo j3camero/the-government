@@ -30,7 +30,8 @@ class CommissarUser {
         ban_pardon_time,
         presidential_election_vote,
         presidential_election_message_id,
-        steam_id) {
+        steam_id,
+        steam_name) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -56,6 +57,7 @@ class CommissarUser {
 	this.presidential_election_vote = presidential_election_vote;
 	this.presidential_election_message_id = presidential_election_message_id;
 	this.steam_id = steam_id;
+	this.steam_name = steam_name;
     }
 
     async setDiscordId(discord_id) {
@@ -262,6 +264,14 @@ class CommissarUser {
 	}
 	this.steam_id = steam_id;
 	await this.updateFieldInDatabase('steam_id', this.steam_id);
+    }
+
+    async setSteamName(steam_name) {
+	if (steam_name === this.steam_name) {
+	    return;
+	}
+	this.steam_name = steam_name;
+	await this.updateFieldInDatabase('steam_name', this.steam_name);
     }
     
     async updateFieldInDatabase(fieldName, fieldValue) {

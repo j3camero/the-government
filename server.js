@@ -264,6 +264,7 @@ async function UpdateProximityChat() {
 	    const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
 	    if (cu) {
 		await cu.setSteamId(account.steamId);
+		await cu.setSteamName(account.steamName);
 	    }
 	}
     }
