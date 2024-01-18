@@ -16,8 +16,10 @@ async function UpdateUserRanks() {
 	}
 	// When we run out of ranks, this line defaults to the last/least rank.
 	rank = Math.max(0, Math.min(RankMetadata.length - 1, rank));
-	await AnnounceIfPromotion(user, rank);
-	await user.setRank(rank);
+	const cap = user.steam_id ? 0 : 10;
+	const cappedRank = Math.max(rank, cap);
+	await AnnounceIfPromotion(user, cappedRank);
+	await user.setRank(cappedRank);
 	usersAtRank++;
     }
 }
