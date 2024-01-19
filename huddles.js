@@ -6,8 +6,10 @@
 // introduce auto-scaling to Discord voice chat rooms so there are always
 // the right amount of rooms no matter how busy.
 
+const config = require('./config');
 const { PermissionFlagsBits } = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const fetch = require('./fetch');
 const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
@@ -22,8 +24,6 @@ const huddles = [
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
     const matchingChannels = [];
-    // Necessary in case a string key is passed in. Object keys are
-    // sometimes showing up as strings.
     for (const [id, channel] of guild.channels.cache) {
 	if (channel.type === 2 &&
 	    channel.name === huddle.name &&
@@ -459,14 +459,174 @@ async function Overflow(guild) {
     return true;
 }
 
+// Details of last seen in-game movement, keyed by discord ID.
+const lastSeenCache = {};
+
+async function UpdateProximityChat() {
+    if (!config.rustCultApiToken) {
+	console.log('Cannot update prox because no api token.');
+	return;
+    }
+    const url = 'https://rustcult.com/getalldiscordaccounts?token=' + config.rustCultApiToken;
+    const response = await fetch(url);
+    if (!response) {
+	console.log('Cannot update prox because no response received.');
+	return;
+    }
+    if (typeof response !== 'string') {
+	console.log('Cannot update prox because response is not a string.');
+	return;
+    }
+    const linkedAccounts = JSON.parse(response);
+    console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.cm API.');
+    for (const account of linkedAccounts) {
+	if (account && account.discordId) {
+	    if (account.steamId) {
+		const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
+		if (cu) {
+		    await cu.setSteamId(account.steamId);
+		    await cu.setSteamName(account.steamName);
+		}
+	    }
+	    if (account.server && account.x && account.y) {
+		lastSeenCache[account.discordId] = account;
+	    }
+	}
+    }
+    console.log(Object.keys(lastSeenCache).length, 'cached member locations.');
+    // Get all Proximity VC rooms & members in them.
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const proxChannels = {};
+    const proxMembers = {};
+    for (const [channelId, channel] of guild.channels.cache) {
+	if (channel.type === 2 && channel.name === 'Proximity') {
+	    proxChannels[channelId] = channel;
+	    for (const [memberId, member] of channel.members) {
+		proxMembers[memberId] = member;
+	    }
+	}
+    }
+    console.log('Found', Object.keys(proxChannels).length, 'prox channels');
+    console.log('Found', Object.keys(proxMembers).length, 'prox members');
+    // Make distance matrix.
+    const distanceMatrix = {};
+    for (const i in proxMembers) {
+	distanceMatrix[i] = {};
+	for (const j in proxMembers) {
+	    const a = lastSeenCache[i];
+	    const b = lastSeenCache[j];
+	    if (a && b && a.server && b.server && a.server === b.server) {
+		const dx = a.x - b.x;
+		const dy = a.y - b.y;
+		const distance = Math.sqrt(dx * dx + dy * dy);
+		distanceMatrix[i][j] = distance;
+	    } else {
+		// Different server or missing server = infinite distance.
+		distanceMatrix[i][j] = 999999;
+	    }
+	}
+    }
+    console.log('distanceMatrix', distanceMatrix);
+    // Distance between clusters of Discord IDs.
+    function ClusterDistance(a, b) {
+	let minDist = null;
+	for (const i of a) {
+	    for (const j of b) {
+		const d = distanceMatrix[i][j];
+		if (minDist === null || d < minDist) {
+		    minDist = d;
+		}
+	    }
+	}
+	return minDist;
+    }
+    // Cluster diameter. ie: max distance between two points.
+    function ClusterDiameter(c) {
+	let maxDist = null;
+	const n = c.length;
+	for (let i = 0; i < n; i++) {
+	    for (let j = i + 1; j < n; j++) {
+		const ci = c[i];
+		const cj = c[j];
+		const d = distanceMatrix[ci][cj];
+		if (maxDist === null || d > maxDist) {
+		    maxDist = d;
+		}
+	    }
+	}
+	return maxDist;
+    }
+    // Diameter of 2 clusters combined.
+    function TwoClusterDiameter(a, b) {
+	const c = a.concat(b);
+	return ClusterDiameter(c);
+    }
+    // Initialize clusters. Start with n clusters: one per member in proximity VC.
+    const clusters = [];
+    for (const discordId in proxMembers) {
+	clusters.push([discordId]);
+    }
+    // Merge clusters until no longer possible.
+    let bestDistance;
+    do {
+	const n = clusters.length;
+	let bestI;
+	let bestJ;
+	bestDistance = null;
+	for (let i = 0; i < n; i++) {
+	    for (let j = i + 1; j < n; j++) {
+		const a = clusters[i];
+		const b = clusters[j];
+		const distance = ClusterDistance(a, b);
+		if (distance < 438) {
+		    const diameter = TwoClusterDiameter(a, b);
+		    if (diameter < 584) {
+			if (bestDistance === null || distance < bestDistance) {
+			    bestDistance = distance;
+			    bestI = i;
+			    bestJ = j;
+			}
+		    }
+		}
+	    }
+	}
+	if (bestDistance !== null) {
+	    const a = clusters[bestI];
+	    const b = clusters[bestJ];
+	    // Combine two closest clusters.
+	    const newCluster = a.concat(b);
+	    clusters.splice(bestJ, 1);
+	    clusters.splice(bestI, 1);
+	    clusters.push(newCluster);
+	}
+    } while (bestDistance !== null);
+    // Put solos and randos together into one lobby.
+    const clustersWithLobby = [[]];
+    for (const cluster of clusters) {
+	if (cluster.length > 1) {
+	    // Cluster with 2 or more members.
+	    clustersWithLobby.push(cluster);
+	} else {
+	    // Solo cluster. Isolated player detected. Add to lobby.
+	    const solo = cluster[0];
+	    clustersWithLobby[0].push(solo);
+	}
+    }
+    console.log('Prox clusters', clustersWithLobby);
+    // Permute clusters to minimize number of drags.
+    // Perms. Offline members by nearest neighbor.
+    // Drag.
+}
+
 // To avoid race conditions on the cheap, use a system of routine updates.
 // To schedule an update, a boolean flag is flipped. That way, the next time
 // the cycle goes around, it knows that an update is needed. Redundant or
 // overlapping updates are avoided this way.
 let isUpdateNeeded = false;
-setInterval(Update, 5 * 1000);
+setInterval(Update, 9 * 1000);
 
 async function Update() {
+    await UpdateProximityChat();
     if (!isUpdateNeeded) {
 	return;
     }

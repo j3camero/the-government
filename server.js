@@ -3,12 +3,10 @@ const Ban = require('./ban');
 const BanVoteCache = require('./ban-vote-cache');
 const BotCommands = require('./bot-commands');
 const Clock = require('./clock');
-const config = require('./config');
 const DB = require('./database');
 const deepEqual = require('deep-equal');
 const { ContextMenuCommandBuilder, Events, ApplicationCommandType } = require('discord.js');
 const DiscordUtil = require('./discord-util');
-const fetch = require('./fetch');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
@@ -243,38 +241,10 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
     return matchingRecords;
 }
 
-async function UpdateProximityChat() {
-    if (!config.rustCultApiToken) {
-	console.log('Cannot update prox because no api token.');
-	return;
-    }
-    const url = 'https://rustcult.com/getalldiscordaccounts?token=' + config.rustCultApiToken;
-    const response = await fetch(url);
-    if (!response) {
-	console.log('Cannot update prox because no response received.');
-	return;
-    }
-    if (typeof response !== 'string') {
-	console.log('Cannot update prox because response is not a string.');
-	return;
-    }
-    const linkedAccounts = JSON.parse(response);
-    for (const account of linkedAccounts) {
-	if (account && account.discordId && account.steamId) {
-	    const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
-	    if (cu) {
-		await cu.setSteamId(account.steamId);
-		await cu.setSteamName(account.steamName);
-	    }
-	}
-    }
-}
-
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
 async function RoutineUpdate() {
     console.log('Routine update');
     startTime = new Date().getTime();
-    await UpdateProximityChat();
     await yen.DoLottery();
     await Rank.UpdateUserRanks();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
