@@ -15,11 +15,11 @@ const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
 
 const huddles = [
-    { name: 'Main', userLimit: 30, position: 1000 },
-    { name: 'Duo', userLimit: 4, position: 2000 },
-    { name: 'Trio', userLimit: 5, position: 3000 },
-    { name: 'Quad', userLimit: 6, position: 4000 },
-    { name: 'Squad', userLimit: 10, position: 7000 },
+    { name: 'Main', userLimit: 99, position: 1000 },
+    { name: 'Duo', userLimit: 2, position: 2000 },
+    { name: 'Trio', userLimit: 3, position: 3000 },
+    { name: 'Quad', userLimit: 4, position: 4000 },
+    { name: 'Squad', userLimit: 8, position: 7000 },
 ];
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
@@ -51,22 +51,20 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	userLimit: huddle.userLimit,
     };
     console.log('Creating channel.');
-    await guild.channels.create(options);
-    console.log('Done');
+    return await guild.channels.create(options);
 }
 
 async function CreateNewVoiceChannel(guild, huddle) {
-    const level3Bitrate = 384000;
+    const level3Bitrate = 256000;
     const level2Bitrate = 128000;
     try {
-	await CreateNewVoiceChannelWithBitrate(guild, huddle, level3Bitrate);
+	return await CreateNewVoiceChannelWithBitrate(guild, huddle, level3Bitrate);
     } catch (err) {
 	try {
-	    await CreateNewVoiceChannelWithBitrate(guild, huddle, level2Bitrate);
+	    return await CreateNewVoiceChannelWithBitrate(guild, huddle, level2Bitrate);
 	} catch (err) {
-	    // If channel creation fails, assume that it's because of the bitrate and try again.
-	    // This will save us if the server loses Discord Nitro levels.
-	    await CreateNewVoiceChannelWithBitrate(guild, huddle);
+	    console.log('Failed to create voice channel.');
+	    return null;
 	}
     }
 }
@@ -161,7 +159,6 @@ function CompareRooms(a, b) {
 	return -1;
     }
     // This is the scoring rule for rooms that are neither empty nor full.
-    // The room with the most senior member wins.
     const ah = ScoreRoom(a);
     const bh = ScoreRoom(b);
     if (ah < bh) {
@@ -172,6 +169,13 @@ function CompareRooms(a, b) {
     }
     // Rules from here on down are mainly intended for sorting the empty
     // VC rooms at the bottom amongst themselves.
+    // Rooms named Proximity sort up.
+    if (a.name !== 'Proximity' && b.name === 'Proximity') {
+	return 1;
+    }
+    if (a.name === 'Proximity' && b.name !== 'Proximity') {
+	return -1;
+    }
     // Rooms named Main sort up.
     if (a.name !== 'Main' && b.name === 'Main') {
 	return 1;
@@ -509,21 +513,23 @@ async function UpdateProximityChat() {
     console.log('Found', Object.keys(proxChannels).length, 'prox channels');
     console.log('Found', Object.keys(proxMembers).length, 'prox members');
     // Make distance matrix.
+    function Distance(a, b) {
+	if (!a || !b || !a.server || !b.server || a.server !== b.server) {
+	    // Different server or missing server = infinite distance.
+	    return 999999;
+	}
+	const dx = a.x - b.x;
+	const dy = a.y - b.y;
+	const distance = Math.sqrt(dx * dx + dy * dy);
+	return distance;
+    }
     const distanceMatrix = {};
     for (const i in proxMembers) {
+	const a = lastSeenCache[i];
 	distanceMatrix[i] = {};
 	for (const j in proxMembers) {
-	    const a = lastSeenCache[i];
 	    const b = lastSeenCache[j];
-	    if (a && b && a.server && b.server && a.server === b.server) {
-		const dx = a.x - b.x;
-		const dy = a.y - b.y;
-		const distance = Math.sqrt(dx * dx + dy * dy);
-		distanceMatrix[i][j] = distance;
-	    } else {
-		// Different server or missing server = infinite distance.
-		distanceMatrix[i][j] = 999999;
-	    }
+	    distanceMatrix[i][j] = Distance(a, b);
 	}
     }
     console.log('distanceMatrix', distanceMatrix);
@@ -567,12 +573,11 @@ async function UpdateProximityChat() {
 	clusters.push([discordId]);
     }
     // Merge clusters until no longer possible.
-    let bestDistance;
-    do {
+    while (true) {
 	const n = clusters.length;
 	let bestI;
 	let bestJ;
-	bestDistance = null;
+	let bestDistance = null;
 	for (let i = 0; i < n; i++) {
 	    for (let j = i + 1; j < n; j++) {
 		const a = clusters[i];
@@ -590,16 +595,17 @@ async function UpdateProximityChat() {
 		}
 	    }
 	}
-	if (bestDistance !== null) {
-	    const a = clusters[bestI];
-	    const b = clusters[bestJ];
-	    // Combine two closest clusters.
-	    const newCluster = a.concat(b);
-	    clusters.splice(bestJ, 1);
-	    clusters.splice(bestI, 1);
-	    clusters.push(newCluster);
+	if (bestDistance === null) {
+	    break;
 	}
-    } while (bestDistance !== null);
+	// Combine two closest clusters.
+	const a = clusters[bestI];
+	const b = clusters[bestJ];
+	const newCluster = a.concat(b);
+	clusters.splice(bestJ, 1);
+	clusters.splice(bestI, 1);
+	clusters.push(newCluster);
+    }
     // Put solos and randos together into one lobby.
     const clustersWithLobby = [[]];
     for (const cluster of clusters) {
@@ -613,9 +619,133 @@ async function UpdateProximityChat() {
 	}
     }
     console.log('Prox clusters', clustersWithLobby);
+    // Create new channel(s) if needed.
+    // Don't delete extra channels here. Do that at the end.
+    while (Object.keys(proxChannels).length < clustersWithLobby.length) {
+	const newChannel = await CreateNewVoiceChannel(guild, { name: 'Proximity', userLimit: 99 });
+	proxChannels[newChannel.id] = newChannel;
+    }
+    // Helper functions for generating permutations of the channel list.
+    function ForAllPermutationsRecursive(permuted, remaining, callback) {
+	const n = remaining.length;
+	if (n === 0) {
+	    callback(permuted);
+	}
+	for (let i = 0; i < n; i++) {
+	    const newPermuted = permuted.slice();
+	    newPermuted.push(remaining[i]);
+	    const newRemaining = remaining.slice();
+	    newRemaining.splice(i, 1);
+	    ForAllPermutationsRecursive(newPermuted, newRemaining, callback);
+	}
+    }
+    function ForAllPermutations(arr, callback) {
+	ForAllPermutationsRecursive([], arr, callback);
+    }
     // Permute clusters to minimize number of drags.
-    // Perms. Offline members by nearest neighbor.
-    // Drag.
+    const proxChannelsAsList = Object.values(proxChannels);
+    let bestPermutation;
+    let minDrags;
+    let enforcementPlanWithMinimumDrags;
+    ForAllPermutations(proxChannelsAsList, (perm) => {
+	console.log('Imagining permutation');
+	const plan = {};
+	for (let i = 0; i < perm.length; i++) {
+	    const channel = perm[i];
+	    const discordIdsInChannel = {};
+	    for (const [memberId, member] of channel.members) {
+		discordIdsInChannel[memberId] = true;
+	    }
+	    const cluster = i < clustersWithLobby.length ? clustersWithLobby[i] : [];
+	    for (const discordId of cluster) {
+		if (!(discordId in discordIdsInChannel)) {
+		    plan[discordId] = channel.id;
+		}
+	    }
+	}
+	const dragCount = Object.keys(plan).length;
+	if (!bestPermutation || dragCount < minDrags) {
+	    minDrags = dragCount;
+	    enforcementPlanWithMinimumDrags = plan;
+	    bestPermutation = perm;
+	}
+    });
+    console.log('Calculated enforcement plan requires', minDrags, 'drags');
+    // Open perms for the lobby (ie: channel zero).
+    const lobby = bestPermutation[0];
+    await SetOpenPerms(lobby);
+    // Private perms for the rest of the prox channels that are not the lobby.
+    for (let i = 1; i < bestPermutation.length; i++) {
+	const connect = PermissionFlagsBits.Connect;
+	const view = PermissionFlagsBits.ViewChannel;
+	const perms = [
+	    { id: guild.roles.everyone.id, deny: [connect, view] },
+	    { id: RoleID.Grunt, allow: [view] },
+	    { id: RoleID.Officer, allow: [view] },
+	    { id: RoleID.General, allow: [view] },
+	    { id: RoleID.Marshal, allow: [view] },
+	    { id: RoleID.Bots, allow: [view, connect] },
+	];
+	const cluster = i < clustersWithLobby.length ? clustersWithLobby[i] : [];
+	for (const discordId of cluster) {
+	    perms.push({ id: discordId, allow: [view, connect] });
+	}
+	// Add perms for users who are not in proximity VC but who are geographically
+	// nearby in-game to let them know which prox VC room they can join.
+	for (const discordId in lastSeenCache) {
+	    // Don't make duplicate perms for users already in prox VC rooms.
+	    if (discordId in proxMembers) {
+		continue;
+	    }
+	    const a = lastSeenCache[discordId];
+	    if (!a.server || !a.x || !a.y) {
+		continue;
+	    }
+	    // Get min distance to a cluster member.
+	    let minDist = null;
+	    for (const c of cluster) {
+		const b = lastSeenCache[c];
+		const d = Distance(a, b);
+		if (minDist === null || d < minDist) {
+		    minDist = d;
+		}
+	    }
+	    if (!guild.members.cache.has(discordId)) {
+		continue;
+	    }
+	    // Give perms if close enough.
+	    if (minDist !== null && minDist < 400) {
+		perms.push({ id: discordId, allow: [view, connect] });
+	    }
+	}
+	// Send the accumulated perms to the discord channel.
+	const channel = bestPermutation[i];
+	console.log('Setting perms', perms);
+	await channel.permissionOverwrites.set(perms);
+    }
+    // Drag people who need to be dragged.
+    for (const discordId in enforcementPlanWithMinimumDrags) {
+	const member = proxMembers[discordId];
+	if (!member) {
+	    continue;
+	}
+	const channelId = enforcementPlanWithMinimumDrags[discordId];
+	if (!channelId) {
+	    continue;
+	}
+	const channel = proxChannels[channelId];
+	if (!channel) {
+	    continue;
+	}
+	console.log('Dragging a member');
+	await member.voice.setChannel(channel);
+    }
+    // Delete an extra channel if there are any.
+    if (Object.keys(proxChannels).length > clustersWithLobby.length) {
+	console.log('Deleting leftover Prox channel.');
+	const channelToDelete = bestPermutation[bestPermutation.length - 1];
+	await channelToDelete.delete();
+    }
 }
 
 // To avoid race conditions on the cheap, use a system of routine updates.
@@ -634,7 +764,7 @@ async function Update() {
     for (const huddle of huddles) {
 	await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
     }
-    const overflowMovedAnyone = await Overflow(guild);
+    const overflowMovedAnyone = false;  // await Overflow(guild);
     const roomsInOrder = await MoveOneRoomIfNeeded(guild);
     isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
 }
