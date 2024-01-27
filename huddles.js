@@ -491,8 +491,33 @@ async function GetAllDiscordAccountsFromRustCultApi() {
 const lastSeenCache = {};
 
 async function UpdateProximityChat() {
+    // Get all Proximity VC rooms & members in them.
+    const proxRoomNames = {
+	Lobby: true,
+	Proximity: true,
+	Roaming: true,
+	Village: true,
+    };
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const allChannels = await guild.channels.fetch();
+    const proxChannels = {};
+    const proxMembers = {};
+    for (const [channelId, channel] of allChannels) {
+	if (channel.type === 2 && channel.name in proxRoomNames) {
+	    proxChannels[channelId] = channel;
+	    for (const [memberId, member] of channel.members) {
+		proxMembers[memberId] = member;
+	    }
+	}
+    }
+    console.log('Found', Object.keys(proxChannels).length, 'prox channels');
+    console.log('Found', Object.keys(proxMembers).length, 'prox members');
+    if (Object.keys(proxChannels).length === 1 && Object.keys(proxMembers).length === 0) {
+	return;
+    }
     const draggableDiscordIds = {};
     const villageDiscordIds = {};
+    // Hit the rustcult.com API to get updated player positions.
     const response = await GetAllDiscordAccountsFromRustCultApi();
     if (response) {
 	const linkedAccounts = JSON.parse(response);
@@ -523,27 +548,6 @@ async function UpdateProximityChat() {
 	}
     }
     console.log(Object.keys(lastSeenCache).length, 'cached member locations.');
-    // Get all Proximity VC rooms & members in them.
-    const proxRoomNames = {
-	Lobby: true,
-	Proximity: true,
-	Roaming: true,
-	Village: true,
-    };
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const allChannels = await guild.channels.fetch();
-    const proxChannels = {};
-    const proxMembers = {};
-    for (const [channelId, channel] of allChannels) {
-	if (channel.type === 2 && channel.name in proxRoomNames) {
-	    proxChannels[channelId] = channel;
-	    for (const [memberId, member] of channel.members) {
-		proxMembers[memberId] = member;
-	    }
-	}
-    }
-    console.log('Found', Object.keys(proxChannels).length, 'prox channels');
-    console.log('Found', Object.keys(proxMembers).length, 'prox members');
     // Make distance matrix.
     function Distance(a, b) {
 	if (!a || !b || !a.server || !b.server || a.server !== b.server) {
