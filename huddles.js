@@ -591,7 +591,7 @@ async function UpdateProximityChat() {
 		const distance = ClusterDistance(a, b);
 		if (distance < 438) {
 		    const diameter = TwoClusterDiameter(a, b);
-		    if (diameter < 584) {
+		    if (diameter < 730) {
 			if (bestDistance === null || distance < bestDistance) {
 			    bestDistance = distance;
 			    bestI = i;
