@@ -472,7 +472,13 @@ async function UpdateProximityChat() {
 	return;
     }
     const url = 'https://rustcult.com/getalldiscordaccounts?token=' + config.rustCultApiToken;
-    const response = await fetch(url);
+    let response;
+    try {
+	response = await fetch(url);
+    } catch (error) {
+	console.log('Cannot update prox because error while querying rustcult API.');
+	return;
+    }
     if (!response) {
 	console.log('Cannot update prox because no response received.');
 	return;
