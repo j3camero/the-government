@@ -492,10 +492,11 @@ const lastSeenCache = {};
 
 async function UpdateProximityChat() {
     const draggableDiscordIds = {};
+    const villageDiscordIds = {};
     const response = await GetAllDiscordAccountsFromRustCultApi();
     if (response) {
 	const linkedAccounts = JSON.parse(response);
-	console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.cm API.');
+	console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.com API.');
 	for (const account of linkedAccounts) {
 	    if (account && account.discordId) {
 		if (account.steamId) {
@@ -515,16 +516,25 @@ async function UpdateProximityChat() {
 			draggableDiscordIds[account.discordId] = true;
 		    }
 		}
+		if (account.howManyBasesNearby && account.howManyBasesNearby >= 10) {
+		    villageDiscordIds[account.discordId] = true;
+		}
 	    }
 	}
     }
     console.log(Object.keys(lastSeenCache).length, 'cached member locations.');
     // Get all Proximity VC rooms & members in them.
+    const proxRoomNames = {
+	Lobby: true,
+	Proximity: true,
+	Roaming: true,
+	Village: true,
+    };
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const proxChannels = {};
     const proxMembers = {};
     for (const [channelId, channel] of guild.channels.cache) {
-	if (channel.type === 2 && channel.name === 'Proximity') {
+	if (channel.type === 2 && channel.name in proxRoomNames) {
 	    proxChannels[channelId] = channel;
 	    for (const [memberId, member] of channel.members) {
 		proxMembers[memberId] = member;
@@ -704,6 +714,10 @@ async function UpdateProximityChat() {
     // Open perms for the lobby (ie: channel zero).
     const lobby = bestPermutation[0];
     await SetOpenPerms(lobby);
+    const lobbyName = 'Proximity';
+    if (lobby.name !== lobbyName) {
+	await lobby.setName(lobbyName);
+    }
     // Private perms for the rest of the prox channels that are not the lobby.
     for (let i = 1; i < bestPermutation.length; i++) {
 	const connect = PermissionFlagsBits.Connect;
@@ -717,8 +731,12 @@ async function UpdateProximityChat() {
 	    { id: RoleID.Bots, allow: [view, connect] },
 	];
 	const cluster = i < clustersWithLobby.length ? clustersWithLobby[i] : [];
+	let villagePeopleDetected = false;
 	for (const discordId of cluster) {
 	    perms.push({ id: discordId, allow: [view, connect] });
+	    if (discordId in villageDiscordIds) {
+		villagePeopleDetected = true;
+	    }
 	}
 	// Add perms for users who are not in proximity VC but who are geographically
 	// nearby in-game to let them know which prox VC room they can join.
@@ -752,6 +770,11 @@ async function UpdateProximityChat() {
 	const channel = bestPermutation[i];
 	console.log('Setting perms', perms);
 	await channel.permissionOverwrites.set(perms);
+	// Set the channel name. Village or Roaming.
+	const newChannelName = villagePeopleDetected ? 'Village' : 'Roaming';
+	if (channel.name !== newChannelName) {
+	    await channel.setName(newChannelName);
+	}
     }
     // Drag people who need to be dragged.
     for (const discordId in bestPlan) {
