@@ -531,9 +531,10 @@ async function UpdateProximityChat() {
 	Village: true,
     };
     const guild = await DiscordUtil.GetMainDiscordGuild();
+    const allChannels = await guild.channels.fetch();
     const proxChannels = {};
     const proxMembers = {};
-    for (const [channelId, channel] of guild.channels.cache) {
+    for (const [channelId, channel] of allChannels) {
 	if (channel.type === 2 && channel.name in proxRoomNames) {
 	    proxChannels[channelId] = channel;
 	    for (const [memberId, member] of channel.members) {
@@ -716,10 +717,11 @@ async function UpdateProximityChat() {
     await SetOpenPerms(lobby);
     const lobbyName = 'Proximity';
     if (lobby.name !== lobbyName) {
-	await lobby.setName(lobbyName);
+	// Setting channel names is slow for some reason.
+	//await lobby.setName(lobbyName);
     }
     // Private perms for the rest of the prox channels that are not the lobby.
-    for (let i = 1; i < bestPermutation.length; i++) {
+    for (let i = 1; i < clustersWithLobby.length; i++) {
 	const connect = PermissionFlagsBits.Connect;
 	const view = PermissionFlagsBits.ViewChannel;
 	const perms = [
@@ -769,13 +771,24 @@ async function UpdateProximityChat() {
 	// Send the accumulated perms to the discord channel.
 	const channel = bestPermutation[i];
 	console.log('Setting perms', perms);
-	await channel.permissionOverwrites.set(perms);
+	try {
+	    console.log('BEGIN SET PERMS');
+	    await channel.permissionOverwrites.set(perms);
+	    console.log('END SET PERMS');
+	} catch (error) {
+	    console.log('Error while setting perms on prox channel.');
+	    // Do nothing.
+	}
 	// Set the channel name. Village or Roaming.
 	const newChannelName = villagePeopleDetected ? 'Village' : 'Roaming';
 	if (channel.name !== newChannelName) {
-	    await channel.setName(newChannelName);
+	    // Setting channel names is incredibly slow for some reason.
+	    //console.log('BEGIN SET CHANNEL NAME');
+	    //await channel.setName(newChannelName);
+	    //console.log('END SET CHANNEL NAME');
 	}
     }
+    console.log('Done setting perms');
     // Drag people who need to be dragged.
     for (const discordId in bestPlan) {
 	const member = proxMembers[discordId];
@@ -794,6 +807,7 @@ async function UpdateProximityChat() {
 	await member.voice.setChannel(channel);
     }
     // Delete an extra channel if there are any.
+    console.log('Thinking about deleting prox channel.', Object.keys(proxChannels).length, clustersWithLobby.length);
     if (Object.keys(proxChannels).length > clustersWithLobby.length) {
 	console.log('Deleting leftover Prox channel.');
 	const channelToDelete = bestPermutation[bestPermutation.length - 1];
@@ -806,20 +820,23 @@ async function UpdateProximityChat() {
 // the cycle goes around, it knows that an update is needed. Redundant or
 // overlapping updates are avoided this way.
 let isUpdateNeeded = false;
-setInterval(Update, 9 * 1000);
+setTimeout(Update, 9000);
 
 async function Update() {
+    console.log('Starting proximity chat update');
     await UpdateProximityChat();
-    if (!isUpdateNeeded) {
-	return;
+    console.log('Proximity chat update done');
+    if (isUpdateNeeded) {
+	const guild = await DiscordUtil.GetMainDiscordGuild();
+	for (const huddle of huddles) {
+	    await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
+	}
+	const overflowMovedAnyone = false;  // await Overflow(guild);
+	const roomsInOrder = await MoveOneRoomIfNeeded(guild);
+	isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
     }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    for (const huddle of huddles) {
-	await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
-    }
-    const overflowMovedAnyone = false;  // await Overflow(guild);
-    const roomsInOrder = await MoveOneRoomIfNeeded(guild);
-    isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
+    console.log('Done huddles update. Scheduling next update.');
+    setTimeout(Update, 9000);
 }
 
 function ScheduleUpdate() {
