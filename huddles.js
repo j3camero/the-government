@@ -463,13 +463,10 @@ async function Overflow(guild) {
     return true;
 }
 
-// Details of last seen in-game movement, keyed by discord ID.
-const lastSeenCache = {};
-
-async function UpdateProximityChat() {
+async function GetAllDiscordAccountsFromRustCultApi() {
     if (!config.rustCultApiToken) {
 	console.log('Cannot update prox because no api token.');
-	return;
+	return null;
     }
     const url = 'https://rustcult.com/getalldiscordaccounts?token=' + config.rustCultApiToken;
     let response;
@@ -477,29 +474,47 @@ async function UpdateProximityChat() {
 	response = await fetch(url);
     } catch (error) {
 	console.log('Cannot update prox because error while querying rustcult API.');
-	return;
+	return null;
     }
     if (!response) {
 	console.log('Cannot update prox because no response received.');
-	return;
+	return null;
     }
     if (typeof response !== 'string') {
 	console.log('Cannot update prox because response is not a string.');
-	return;
+	return null;
     }
-    const linkedAccounts = JSON.parse(response);
-    console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.cm API.');
-    for (const account of linkedAccounts) {
-	if (account && account.discordId) {
-	    if (account.steamId) {
-		const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
-		if (cu) {
-		    await cu.setSteamId(account.steamId);
-		    await cu.setSteamName(account.steamName);
+    return response;
+}
+
+// Details of last seen in-game movement, keyed by discord ID.
+const lastSeenCache = {};
+
+async function UpdateProximityChat() {
+    const draggableDiscordIds = {};
+    const response = await GetAllDiscordAccountsFromRustCultApi();
+    if (response) {
+	const linkedAccounts = JSON.parse(response);
+	console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.cm API.');
+	for (const account of linkedAccounts) {
+	    if (account && account.discordId) {
+		if (account.steamId) {
+		    const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
+		    if (cu) {
+			await cu.setSteamId(account.steamId);
+			await cu.setSteamName(account.steamName);
+		    }
 		}
-	    }
-	    if (account.server && account.x && account.y) {
-		lastSeenCache[account.discordId] = account;
+		if (account.server && account.x && account.y) {
+		    lastSeenCache[account.discordId] = account;
+		}
+		const sslm = account.secondsSinceLastMovement;
+		const ssbc = account.secondsSinceBreadcrumb;
+		if ((sslm || sslm === 0) && (ssbc || ssbc === 0)) {
+		    if (sslm < 10 && ssbc < 30) {
+			draggableDiscordIds[account.discordId] = true;
+		    }
+		}
 	    }
 	}
     }
@@ -651,11 +666,13 @@ async function UpdateProximityChat() {
     // Permute clusters to minimize number of drags.
     const proxChannelsAsList = Object.values(proxChannels);
     let bestPermutation;
+    let minFails;
     let minDrags;
-    let enforcementPlanWithMinimumDrags;
+    let bestPlan;
     ForAllPermutations(proxChannelsAsList, (perm) => {
 	console.log('Imagining permutation');
 	const plan = {};
+	let failCount = 0;
 	for (let i = 0; i < perm.length; i++) {
 	    const channel = perm[i];
 	    const discordIdsInChannel = {};
@@ -665,18 +682,25 @@ async function UpdateProximityChat() {
 	    const cluster = i < clustersWithLobby.length ? clustersWithLobby[i] : [];
 	    for (const discordId of cluster) {
 		if (!(discordId in discordIdsInChannel)) {
-		    plan[discordId] = channel.id;
+		    if (discordId in draggableDiscordIds) {
+			plan[discordId] = channel.id;
+		    } else {
+			failCount++;
+		    }
 		}
 	    }
 	}
 	const dragCount = Object.keys(plan).length;
-	if (!bestPermutation || dragCount < minDrags) {
+	if (!bestPermutation ||
+	    failCount < minFails ||
+	    (failCount === minFails && dragCount < minDrags)) {
+	    minFails = failCount;
 	    minDrags = dragCount;
-	    enforcementPlanWithMinimumDrags = plan;
+	    bestPlan = plan;
 	    bestPermutation = perm;
 	}
     });
-    console.log('Calculated enforcement plan requires', minDrags, 'drags');
+    console.log('Calculated enforcement plan requires', minDrags, 'drags and has', minFails, 'fails.');
     // Open perms for the lobby (ie: channel zero).
     const lobby = bestPermutation[0];
     await SetOpenPerms(lobby);
@@ -730,12 +754,12 @@ async function UpdateProximityChat() {
 	await channel.permissionOverwrites.set(perms);
     }
     // Drag people who need to be dragged.
-    for (const discordId in enforcementPlanWithMinimumDrags) {
+    for (const discordId in bestPlan) {
 	const member = proxMembers[discordId];
 	if (!member) {
 	    continue;
 	}
-	const channelId = enforcementPlanWithMinimumDrags[discordId];
+	const channelId = bestPlan[discordId];
 	if (!channelId) {
 	    continue;
 	}
