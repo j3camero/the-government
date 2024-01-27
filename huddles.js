@@ -720,10 +720,7 @@ async function UpdateProximityChat() {
     const lobby = bestPermutation[0];
     await SetOpenPerms(lobby);
     const lobbyName = 'Proximity';
-    if (lobby.name !== lobbyName) {
-	// Setting channel names is slow for some reason.
-	//await lobby.setName(lobbyName);
-    }
+    await DiscordUtil.TryToSetChannelNameWithRateLimit(lobby, lobbyName);
     // Private perms for the rest of the prox channels that are not the lobby.
     for (let i = 1; i < clustersWithLobby.length; i++) {
 	const connect = PermissionFlagsBits.Connect;
@@ -785,12 +782,7 @@ async function UpdateProximityChat() {
 	}
 	// Set the channel name. Village or Roaming.
 	const newChannelName = villagePeopleDetected ? 'Village' : 'Roaming';
-	if (channel.name !== newChannelName) {
-	    // Setting channel names is incredibly slow for some reason.
-	    //console.log('BEGIN SET CHANNEL NAME');
-	    //await channel.setName(newChannelName);
-	    //console.log('END SET CHANNEL NAME');
-	}
+	await DiscordUtil.TryToSetChannelNameWithRateLimit(channel, newChannelName);
     }
     console.log('Done setting perms');
     // Drag people who need to be dragged.
