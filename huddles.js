@@ -512,9 +512,12 @@ async function UpdateProximityChat() {
     }
     console.log('Found', Object.keys(proxChannels).length, 'prox channels');
     console.log('Found', Object.keys(proxMembers).length, 'prox members');
-    if (Object.keys(proxChannels).length === 1 && Object.keys(proxMembers).length === 0) {
-	return;
-    }
+    // Ideally we want to bail early if there's no work to do, but there are some things
+    // like a chatroom's name switching after minutes of being rate limited that
+    // still need to happen in weird corner cases even with no people in the VC rooms.
+    //if (Object.keys(proxChannels).length === 1 && Object.keys(proxMembers).length === 0) {
+    //    return;
+    //}
     const draggableDiscordIds = {};
     const villageDiscordIds = {};
     // Hit the rustcult.com API to get updated player positions.
