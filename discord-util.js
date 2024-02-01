@@ -284,7 +284,7 @@ async function TryToSetChannelNameWithRateLimit(channel, newName) {
     const t = Date.now();
     const s = lastTimeNameChangedByChannelId[channel.id] || 0;
     const elapsed = t - s;
-    const tenMinutes = 10 * 60 * 1000;
+    const tenMinutes = 6 * 60 * 1000;
     if (elapsed < tenMinutes) {
 	return;
     }

@@ -15,12 +15,15 @@ const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
 
 const huddles = [
-    { name: 'Main', userLimit: 99, position: 1000 },
     { name: 'Duo', userLimit: 2, position: 2000 },
     { name: 'Trio', userLimit: 3, position: 3000 },
     { name: 'Quad', userLimit: 4, position: 4000 },
     { name: 'Squad', userLimit: 8, position: 7000 },
 ];
+const mainRoomControlledByProximity = true;
+if (!mainRoomControlledByProximity) {
+    huddles.push({ name: 'Main', userLimit: 99, position: 1000 });
+}
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
     const matchingChannels = [];
@@ -492,12 +495,16 @@ const lastSeenCache = {};
 
 async function UpdateProximityChat() {
     // Get all Proximity VC rooms & members in them.
+    const lobbyName = mainRoomControlledByProximity ? 'Main' : 'Proximity';
     const proxRoomNames = {
 	Lobby: true,
 	Proximity: true,
 	Roaming: true,
 	Village: true,
     };
+    if (mainRoomControlledByProximity) {
+	proxRoomNames['Main'] = true;
+    }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const allChannels = await guild.channels.fetch();
     const proxChannels = {};
@@ -661,7 +668,7 @@ async function UpdateProximityChat() {
     // Create new channel(s) if needed.
     // Don't delete extra channels here. Do that at the end.
     while (Object.keys(proxChannels).length < clustersWithLobby.length) {
-	const newChannel = await CreateNewVoiceChannel(guild, { name: 'Proximity', userLimit: 99 });
+	const newChannel = await CreateNewVoiceChannel(guild, { name: lobbyName, userLimit: 99 });
 	proxChannels[newChannel.id] = newChannel;
     }
     // Helper functions for generating permutations of the channel list.
@@ -722,7 +729,6 @@ async function UpdateProximityChat() {
     // Open perms for the lobby (ie: channel zero).
     const lobby = bestPermutation[0];
     await SetOpenPerms(lobby);
-    const lobbyName = 'Proximity';
     await DiscordUtil.TryToSetChannelNameWithRateLimit(lobby, lobbyName);
     // Private perms for the rest of the prox channels that are not the lobby.
     for (let i = 1; i < clustersWithLobby.length; i++) {
