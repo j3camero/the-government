@@ -386,6 +386,10 @@ async function Start() {
 	// Do nothing.
     });
 
+    //discordClient.on('rateLimit', (rateLimitData) => {
+	//console.log('RATELIMIT ###', rateLimitData);
+    //});
+
     const upvoteMenuBuilder = new ContextMenuCommandBuilder()
 	  .setName('Upvote')
 	  .setType(ApplicationCommandType.User);

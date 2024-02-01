@@ -497,26 +497,36 @@ async function UpdateProximityChat() {
     // Get all Proximity VC rooms & members in them.
     const lobbyName = mainRoomControlledByProximity ? 'Main' : 'Proximity';
     const proxRoomNames = {
-	Lobby: true,
 	Proximity: true,
 	Roaming: true,
 	Village: true,
     };
-    if (mainRoomControlledByProximity) {
-	proxRoomNames['Main'] = true;
-    }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const allChannels = await guild.channels.fetch();
+    let lobbyChannel;
     const proxChannels = {};
     const proxMembers = {};
     for (const [channelId, channel] of allChannels) {
-	if (channel.type === 2 && channel.name in proxRoomNames) {
+	if (channel.type !== 2) {
+	    continue;
+	}
+	if (channel.name in proxRoomNames) {
 	    proxChannels[channelId] = channel;
+	    for (const [memberId, member] of channel.members) {
+		proxMembers[memberId] = member;
+	    }
+	} else if (channel.name === lobbyName) {
+	    lobbyChannel = channel;
 	    for (const [memberId, member] of channel.members) {
 		proxMembers[memberId] = member;
 	    }
 	}
     }
+    if (!lobbyChannel) {
+	console.log('No prox lobby channel found. Bailing.');
+	return;
+    }
+    console.log('Found', lobbyChannel ? 1 : 0, 'lobby channels');
     console.log('Found', Object.keys(proxChannels).length, 'prox channels');
     console.log('Found', Object.keys(proxMembers).length, 'prox members');
     // Ideally we want to bail early if there's no work to do, but there are some things
@@ -667,7 +677,7 @@ async function UpdateProximityChat() {
     console.log('Prox clusters', clustersWithLobby);
     // Create new channel(s) if needed.
     // Don't delete extra channels here. Do that at the end.
-    while (Object.keys(proxChannels).length < clustersWithLobby.length) {
+    while (Object.keys(proxChannels).length < clustersWithLobby.length - 1) {
 	const newChannel = await CreateNewVoiceChannel(guild, { name: lobbyName, userLimit: 99 });
 	proxChannels[newChannel.id] = newChannel;
     }
@@ -704,7 +714,7 @@ async function UpdateProximityChat() {
 	    for (const [memberId, member] of channel.members) {
 		discordIdsInChannel[memberId] = true;
 	    }
-	    const cluster = i < clustersWithLobby.length ? clustersWithLobby[i] : [];
+	    const cluster = i < (clustersWithLobby.length - 1) ? clustersWithLobby[i + 1] : [];
 	    for (const discordId of cluster) {
 		if (!(discordId in discordIdsInChannel)) {
 		    if (discordId in draggableDiscordIds) {
@@ -712,6 +722,21 @@ async function UpdateProximityChat() {
 		    } else {
 			failCount++;
 		    }
+		}
+	    }
+	}
+	// Do lobby calculation.
+	const discordIdsInLobby = {};
+	for (const [memberId, member] of lobbyChannel.members) {
+	    discordIdsInLobby[memberId] = true;
+	}
+	const lobbyCluster = clustersWithLobby[0];
+	for (const discordId of lobbyCluster) {
+	    if (!(discordId in discordIdsInLobby)) {
+		if (discordId in draggableDiscordIds) {
+		    plan[discordId] = lobbyChannel.id;
+		} else {
+		    failCount++;
 		}
 	    }
 	}
@@ -779,11 +804,13 @@ async function UpdateProximityChat() {
 	    }
 	}
 	// Send the accumulated perms to the discord channel.
-	const channel = bestPermutation[i];
+	const channel = bestPermutation[i - 1];
 	console.log('Setting perms', perms);
 	try {
 	    console.log('BEGIN SET PERMS');
-	    await channel.permissionOverwrites.set(perms);
+	    // Do not await. This is rate limited so we just move on.
+	    DiscordUtil.TryToSetChannelPermsWithRateLimit(channel, perms);
+	    //await channel.permissionOverwrites.set(perms);
 	    console.log('END SET PERMS');
 	} catch (error) {
 	    console.log('Error while setting perms on prox channel.');

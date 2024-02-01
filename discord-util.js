@@ -294,6 +294,22 @@ async function TryToSetChannelNameWithRateLimit(channel, newName) {
     channel.setName(newName);
 }
 
+const lastTimePermsChangedByChannelId = {};
+
+async function TryToSetChannelPermsWithRateLimit(channel, newPerms) {
+    const t = Date.now();
+    const s = lastTimePermsChangedByChannelId[channel.id] || 0;
+    const elapsed = t - s;
+    const tenMinutes = 6 * 60 * 1000;
+    if (elapsed < tenMinutes) {
+	return;
+    }
+    lastTimePermsChangedByChannelId[channel.id] = t;
+    // Do not await. This call is known to hang for a long time when rate limited.
+    // Best thing in such cases is to move on.
+    channel.permissionOverwrites.set(newPerms);
+}
+
 module.exports = {
     AddRole,
     Connect,
@@ -310,6 +326,7 @@ module.exports = {
     RemoveRole,
     SendLongList,
     TryToSetChannelNameWithRateLimit,
+    TryToSetChannelPermsWithRateLimit,
     UpdateHarmonicCentralityChatChannel,
     moveMemberToAfk
 };
