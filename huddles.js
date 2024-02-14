@@ -20,7 +20,7 @@ const huddles = [
     { name: 'Quad', userLimit: 4, position: 4000 },
     { name: 'Squad', userLimit: 8, position: 7000 },
 ];
-const mainRoomControlledByProximity = true;
+const mainRoomControlledByProximity = false;
 if (!mainRoomControlledByProximity) {
     huddles.push({ name: 'Main', userLimit: 99, position: 1000 });
 }
@@ -273,17 +273,22 @@ function GetLowestRankingMembersFromVoiceChannel(channel, n) {
 
 // Sets a channel to be accessible to everyone.
 async function SetOpenPerms(channel) {
+    if (!channel) {
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
     const connect = PermissionFlagsBits.Connect;
     const view = PermissionFlagsBits.ViewChannel;
     const perms = [
-	{ id: channel.guild.roles.everyone.id, deny: [connect, view] },
+	{ id: guild.roles.everyone.id, deny: [connect, view] },
 	{ id: RoleID.Grunt, allow: [connect, view] },
 	{ id: RoleID.Officer, allow: [connect, view] },
 	{ id: RoleID.General, allow: [connect, view] },
 	{ id: RoleID.Marshal, allow: [connect, view] },
 	{ id: RoleID.Bots, allow: [view, connect] },
     ];
-    await channel.permissionOverwrites.set(perms);
+    // Do not await. Fire and forget with rate limit.
+    DiscordUtil.TryToSetChannelPermsWithRateLimit(channel, perms);
 }
 
 // Calculates the rank-level perms to use for rank-limiting a voice channel.
@@ -510,13 +515,13 @@ async function UpdateProximityChat() {
 	if (channel.type !== 2) {
 	    continue;
 	}
-	if (channel.name in proxRoomNames) {
-	    proxChannels[channelId] = channel;
+	if (channel.name === lobbyName) {
+	    lobbyChannel = channel;
 	    for (const [memberId, member] of channel.members) {
 		proxMembers[memberId] = member;
 	    }
-	} else if (channel.name === lobbyName) {
-	    lobbyChannel = channel;
+	} else if (channel.name in proxRoomNames) {
+	    proxChannels[channelId] = channel;
 	    for (const [memberId, member] of channel.members) {
 		proxMembers[memberId] = member;
 	    }
@@ -752,9 +757,8 @@ async function UpdateProximityChat() {
     });
     console.log('Calculated enforcement plan requires', minDrags, 'drags and has', minFails, 'fails.');
     // Open perms for the lobby (ie: channel zero).
-    const lobby = bestPermutation[0];
-    await SetOpenPerms(lobby);
-    await DiscordUtil.TryToSetChannelNameWithRateLimit(lobby, lobbyName);
+    await SetOpenPerms(lobbyChannel);
+    await DiscordUtil.TryToSetChannelNameWithRateLimit(lobbyChannel, lobbyName);
     // Private perms for the rest of the prox channels that are not the lobby.
     for (let i = 1; i < clustersWithLobby.length; i++) {
 	const connect = PermissionFlagsBits.Connect;
