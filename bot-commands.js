@@ -535,22 +535,7 @@ async function HandleCommitteeCommand(discordMessage) {
 }
 
 async function HandleNickCommand(discordMessage) {
-    const tokens = discordMessage.content.split(' ');
-    if (tokens.length < 2) {
-	await discordMessage.channel.send(`ERROR: wrong number of arguments. USAGE: !nick NewNicknam3`);
-	return;
-    }
-    const raw = discordMessage.content.substring(6);
-    const filtered = FilterUsername(raw);
-    if (filtered.length === 0) {
-	await discordMessage.channel.send(`ERROR: no weird nicknames.`);
-	return;
-    }
-    const discordId = discordMessage.author.id;
-    const cu = await UserCache.GetCachedUserByDiscordId(discordId);
-    await cu.setNick(filtered);
-    const newName = cu.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`Changed name to ${newName}`);
+    await discordMessage.channel.send(`To set your nickname, link your Steam account https://rustcult.com\n\nYour discord name is your Steam name. It can take up to 12 hours to update.`);
 }
 
 // Do as if the user just joined the discord. For manually resolving people who
