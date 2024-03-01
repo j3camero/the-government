@@ -111,7 +111,7 @@ async function HandlePresidentVoteCommand(discordMessage) {
 	name: 'presidential-election',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in March 2024. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. This vote ends <t:1706554800:R>.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in March 2024. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. This vote ends <t:1709604000:R>.');
     await message.react('❤️');
     const generalRankUsers = await UserCache.GetMostCentralUsers(15);
     const candidateNames = [];
