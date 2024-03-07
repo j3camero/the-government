@@ -22,7 +22,7 @@ const huddles = [
 ];
 const mainRoomControlledByProximity = false;
 if (!mainRoomControlledByProximity) {
-    huddles.push({ name: 'Main', userLimit: 99, position: 1000 });
+    //huddles.push({ name: 'Main', userLimit: 99, position: 1000 });
 }
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
@@ -172,39 +172,27 @@ function CompareRooms(a, b) {
     }
     // Rules from here on down are mainly intended for sorting the empty
     // VC rooms at the bottom amongst themselves.
-    // Rooms named Proximity sort up.
-    if (a.name !== 'Proximity' && b.name === 'Proximity') {
-	return 1;
+    const roomOrder = ['★', '❱❱❱❱', '❱❱❱', '❱❱', '❱', '⦁⦁⦁⦁', '⦁⦁⦁', '⦁⦁', '⦁'];
+    for (const roomName of roomOrder) {
+	if (a.name.startsWith(roomName) && !b.name.startsWith(roomName)) {
+	    return -1;
+	}
+	if (!a.name.startsWith(roomName) && b.name.startsWith(roomName)) {
+	    return 1;
+	}
     }
-    if (a.name === 'Proximity' && b.name !== 'Proximity') {
+    // Rooms with a unicode chevron character in the name sort up (officer rank insignia).
+    if (a.name.includes('❱') && !b.name.includes('❱')) {
 	return -1;
     }
-    // Rooms named Main sort up.
-    if (a.name !== 'Main' && b.name === 'Main') {
+    if (!a.name.includes('❱') && b.name.includes('❱')) {
 	return 1;
-    }
-    if (a.name === 'Main' && b.name !== 'Main') {
-	return -1;
     }
     // Rooms with lower capacity sort up.
     if (a.userLimit > b.userLimit) {
 	return 1;
     }
     if (a.userLimit < b.userLimit) {
-	return -1;
-    }
-    // Rooms named Officers Only go next.
-    if (a.name !== 'Officers Only' && b.name === 'Officers Only') {
-	return 1;
-    }
-    if (a.name === 'Officers Only' && b.name !== 'Officers Only') {
-	return -1;
-    }
-    // Rooms named Generals Only go next.
-    if (a.name !== 'Generals Only' && b.name === 'Generals Only') {
-	return 1;
-    }
-    if (a.name === 'Generals Only' && b.name !== 'Generals Only') {
 	return -1;
     }
     // Should all other criteria fail to break the tie, then alphabetic ordering is the last resort.
@@ -863,13 +851,13 @@ async function Update() {
     await UpdateProximityChat();
     console.log('Proximity chat update done');
     if (isUpdateNeeded) {
-	const guild = await DiscordUtil.GetMainDiscordGuild();
-	for (const huddle of huddles) {
-	    await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
-	}
-	const overflowMovedAnyone = false;  // await Overflow(guild);
-	const roomsInOrder = await MoveOneRoomIfNeeded(guild);
-	isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
+	//const guild = await DiscordUtil.GetMainDiscordGuild();
+	//for (const huddle of huddles) {
+	//    await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
+	//}
+	//const overflowMovedAnyone = false;  // await Overflow(guild);
+	//const roomsInOrder = await MoveOneRoomIfNeeded(guild);
+	//isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
     }
     console.log('Done huddles update. Scheduling next update.');
     setTimeout(Update, 9000);
