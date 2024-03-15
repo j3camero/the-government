@@ -22,7 +22,7 @@ const huddles = [
 ];
 const mainRoomControlledByProximity = false;
 if (!mainRoomControlledByProximity) {
-    //huddles.push({ name: 'Main', userLimit: 99, position: 1000 });
+    huddles.push({ name: 'Main', userLimit: 99, position: 1000 });
 }
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
@@ -172,7 +172,7 @@ function CompareRooms(a, b) {
     }
     // Rules from here on down are mainly intended for sorting the empty
     // VC rooms at the bottom amongst themselves.
-    const roomOrder = ['★', '❱❱❱❱', '❱❱❱', '❱❱', '❱', '⦁⦁⦁⦁', '⦁⦁⦁', '⦁⦁', '⦁'];
+    const roomOrder = ['Main', 'Duo', 'Trio', 'Quad', 'Squad'];
     for (const roomName of roomOrder) {
 	if (a.name.startsWith(roomName) && !b.name.startsWith(roomName)) {
 	    return -1;
@@ -180,13 +180,6 @@ function CompareRooms(a, b) {
 	if (!a.name.startsWith(roomName) && b.name.startsWith(roomName)) {
 	    return 1;
 	}
-    }
-    // Rooms with a unicode chevron character in the name sort up (officer rank insignia).
-    if (a.name.includes('❱') && !b.name.includes('❱')) {
-	return -1;
-    }
-    if (!a.name.includes('❱') && b.name.includes('❱')) {
-	return 1;
     }
     // Rooms with lower capacity sort up.
     if (a.userLimit > b.userLimit) {
@@ -839,28 +832,54 @@ async function UpdateProximityChat() {
     }
 }
 
+async function UpdateSteamAccountInfo() {
+    // Hit the rustcult.com API to get updated player positions.
+    const response = await GetAllDiscordAccountsFromRustCultApi();
+    if (!response) {
+	return;
+    }
+    const linkedAccounts = JSON.parse(response);
+    console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.com API.');
+    for (const account of linkedAccounts) {
+	if (!account) {
+	    return;
+	}
+	if (!account.discordId) {
+	    return;
+	}
+	if (!account.steamId) {
+	    return;
+	}
+	const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
+	if (!cu) {
+	    return;
+	}
+	await cu.setSteamId(account.steamId);
+	await cu.setSteamName(account.steamName);
+    }
+}
+
+// Update steam account info once after startup, then hourly after that.
+setTimeout(UpdateSteamAccountInfo, 15 * 1000);
+setInterval(UpdateSteamAccountInfo, 60 * 60 * 1000);
+
 // To avoid race conditions on the cheap, use a system of routine updates.
 // To schedule an update, a boolean flag is flipped. That way, the next time
 // the cycle goes around, it knows that an update is needed. Redundant or
 // overlapping updates are avoided this way.
 let isUpdateNeeded = false;
-setTimeout(Update, 9000);
+setTimeout(HuddlesUpdate, 9000);
 
-async function Update() {
-    console.log('Starting proximity chat update');
-    await UpdateProximityChat();
-    console.log('Proximity chat update done');
+async function HuddlesUpdate() {
     if (isUpdateNeeded) {
-	//const guild = await DiscordUtil.GetMainDiscordGuild();
-	//for (const huddle of huddles) {
-	//    await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
-	//}
-	//const overflowMovedAnyone = false;  // await Overflow(guild);
-	//const roomsInOrder = await MoveOneRoomIfNeeded(guild);
-	//isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
+	const guild = await DiscordUtil.GetMainDiscordGuild();
+	for (const huddle of huddles) {
+	    await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
+	}
+	const roomsInOrder = await MoveOneRoomIfNeeded(guild);
+	isUpdateNeeded = !roomsInOrder;
     }
-    console.log('Done huddles update. Scheduling next update.');
-    setTimeout(Update, 9000);
+    setTimeout(HuddlesUpdate, 1000);
 }
 
 function ScheduleUpdate() {

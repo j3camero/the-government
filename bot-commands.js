@@ -249,22 +249,21 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of February 2024. Report to Rustafied.com - US Long III\n`;
-    content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
+    content += `Here are your secret orders for the month of March 2024. Report to Rustopia.gg - US Large\n`;
+    content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
     if (user.rank <= 5) {
 	content += `Generals Code 1111\n`;
     }
     if (user.rank <= 9) {
 	content += `Officers Code 1111\n`;
-	content += `Non wipe badge code 1111\n`;
     }
     if (user.rank <= 13) {
 	content += `Grunt Code 1111\n`;
 	content += `Gate Code 1111\n\n`;
     }
-    content += `Run straight to E4. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/ for the best possible experience with the new proximity chat. It also works when you join team in-game. The main objective of the proximity bot is to keep people that are close to each other in the same call. It will automatically moves you to a separate room if you are more than three grids away, unless you are solo. If you die and respawn at beach you will be moved to the solo call. If there is any call with people close to you, your two calls will merge. If you have trouble getting or staying in the right call make sure you are connected in https://rustcult.com/. Static VCs that are excluded from the moving around are:
-the *wipe badge call*, *duo*, *trio* *quad* and *squad* call.\n\n`;
+    content += `Run straight to A1. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around all your bases even if you never have the app open.\n\n`;
+    content += `Want yen? Become a Government Contractor. Mr. President is paying 100 yen per box of stone at community base all day on wipe day. Offer is good for at least 10 boxes of stone so there is time for you to cash in. 10 yen per row of stone for smaller deliveries.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
@@ -286,13 +285,11 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of February 2024. Report to Rustafied.com - US Long III\n`;
-    content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
-    if (user.rank <= 9) {
-	content += `Non wipe badge code 1111\n`;
-    }
-    content += `Run straight to G1. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/ for the best possible experience with the new proximity chat. It also works if you join team in-game.\n\n`;
+    content += `Here are your secret orders for the month of March 2024. Report to Rustopia.gg - US Large\n`;
+    content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
+    content += `Get the gov build location from one of your trusted friends with a high rank in The Government. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around all your bases even if you never have the app open.\n\n`;
+    content += `Want yen? Become a Government Contractor. Mr. President is paying 100 yen per box of stone at community base all day on wipe day. Offer is good for at least 10 boxes of stone so there is time for you to cash in. 10 yen per row of stone for smaller deliveries.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');

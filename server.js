@@ -241,18 +241,6 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
     return matchingRecords;
 }
 
-async function HourlyCensus() {
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const recruitRoomId = '1197740625534140557';
-    const recruitRoom = await guild.channels.fetch(recruitRoomId);
-    if (!recruitRoom) {
-	return;
-    }
-    const roomName = `${guild.memberCount} ⦁`;
-    // Do not await. Discord has rate limits for changing channel names. Fire and forget.
-    recruitRoom.setName(roomName);
-}
-
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
 async function RoutineUpdate() {
     console.log('Routine update');
@@ -427,8 +415,6 @@ async function Start() {
     //await recruiting.UpdateRecruitingLeaderboard();
     // Routine update schedules itself to run again after it finishes.
     // That way it avoids running over itself if it runs longer than a minute.
-    await HourlyCensus();
-    setInterval(HourlyCensus, 60 * 60 * 1000);
     await RoutineUpdate();
 }
 
