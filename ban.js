@@ -158,7 +158,7 @@ async function UpdateTrial(cu) {
     let baselineVoteDurationDays;
     let nextStateChangeMessage;
     if (guilty) {
-	baselineVoteDurationDays = 7;
+	baselineVoteDurationDays = 3;
 	const n = VoteDuration.HowManyMoreNoVotes(yesVoteCount, noVoteCount, VoteDuration.SimpleMajority);
 	nextStateChangeMessage = `${n} more NO votes to unban`;
 	if (cu.good_standing) {
@@ -174,7 +174,7 @@ async function UpdateTrial(cu) {
 	    }
 	}
     } else {
-	baselineVoteDurationDays = 2;
+	baselineVoteDurationDays = 1;
 	const n = VoteDuration.HowManyMoreYesVotes(yesVoteCount, noVoteCount, VoteDuration.SimpleMajority);
 	nextStateChangeMessage = `${n} more YES votes to ban`;
 	if (!cu.good_standing) {
