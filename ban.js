@@ -451,6 +451,7 @@ async function RateLimitBanCourtMessage(discordMessage) {
     const currentTime = Date.now();
     let recentMessageCount = 0;
     for (const [messageId, message] of messages) {
+	//console.log(messageId, message.author.username, message.createdTimestamp, message.content);
 	if (message.author.id === discordMessage.author.id) {
 	    const ageMillis = currentTime - message.createdTimestamp;
 	    const ageHours = ageMillis / (60 * 60 * 1000);
@@ -462,8 +463,16 @@ async function RateLimitBanCourtMessage(discordMessage) {
     // Recent message count includes the currently posted message, discordMessage.
     if (recentMessageCount > maxMessagesPerChannelPerTimeframe) {
 	const explanation = `The wheels of justice turn slowly. There is a limit of 4 messages every 4 hours per juror per trial. Your contributions to ban court are appreciated. Feel free to edit your messages to add more. This message is automated and helps The Government keep #case-files reasonably short. Thank you and sorry for deleting your message.  --The Bot`;
-	await discordMessage.author.send(explanation);
-	await discordMessage.delete();
+	try {
+	    await discordMessage.author.send(explanation);
+	} catch (error) {
+	    console.log('Failed to DM member for too frequent messages in ban court');
+	}
+	try {
+	    await discordMessage.delete();
+	} catch (error) {
+	    console.log('Failed to delete a message in ban court');
+	}
     }
 }
 
