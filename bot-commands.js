@@ -7,6 +7,7 @@ const DiscordUtil = require('./discord-util');
 const FilterUsername = require('./filter-username');
 const huddles = require('./huddles');
 const RandomPin = require('./random-pin');
+const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
@@ -187,24 +188,73 @@ async function HandlePrivateRoomVoteCommand(discordMessage) {
     await channel.setParent(voteSectionId);
 }
 
-async function HandleAmnestyVoteCommand(discordMessage) {
+function GenerateAkaStringForUser(cu) {
+    const peakRank = cu.peak_rank || 13;
+    const peakRankInsignia = RankMetadata[peakRank].insignia;
+    const names = [
+	cu.steam_name,
+	cu.nick,
+	cu.nickname,
+	cu.steam_id,
+	cu.discord_id,
+	peakRankInsignia,
+    ];
+    const filteredNames = [];
+    for (const name of names) {
+	if (name && name.length > 0) {
+	    filteredNames.push(name);
+	}
+    }
+    const joined = filteredNames.join(' / ');
+    return joined;
+}
+
+async function HandleAmnestyCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
 	// Auth: this command for developer use only.
 	return;
     }
+    await discordMessage.channel.send(`The Generals have voted to unban the following individuals from The Government:`);
+    let unbanCountForGov = 0;
+    await UserCache.ForEach(async (cu) => {
+	if (!cu.good_standing && !cu.ban_vote_start_time && !cu.ban_pardon_time) {
+	    await cu.setGoodStanding(true);
+	    await cu.setBanVoteStartTime(null);
+	    await cu.setBanVoteChatroom(null);
+	    await cu.setBanVoteMessage(null);
+	    await cu.setBanConvictionTime(null);
+	    await cu.setBanPardonTime(null);
+	    const aka = GenerateAkaStringForUser(cu);
+	    await discordMessage.channel.send(`Unbanned ${aka}`);
+	    await Sleep(1000);
+	    unbanCountForGov++;
+	}
+    });
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create({ name: 'amnesty-vote' });
-    const message = await channel.send(
-	`__**Amnesty for weighedsea**__\n\n` +
-	`Should we unban weighedsea?\n\n` +
-        `Vote Yes to unban weighedsea. Vote No to keep weighedsea banned, or if you disagree with this vote being held in the first place.\n\n` +
-        `This guy was banned about a year ago. What we can determine is that he was banned during the Broken Dairy Queen Shooting Saga, early on, for calling it out as a lie. I guess in that moment it seemed insensitive. In light of the situation later blowing up in Broken's face as an obvious fabrication, it now looks like we banned weighed for nothing.\n\n` +
-	`A 2/3 majority is needed for this motion to pass. These matters will always be decided by the Generals. If we choose to grant this amnesty, then we can always ban him again later.`);
-    await message.react('✅');
-    await message.react('❌');
-    const voteSectionId = '1043778293612163133';
-    await channel.setParent(voteSectionId);
+    const bans = await guild.bans.fetch();
+    let unbanCountForDiscord = 0;
+    for (const [banId, ban] of bans) {
+	const discordId = ban.user.id;
+	if (!discordId) {
+	    continue;
+	}
+	const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+	if (!cu) {
+	    continue;
+	}
+	if (!cu.ban_pardon_time) {
+	    await guild.bans.remove(discordId);
+	    const aka = GenerateAkaStringForUser(cu);
+	    await discordMessage.channel.send(`Unbanned ${aka}`);
+	    await Sleep(1000);
+	    unbanCountForDiscord++;
+	}
+    }
+    await discordMessage.channel.send(`${unbanCountForGov} gov users unbanned`);
+    await discordMessage.channel.send(`${unbanCountForDiscord} discord users unbanned`);
+    const total = unbanCountForGov + unbanCountForDiscord;
+    await discordMessage.channel.send(`These ${total} bans have been pardoned by order of the Generals`);
 }
 
 async function HandleTermLengthVoteCommand(discordMessage) {
@@ -696,7 +746,7 @@ async function HandleUnknownCommand(discordMessage) {
 async function Dispatch(discordMessage) {
     const handlers = {
 	'!afk': HandleAfkCommand,
-	'!amnestyvote': HandleAmnestyVoteCommand,
+	'!amnesty': HandleAmnestyCommand,
 	'!apprehend': Ban.HandleBanCommand,
 	'!arrest': Ban.HandleBanCommand,
 	'!art': Artillery,
