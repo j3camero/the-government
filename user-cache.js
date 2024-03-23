@@ -98,7 +98,7 @@ async function CreateNewDatabaseUser(discordMember) {
     const nickname = FilterUsername(discordMember.user.username);
     console.log(`Create a new DB user for ${nickname}`);
     const rank = RankMetadata.length - 1;
-    const last_seen = moment().format();
+    const last_seen = null;
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};
     const result = await DB.Query('INSERT INTO users SET ?', fields);

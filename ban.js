@@ -288,7 +288,17 @@ async function HandleBanCommand(discordMessage) {
 	return;
     }
     if (mentionedUser.ban_vote_start_time) {
-	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial.`);
+	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial`);
+	return;
+    }
+    if (!mentionedUser.last_seen) {
+	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is immune until they send a text message or join voice chat for the first time`);
+	return;
+    }
+    const lastSeen = moment(mentionedUser.last_seen);
+    if (moment().subtract(20, 'days').isAfter(lastSeen)) {
+	const daysOfInactivity = Math.round(moment().diff(lastSeen, 'days'));
+	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is immune because their last message or voice acivity was ${daysOfInactivity} days ago.`);
 	return;
     }
     await discordMessage.channel.send(`${mentionedUser.getRankNameAndInsignia()} has been sent to Ban Court!`);
