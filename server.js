@@ -335,6 +335,7 @@ async function Start() {
 	}
 	await cu.setCitizen(true);
 	await BotCommands.Dispatch(message);
+	await Ban.RateLimitBanCourtMessage(message);
     });
 
     // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,

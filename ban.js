@@ -62,7 +62,8 @@ async function UpdateTrial(cu) {
 	console.log('Failed to find or create ban court channel', roomName);
 	return;
     }
-    await channel.setRateLimitPerUser(600);
+    // No more rate limit because it's being enforced by the gov bot now.
+    //await channel.setRateLimitPerUser(600);
     await cu.setBanVoteChatroom(channel.id);
     // Update or create the ban vote message itself. The votes are reactions to this message.
     let message;
@@ -427,10 +428,50 @@ async function HandleConvictCommand(discordMessage) {
     }
 }
 
+// 
+async function RateLimitBanCourtMessage(discordMessage) {
+    const timeframeHours = 4;
+    const maxMessagesPerChannelPerTimeframe = 4;
+    const defendantUser = await UserCache.GetCachedUserByBanVoteChannelId(discordMessage.channel.id);
+    if (!defendantUser) {
+	// This is not a ban courtroom. Do nothing.
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    if (!defendantUser.ban_vote_chatroom) {
+	// No courtroom for some reason. Bail.
+	return;
+    }
+    const channel = await guild.channels.resolve(defendantUser.ban_vote_chatroom);
+    if (!channel) {
+	// Could not find the channel. Bail.
+	return;
+    }
+    const messages = await channel.messages.fetch({ limit: 20, cache: false });
+    const currentTime = Date.now();
+    let recentMessageCount = 0;
+    for (const [messageId, message] of messages) {
+	if (message.author.id === discordMessage.author.id) {
+	    const ageMillis = currentTime - message.createdTimestamp;
+	    const ageHours = ageMillis / (60 * 60 * 1000);
+	    if (ageHours < timeframeHours) {
+		recentMessageCount++;
+	    }
+	}
+    }
+    // Recent message count includes the currently posted message, discordMessage.
+    if (recentMessageCount > maxMessagesPerChannelPerTimeframe) {
+	const explanation = `The wheels of justice turn slowly. There is a limit of 4 messages every 4 hours per juror per trial. Your contributions to ban court are appreciated. Feel free to edit your messages to add more. This message is automated and helps The Government keep #case-files reasonably short. Thank you and sorry for deleting your message.  --The Bot`;
+	await discordMessage.author.send(explanation);
+	await discordMessage.delete();
+    }
+}
+
 module.exports = {
     HandleBanCommand,
     HandleConvictCommand,
     HandlePardonCommand,
     HandlePossibleReaction,
+    RateLimitBanCourtMessage,
     UpdateTrial,
 };
