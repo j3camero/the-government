@@ -334,6 +334,7 @@ async function Start() {
 	    return;
 	}
 	await cu.setCitizen(true);
+	await cu.seenNow();
 	await BotCommands.Dispatch(message);
 	await Ban.RateLimitBanCourtMessage(message);
     });
@@ -380,6 +381,7 @@ async function Start() {
 	    return;
 	}
 	await cu.setCitizen(true);
+	await cu.seenNow();
 	await Ban.HandlePossibleReaction(messageReaction, user, true);
     });
 
