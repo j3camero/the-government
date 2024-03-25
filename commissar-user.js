@@ -58,6 +58,7 @@ class CommissarUser {
 	this.presidential_election_message_id = presidential_election_message_id;
 	this.steam_id = steam_id;
 	this.steam_name = steam_name;
+	this.steam_name_update_time = null;
     }
 
     async setDiscordId(discord_id) {
@@ -274,7 +275,13 @@ class CommissarUser {
 	this.steam_name = steam_name;
 	await this.updateFieldInDatabase('steam_name', this.steam_name);
     }
-    
+
+    async setSteamNameUpdatedNow() {
+	const t = moment().format();
+	this.steam_name_update_time = t;
+	await this.updateFieldInDatabase('steam_name_update_time', t);
+    }
+
     async updateFieldInDatabase(fieldName, fieldValue) {
 	//console.log(`DB update ${fieldName} = ${fieldValue} for ${this.nickname} (ID:${this.commissar_id}).`);
 	const sql = `UPDATE users SET ${fieldName} = ? WHERE commissar_id = ?`;
@@ -294,7 +301,7 @@ class CommissarUser {
 	}
 	return this.rank;
     }
-    
+
     getGenderPrefix() {
 	if (this.gender === 'F') {
 	    return 'Madam';

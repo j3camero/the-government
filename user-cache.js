@@ -40,6 +40,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.presidential_election_message_id,
 	    row.steam_id,
 	    row.steam_name,
+	    row.steam_name_update_time,
 	);
 	newCache[row.commissar_id] = newUser;
     });
@@ -117,7 +118,7 @@ async function CreateNewDatabaseUser(discordMember) {
 	null, null, null,
 	0,
 	null, null, null, null, null,
-	null, null,
+	null, null, null,
     );
     commissarUserCache[commissar_id] = newUser;
     return newUser;
@@ -263,6 +264,26 @@ function CountPresidentialElectionVotes() {
     return votes;
 }
 
+function GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName() {
+    let chosenUser = null;
+    let oldestUpdateTime;
+    for (const i in commissarUserCache) {
+	const u = commissarUserCache[i];
+	if (!u.steam_id) {
+	    continue;
+	}
+	if (!u.steam_name_update_time) {
+	    return u;
+	}
+	const t = moment(u.steam_name_update_time);
+	if (!oldestUpdateTime || t.isBefore(oldestUpdateTime)) {
+	    oldestUpdateTime = t;
+	    chosenUser = u;
+	}
+    }
+    return chosenUser;
+}
+
 module.exports = {
     BulkCentralityUpdate,
     CountVoiceActiveUsers,
@@ -274,6 +295,7 @@ module.exports = {
     GetCachedUserByBanVoteMessageId,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
+    GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName,
     GetMostCentralUsers,
     GetOrCreateUserByDiscordId,
     GetUsersSortedByLastSeen,

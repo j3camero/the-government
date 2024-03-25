@@ -9,6 +9,7 @@ CREATE TABLE users
     discord_id VARCHAR(32),  -- Discord ID.
     steam_id VARCHAR(32),  -- Steam ID.
     steam_name VARCHAR(128),  -- Steam display name.
+    steam_name_update_time TIMESTAMP,
     battlemetrics_id VARCHAR(32),  -- User ID on Battlemetrics.com.
     nickname VARCHAR(32),  -- Last known nickname.
     nick VARCHAR(32),  -- A user-supplied preferred nickname.
