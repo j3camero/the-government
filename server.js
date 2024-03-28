@@ -3,6 +3,7 @@ const Ban = require('./ban');
 const BanVoteCache = require('./ban-vote-cache');
 const BotCommands = require('./bot-commands');
 const Clock = require('./clock');
+const com = require('./chain-of-command');
 const DB = require('./database');
 const deepEqual = require('deep-equal');
 const { ContextMenuCommandBuilder, Events, ApplicationCommandType } = require('discord.js');
@@ -329,23 +330,24 @@ async function UpdateSomeSteamNames() {
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
 async function RoutineUpdate() {
     console.log('Routine update');
-    startTime = new Date().getTime();
-    await yen.DoLottery();
-    await Rank.UpdateUserRanks();
-    await UpdateVoiceActiveMembersForMainDiscordGuild();
+    const startTime = new Date().getTime();
     await huddles.ScheduleUpdate();
+    await UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
     await DB.WriteTimeTogetherRecords(timeCappedRecords);
     await DB.ConsolidateTimeMatrix();
     await UpdateHarmonicCentrality();
+    await com.CalculateChainOfCommand();
+    await Rank.UpdateUserRanks();
     await UpdateSomeSteamNames();
     await UpdateAllCitizens();
+    await yen.DoLottery();
     await recruiting.ScanInvitesForChanges();
     await BanVoteCache.ExpungeVotesWithNoOngoingTrial();
     await AutoUpdate();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
+    const endTime = new Date().getTime();
+    const elapsed = endTime - startTime;
     console.log(`Update Time: ${elapsed} ms`);
     setTimeout(RoutineUpdate, 60 * 1000);
 }
