@@ -37,6 +37,7 @@
     "discord.js": "^14.11.0",
     "exchange-rates-api": "^1.1.0",
     "gamedig": "^2.0.23",
+    "kruskal-mst": "^1.0.0",
     "mocha": "^10.2.0",
     "moment": "^2.29.1",
     "mysql": "^2.17.1",

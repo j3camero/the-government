@@ -85,6 +85,16 @@ function GetCachedUserByDiscordId(discord_id) {
     return null;
 }
 
+// Get a cached user record by Steam ID.
+function GetCachedUserBySteamId(steam_id) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.steam_id === steam_id) {
+	    return user;
+	}
+    }
+    return null;
+}
+
 async function GetOrCreateUserByDiscordId(discordMember) {
     const cu = await GetCachedUserByDiscordId(discordMember.user.id);
     if (cu) {
@@ -151,6 +161,15 @@ function GetMostCentralUsers(topN) {
 	return b.harmonic_centrality - a.harmonic_centrality;
     });
     return flat.slice(0, topN);
+}
+
+function GetAllUsersAsFlatList() {
+    const flat = [];
+    for (const i in commissarUserCache) {
+	const u = commissarUserCache[i];
+	flat.push(u);
+    }
+    return flat;
 }
 
 async function BulkCentralityUpdate(centralityScores) {
@@ -291,10 +310,12 @@ module.exports = {
     ForEach,
     GetAllCitizenCommissarIds,
     GetAllNicknames,
+    GetAllUsersAsFlatList,
     GetCachedUserByBanVoteChannelId,
     GetCachedUserByBanVoteMessageId,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
+    GetCachedUserBySteamId,
     GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName,
     GetMostCentralUsers,
     GetOrCreateUserByDiscordId,
