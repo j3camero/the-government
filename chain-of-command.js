@@ -1,10 +1,20 @@
 const db = require('./database');
 const fs = require('fs');
 const kruskal = require('kruskal-mst');
+const moment = require('moment');
 const UserCache = require('./user-cache');
 
 async function CalculateChainOfCommand() {
     console.log('Chain of command');
+    // Load recently active steam IDs from a file.
+    const recentlyActiveSteamIds = {};
+    for (const line of ReadLinesFromCsvFile('recently-active-steam-ids-march-2024.csv')) {
+	if (line.length !== 1) {
+	    continue;
+	}
+	const s = line[0];
+	recentlyActiveSteamIds[s] = true;
+    }
     // Initialize the social graph made up up vertices (people) and edges (relationships).
     const vertices = {};
     const edges = {};
@@ -14,6 +24,15 @@ async function CalculateChainOfCommand() {
     let maxHC = null;
     let sumHC = 0;
     for (const v of discordVertices) {
+	const activeInGame = v.steam_id in recentlyActiveSteamIds;
+	if (!v.last_seen && !activeInGame) {
+	    continue;
+	}
+	const lastSeen = moment(v.last_seen);
+	const limit = moment().subtract(90, 'days');
+	if (lastSeen.isBefore(limit) && !activeInGame) {
+	    continue;
+	}
 	const i = v.steam_id || v.discord_id || v.commissar_id;
 	const hc = v.citizen ? v.harmonic_centrality : 0;
 	vertices[i] = {
@@ -50,6 +69,12 @@ async function CalculateChainOfCommand() {
 	const hiid = hiUser.steam_id || hiUser.discord_id || hiUser.commissar_id;
 	const a = loid < hiid ? loid : hiid;
 	const b = loid < hiid ? hiid : loid;
+	if (!(a in vertices)) {
+	    continue;
+	}
+	if (!(b in vertices)) {
+	    continue;
+	}
 	if (!(a in edges)) {
 	    edges[a] = {};
 	}
@@ -82,12 +107,16 @@ async function CalculateChainOfCommand() {
 	    continue;
 	}
 	const i = line[0];
+	if (!(i in recentlyActiveSteamIds)) {
+	    continue;
+	}
 	const activity = parseFloat(line[1]);
 	if (!(i in vertices)) {
 	    vertices[i] = {};
 	}
 	vertices[i].in_game_activity = activity;
 	vertices[i].steam_id = i;
+	vertices[i].vertex_id = i;
 	if (minActivity === null || activity < minActivity) {
 	    minActivity = activity;
 	}
@@ -118,6 +147,12 @@ async function CalculateChainOfCommand() {
 	const t = parseFloat(line[2]);
 	const a = i < j ? i : j;
 	const b = i < j ? j : i;
+	if (!(a in vertices)) {
+	    continue;
+	}
+	if (!(b in vertices)) {
+	    continue;
+	}
 	if (!(a in edges)) {
 	    edges[a] = {};
 	}
@@ -148,7 +183,7 @@ async function CalculateChainOfCommand() {
 	const v = vertices[i];
 	const hc = v.harmonic_centrality || 0;
 	const iga = v.in_game_activity || 0;
-	v.cross_platform_activity = hc + iga;
+	v.cross_platform_activity = (0.2 * hc + iga) / 3600;
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
@@ -158,8 +193,8 @@ async function CalculateChainOfCommand() {
 	    const e = edges[i][j];
 	    const d = e.discord_coplay_time || 0;
 	    const r = e.rust_coplay_time || 0;
-	    const t = d + 2 * r;
-	    e.cross_platform_relationship_strength = t / 3600;
+	    const t = (d + 2 * r) / 3600;
+	    e.cross_platform_relationship_strength = t;
 	    if (t > 0) {
 		e.cross_platform_relationship_distance = 1 / t;
 		edgesFormattedForKruskal.push({
@@ -223,14 +258,31 @@ async function CalculateChainOfCommand() {
 	    break;
 	}
 	next.leadershipScore = minScore;
-	let cu;
-	cu = UserCache.GetCachedUserByDiscordId(next.discord_id);
-	if (!cu) {
-	    cu = UserCache.GetCachedUserBySteamId(next.steam_id);
-	}
-	const displayName = cu ? cu.getNicknameOrTitleWithInsignia() : next.vertex_id || next.steam_id || next.discord_id || 'Unknown Player';
+	const displayName = UserCache.TryToFindDisplayNameForUserGivenAnyKnownId(next.vertex_id);
 	const formattedScore = Math.round(minScore).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-	//console.log(formattedScore, displayName, '(', remainingVertices, 'vertices remaining', ')');
+	let boss;
+	const subordinates = [];
+	const mstEdges = next.mstEdges || [];
+	for (const i of mstEdges) {
+	    const v = vertices[i];
+	    if (!v.leadershipScore && v.leadershipScore !== 0) {
+		boss = v;
+	    } else {
+		subordinates.push(v);
+	    }
+	}
+	let bossName = 'NONE';
+	if (boss) {
+	    bossName = UserCache.TryToFindDisplayNameForUserGivenAnyKnownId(boss.vertex_id);
+	}
+	subordinates.sort((a, b) => b.leadershipScore - a.leadershipScore);
+	const subNames = [];
+	for (const sub of subordinates) {
+	    const subName = UserCache.TryToFindDisplayNameForUserGivenAnyKnownId(sub.vertex_id);
+	    subNames.push(subName);
+	}
+	const allSubs = subNames.join(' ');
+	//console.log('(', remainingVertices, ')', formattedScore, displayName, '( boss:', bossName, ') +', allSubs);
     }
 }
 

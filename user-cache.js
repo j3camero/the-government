@@ -95,6 +95,32 @@ function GetCachedUserBySteamId(steam_id) {
     return null;
 }
 
+// Try to find a user given any known ID.
+function TryToFindUserGivenAnyKnownId(i) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.steam_id === i) {
+	    return user;
+	}
+	if (user.discord_id === i) {
+	    return user;
+	}
+	if (user.commissar_id === i) {
+	    return user;
+	}
+    }
+    return null;
+}
+
+// Try to find a display name for a user given any known ID.
+function TryToFindDisplayNameForUserGivenAnyKnownId(i) {
+    const u = TryToFindUserGivenAnyKnownId(i);
+    if (u) {
+	return u.getNicknameOrTitleWithInsignia();
+    } else {
+	return i;
+    }
+}
+
 async function GetOrCreateUserByDiscordId(discordMember) {
     const cu = await GetCachedUserByDiscordId(discordMember.user.id);
     if (cu) {
@@ -322,4 +348,6 @@ module.exports = {
     GetUsersSortedByLastSeen,
     GetUsersWithRankAndScoreHigherThan,
     LoadAllUsersFromDatabase,
+    TryToFindDisplayNameForUserGivenAnyKnownId,
+    TryToFindUserGivenAnyKnownId,
 };

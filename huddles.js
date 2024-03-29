@@ -528,6 +528,7 @@ async function UpdateProximityChat() {
     if (response) {
 	const linkedAccounts = JSON.parse(response);
 	console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.com API.');
+	//console.log(linkedAccounts);
 	for (const account of linkedAccounts) {
 	    if (account && account.discordId) {
 		if (account.steamId) {
