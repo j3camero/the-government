@@ -117,7 +117,7 @@ function TryToFindDisplayNameForUserGivenAnyKnownId(i) {
     if (u) {
 	return u.getNicknameOrTitleWithInsignia();
     } else {
-	return i;
+	return null;
     }
 }
 

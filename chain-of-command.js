@@ -4,17 +4,12 @@ const kruskal = require('kruskal-mst');
 const moment = require('moment');
 const UserCache = require('./user-cache');
 
+const recentlyActiveSteamIds = {};
+
 async function CalculateChainOfCommand() {
     console.log('Chain of command');
     // Load recently active steam IDs from a file.
-    const recentlyActiveSteamIds = {};
-    for (const line of ReadLinesFromCsvFile('recently-active-steam-ids-march-2024.csv')) {
-	if (line.length !== 1) {
-	    continue;
-	}
-	const s = line[0];
-	recentlyActiveSteamIds[s] = true;
-    }
+    ReadSteamAccountsFromFile('recently-active-steam-ids-march-2024.csv');
     // Initialize the social graph made up up vertices (people) and edges (relationships).
     const vertices = {};
     const edges = {};
@@ -258,7 +253,7 @@ async function CalculateChainOfCommand() {
 	    break;
 	}
 	next.leadershipScore = minScore;
-	const displayName = UserCache.TryToFindDisplayNameForUserGivenAnyKnownId(next.vertex_id);
+	const displayName = GetDisplayName(next.vertex_id);
 	const formattedScore = Math.round(minScore).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	let boss;
 	const subordinates = [];
@@ -273,16 +268,16 @@ async function CalculateChainOfCommand() {
 	}
 	let bossName = 'NONE';
 	if (boss) {
-	    bossName = UserCache.TryToFindDisplayNameForUserGivenAnyKnownId(boss.vertex_id);
+	    bossName = GetDisplayName(boss.vertex_id);
 	}
 	subordinates.sort((a, b) => b.leadershipScore - a.leadershipScore);
 	const subNames = [];
 	for (const sub of subordinates) {
-	    const subName = UserCache.TryToFindDisplayNameForUserGivenAnyKnownId(sub.vertex_id);
+	    const subName = GetDisplayName(sub.vertex_id);
 	    subNames.push(subName);
 	}
 	const allSubs = subNames.join(' ');
-	//console.log('(', remainingVertices, ')', formattedScore, displayName, '( boss:', bossName, ') +', allSubs);
+	console.log('(', remainingVertices, ')', formattedScore, displayName, '( boss:', bossName, ') +', allSubs);
     }
 }
 
@@ -298,6 +293,38 @@ function ReadLinesFromCsvFile(filename) {
 	tokenizedLines.push(tokens);
     }
     return tokenizedLines;
+}
+
+// Helper function that reads and parses a CSV file into memory.
+// This is only for a particular file that contains steam IDs and
+// steam names. The reason why the regular CSV parser is no good
+// for this situation is because sometimes steam names contain commas.
+// This parser is specialized for the special case of 2 columns with
+// ids and names so it is not fooled by commas in steam names.
+function ReadSteamAccountsFromFile(filename) {
+    const fileContents = fs.readFileSync(filename).toString();
+    const lines = fileContents.split('\n');
+    for (const line of lines) {
+	const commaIndex = line.indexOf(',');
+	if (commaIndex < 0) {
+	    continue;
+	}
+	const steamId = line.substring(0, commaIndex);
+	const steamName = line.substring(commaIndex + 1);
+	recentlyActiveSteamIds[steamId] = steamName;
+    }
+}
+
+function GetDisplayName(vertexId) {
+    let displayName = UserCache.TryToFindDisplayNameForUserGivenAnyKnownId(vertexId);
+    if (displayName) {
+	// This user is known to commissar. Use their known name.
+	return displayName;
+    } else {
+	// This user is unknown to commissar. They are a rustcult.com user only.
+	// Import their name from outside commissar.
+	return recentlyActiveSteamIds[vertexId] || 'John Doe';
+    }
 }
 
 module.exports = {
