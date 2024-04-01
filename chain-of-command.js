@@ -218,7 +218,9 @@ async function CalculateChainOfCommand() {
 	to.mstEdges.push(edge.from);
     }
     // Roll up the points starting from edges of the graph.
+    const verticesSortedByScore = [];
     while (true) {
+	// Each iteration of the loop the first thing to do is find the next vertex to score.
 	let next;
 	let minScore;
 	let remainingVertices = 0;
@@ -252,11 +254,14 @@ async function CalculateChainOfCommand() {
 	    // No more nodes left unscored. Terminate the loop.
 	    break;
 	}
+	// If we get here, then a new vertex has been chosen to score next. Calculate each vertex's
+	// boss and subordinates, turning the otherwise directionless graph into a top-down tree.
 	next.leadershipScore = minScore;
 	const displayName = GetDisplayName(next.vertex_id);
 	const formattedScore = Math.round(minScore).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	let boss;
 	const subordinates = [];
+	next.subordinates = [];
 	const mstEdges = next.mstEdges || [];
 	for (const i of mstEdges) {
 	    const v = vertices[i];
@@ -264,11 +269,13 @@ async function CalculateChainOfCommand() {
 		boss = v;
 	    } else {
 		subordinates.push(v);
+		next.subordinates.push(i);
 	    }
 	}
 	let bossName = 'NONE';
 	if (boss) {
 	    bossName = GetDisplayName(boss.vertex_id);
+	    next.boss = boss.vertex_id;
 	}
 	subordinates.sort((a, b) => b.leadershipScore - a.leadershipScore);
 	const subNames = [];
@@ -277,8 +284,51 @@ async function CalculateChainOfCommand() {
 	    subNames.push(subName);
 	}
 	const allSubs = subNames.join(' ');
-	console.log('(', remainingVertices, ')', formattedScore, displayName, '( boss:', bossName, ') +', allSubs);
+	//console.log('(', remainingVertices, ')', formattedScore, displayName, '( boss:', bossName, ') +', allSubs);
+	verticesSortedByScore.push(next);
     }
+    //verticesSortedByScore.reverse();
+    const n = verticesSortedByScore.length;
+    const howManyTopLeadersToExpand = 1;
+    for (let i = n - howManyTopLeadersToExpand; i < n; i++) {
+	verticesSortedByScore[i].expand = true;
+    }
+    for (const v of verticesSortedByScore) {
+	const expandedChildren = [];
+	let nonExpandedChildren = [];
+	for (const subId of v.subordinates) {
+	    const sub = vertices[subId];
+	    if (sub.expand) {
+		expandedChildren.push(sub.summaryTree);
+	    } else {
+		// If this node is not expanded then neither are its children.
+		nonExpandedChildren = nonExpandedChildren.concat(sub.summaryTree.members);
+	    }
+	}
+	// TODO: sort the non-expanded children to properly interleave members from different branches in rank order.
+	if (expandedChildren.length === 0) {
+	    nonExpandedChildren.unshift(v.vertex_id);
+	    v.summaryTree = {
+		members: nonExpandedChildren,
+	    };
+	} else {
+	    expandedChildren.push({
+		members: nonExpandedChildren,
+	    });
+	    v.summaryTree = {
+		children: expandedChildren,
+		members: [v.vertex_id],
+	    };
+	}
+    }
+    const king = verticesSortedByScore[n - 1];
+    const serializedSummaryTree = JSON.stringify(king.summaryTree, null, 2);
+    //console.log('Summary tree (', serializedSummaryTree.length, 'chars )');
+    //console.log(serializedSummaryTree);
+
+    console.log('CountNodesOfTree', CountNodesOfTree(king.summaryTree));
+    console.log('CountLeafNodesOfTree', CountLeafNodesOfTree(king.summaryTree));
+    console.log('MaxDepthOfTree', MaxDepthOfTree(king.summaryTree));
 }
 
 // Helper function that reads and parses a CSV file into memory.
@@ -325,6 +375,47 @@ function GetDisplayName(vertexId) {
 	// Import their name from outside commissar.
 	return recentlyActiveSteamIds[vertexId] || 'John Doe';
     }
+}
+
+function CountNodesOfTree(t) {
+    let nodeCount = 1;
+    const children = t.children || [];
+    for (const child of children) {
+	nodeCount += CountNodesOfTree(child);
+    }
+    return nodeCount + 1;
+}
+
+function MarkTreeAsMainComponent(t) {
+    t.is_in_largest_component = true;
+    const children = t.children || [];
+    for (const child of children) {
+	nodeCount += CountNodesOfTree(child);
+    }
+    return nodeCount;
+}
+
+function CountLeafNodesOfTree(t) {
+    if (!t.children) {
+	return 1;
+    }
+    let leafCount = 0;
+    for (const child of t.children) {
+	leafCount += CountLeafNodesOfTree(child);
+    }
+    return leafCount;
+}
+
+function MaxDepthOfTree(t) {
+    if (!t.children) {
+	return 1;
+    }
+    let maxDepth = -1;
+    for (const child of t.children) {
+	const d = MaxDepthOfTree(child);
+	maxDepth = Math.max(d + 1, maxDepth);
+    }
+    return maxDepth;
 }
 
 module.exports = {
