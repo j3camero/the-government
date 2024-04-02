@@ -1,3 +1,4 @@
+const { createCanvas } = require('canvas');
 const db = require('./database');
 const fs = require('fs');
 const kruskal = require('kruskal-mst');
@@ -178,7 +179,7 @@ async function CalculateChainOfCommand() {
 	const v = vertices[i];
 	const hc = v.harmonic_centrality || 0;
 	const iga = v.in_game_activity || 0;
-	v.cross_platform_activity = (0.2 * hc + iga) / 3600;
+	v.cross_platform_activity = (0.5 * hc + iga) / 3600;
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
@@ -287,48 +288,181 @@ async function CalculateChainOfCommand() {
 	//console.log('(', remainingVertices, ')', formattedScore, displayName, '( boss:', bossName, ') +', allSubs);
 	verticesSortedByScore.push(next);
     }
-    //verticesSortedByScore.reverse();
+    // Find any isolated kings and plug them directly into the king of kings. This unites all
+    // the disconnected components of the graph into one.
     const n = verticesSortedByScore.length;
-    const howManyTopLeadersToExpand = 1;
-    for (let i = n - howManyTopLeadersToExpand; i < n; i++) {
-	verticesSortedByScore[i].expand = true;
-    }
+    const king = verticesSortedByScore[n - 1];
     for (const v of verticesSortedByScore) {
-	const expandedChildren = [];
-	let nonExpandedChildren = [];
+	if (v.boss) {
+	    continue;
+	}
+	if (v === king) {
+	    continue;
+	}
+	v.boss = king.vertex_id;
+	king.subordinates.push(v.vertex_id);
+	king.leadershipScore += v.leadershipScore;
+    }
+    // Sort each node's subordinates.
+    for (const v of verticesSortedByScore) {
+	v.subordinates.sort((a, b) => {
+	    const aScore = vertices[a].leadershipScore;
+	    const bScore = vertices[b].leadershipScore;
+	    return bScore - aScore;
+	});
+    }
+    // Calculate the descendants of each node.
+    for (const v of verticesSortedByScore) {
+	v.descendants = [v.vertex_id];
 	for (const subId of v.subordinates) {
 	    const sub = vertices[subId];
-	    if (sub.expand) {
-		expandedChildren.push(sub.summaryTree);
-	    } else {
-		// If this node is not expanded then neither are its children.
-		nonExpandedChildren = nonExpandedChildren.concat(sub.summaryTree.members);
-	    }
-	}
-	// TODO: sort the non-expanded children to properly interleave members from different branches in rank order.
-	if (expandedChildren.length === 0) {
-	    nonExpandedChildren.unshift(v.vertex_id);
-	    v.summaryTree = {
-		members: nonExpandedChildren,
-	    };
-	} else {
-	    expandedChildren.push({
-		members: nonExpandedChildren,
-	    });
-	    v.summaryTree = {
-		children: expandedChildren,
-		members: [v.vertex_id],
-	    };
+	    v.descendants = v.descendants.concat(sub.descendants);
 	}
     }
-    const king = verticesSortedByScore[n - 1];
-    const serializedSummaryTree = JSON.stringify(king.summaryTree, null, 2);
-    //console.log('Summary tree (', serializedSummaryTree.length, 'chars )');
-    //console.log(serializedSummaryTree);
-
-    console.log('CountNodesOfTree', CountNodesOfTree(king.summaryTree));
-    console.log('CountLeafNodesOfTree', CountLeafNodesOfTree(king.summaryTree));
-    console.log('MaxDepthOfTree', MaxDepthOfTree(king.summaryTree));
+    // Calculate abbreviated summary tree. Kind of like a compressed version of the real massive
+    // tree that is more compact to render and easier to read.
+    function RenderTree(howManyTopLeadersToExpand, pixelWidth, pixelHeight, outputImageFilename) {
+	for (let i = n - howManyTopLeadersToExpand; i < n; i++) {
+	    const v = verticesSortedByScore[i];
+	    if (v.subordinates.length > 0) {
+		v.expand = true;
+	    }
+	}
+	for (const v of verticesSortedByScore) {
+	    const expandedChildren = [];
+	    let nonExpandedChildren = [];
+	    for (const subId of v.subordinates) {
+		const sub = vertices[subId];
+		if (sub.expand) {
+		    expandedChildren.push(sub.summaryTree);
+		} else {
+		    // If this node is not expanded then neither are its children.
+		    nonExpandedChildren = nonExpandedChildren.concat(sub.descendants);
+		}
+	    }
+	    // Sort the non-expanded children to properly interleave members from different branches in rank order.
+	    nonExpandedChildren.sort((a, b) => {
+		const aScore = vertices[a].leadershipScore;
+		const bScore = vertices[b].leadershipScore;
+		return bScore - aScore;
+	    });
+	    if (expandedChildren.length === 0) {
+		if (nonExpandedChildren.length === 0) {
+		    v.summaryTree = {
+			members: [v.vertex_id],
+		    };
+		} else {
+		    v.summaryTree = {
+			members: [v.vertex_id],
+			children: [{
+			    members: nonExpandedChildren,
+			}],
+		    };
+		}
+	    } else {
+		if (nonExpandedChildren.length > 0) {
+		    expandedChildren.push({
+			members: nonExpandedChildren,
+		    });
+		}
+		v.summaryTree = {
+		    children: expandedChildren,
+		    members: [v.vertex_id],
+		};
+	    }
+	}
+	const wholeSummaryTree = king.summaryTree;
+	const serializedSummaryTree = JSON.stringify(wholeSummaryTree, null, 2);
+	console.log('Summary tree (', serializedSummaryTree.length, 'chars )');
+	//console.log(serializedSummaryTree);
+	console.log('CountNodesOfTree', CountNodesOfTree(wholeSummaryTree));
+	console.log('CountMembersInTree', CountMembersInTree(wholeSummaryTree));
+	console.log('CountLeafNodesOfTree', CountLeafNodesOfTree(wholeSummaryTree));
+	const maxDepth = MaxDepthOfTree(wholeSummaryTree);
+	console.log('MaxDepthOfTree', MaxDepthOfTree(wholeSummaryTree));
+	const largeFontSize = 26;
+	const smallFontSize = largeFontSize / 2;
+	const horizontalMargin = 8;
+	const canvas = createCanvas(pixelWidth, pixelHeight);
+	const ctx = canvas.getContext('2d');
+	ctx.fillStyle = '#313338';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	function DrawTree(tree, leftX, rightX, topY) {
+	    const leafNodes = CountLeafNodesOfTree(tree);
+	    const horizontalPixelsPerLeafNode = (rightX - leftX) / leafNodes;
+	    // Draw members.
+	    const centerX = Math.floor((leftX + rightX) / 2) + 0.5;
+	    let bottomY = topY;
+	    for (let i = 0; i < tree.members.length; i++) {
+		const vertexId = tree.members[i];
+		const cu = UserCache.TryToFindUserGivenAnyKnownId(vertexId);
+		const color = cu ? cu.getRankColor() : '#4285F4';
+		const fontSize = tree.children ? largeFontSize : smallFontSize;
+		const rowHeight = 2 * fontSize;
+		const nameY = topY + (i * rowHeight) + rowHeight / 2;
+		const maxColumnWidth = rightX - leftX - horizontalMargin;
+		let displayName = GetDisplayName(vertexId).replaceAll('⦁', '•').replaceAll('❱', '›');
+		bottomY += rowHeight;
+		if (bottomY > canvas.height - 2 * largeFontSize) {
+		    const numHidden = tree.members.length - i;
+		    if (numHidden > 1) {
+			displayName = `+${numHidden} more`;
+		    }
+		}
+		ctx.font = `${fontSize}px Uni Sans Heavy`;
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillStyle = color;
+		ctx.fillText(displayName, centerX, nameY, maxColumnWidth);
+		if (bottomY > canvas.height - 2 * largeFontSize) {
+		    // Reached bottom of the page. Stop drawing names.
+		    break;
+		}
+	    }
+	    // Draw children recursively.
+	    const childTopY = bottomY + 2 * largeFontSize;
+	    const bracketY = Math.floor((bottomY + childTopY) / 2) + 0.5;
+	    ctx.strokeStyle = '#D2D5DA';
+	    let leafNodesDrawn = 0;
+	    let leftBracketX = rightX;
+	    let rightBracketX = leftX;
+	    const children = tree.children || [];
+	    for (const child of children) {
+		const childLeafNodes = CountLeafNodesOfTree(child);
+		const childLeftX = leftX + leafNodesDrawn * horizontalPixelsPerLeafNode;
+		const childRightX = childLeftX + childLeafNodes * horizontalPixelsPerLeafNode;
+		const childCenterX = Math.floor((childLeftX + childRightX) / 2) + 0.5;
+		leftBracketX = Math.min(leftBracketX, childCenterX);
+		rightBracketX = Math.max(rightBracketX, childCenterX);
+		// Draw the vertical white line that points down towards the child.
+		ctx.beginPath();
+		ctx.moveTo(childCenterX, bracketY);
+		ctx.lineTo(childCenterX, Math.floor(childTopY - 12) + 0.5);
+		ctx.stroke();
+		DrawTree(child, childLeftX, childRightX, childTopY);
+		leafNodesDrawn += childLeafNodes;
+	    }
+	    if (tree.children) {
+		// Vertical line pointing up at the parent.
+		ctx.beginPath();
+		ctx.moveTo(centerX, Math.floor(bottomY + 12) + 0.5);
+		ctx.lineTo(centerX, bracketY);
+		ctx.stroke();
+		// Horizontal line. Bracket that joins siblings.
+		ctx.beginPath();
+		ctx.moveTo(Math.floor(leftBracketX) + 0.5, bracketY);
+		ctx.lineTo(Math.floor(rightBracketX) + 0.5, bracketY);
+		ctx.stroke();
+	    }
+	}
+	DrawTree(wholeSummaryTree, 0, canvas.width, largeFontSize);
+	const out = fs.createWriteStream(__dirname + '/' + outputImageFilename);
+	const stream = canvas.createPNGStream();
+	stream.pipe(out);
+	out.on('finish', () =>  console.log('Wrote', outputImageFilename));
+    }
+    RenderTree(15, 1920, 1080, 'chain-of-command-general.png');
+    RenderTree(50, 7000, 1080, 'chain-of-command-officer.png');
 }
 
 // Helper function that reads and parses a CSV file into memory.
@@ -373,7 +507,8 @@ function GetDisplayName(vertexId) {
     } else {
 	// This user is unknown to commissar. They are a rustcult.com user only.
 	// Import their name from outside commissar.
-	return recentlyActiveSteamIds[vertexId] || 'John Doe';
+	const n = recentlyActiveSteamIds[vertexId] || 'John Doe';
+	return `${n} ⦁`;
     }
 }
 
@@ -383,16 +518,16 @@ function CountNodesOfTree(t) {
     for (const child of children) {
 	nodeCount += CountNodesOfTree(child);
     }
-    return nodeCount + 1;
+    return nodeCount;
 }
 
-function MarkTreeAsMainComponent(t) {
-    t.is_in_largest_component = true;
+function CountMembersInTree(t) {
+    let memberCount = t.members.length;
     const children = t.children || [];
     for (const child of children) {
-	nodeCount += CountNodesOfTree(child);
+	memberCount += CountMembersInTree(child);
     }
-    return nodeCount;
+    return memberCount;
 }
 
 function CountLeafNodesOfTree(t) {

@@ -3,6 +3,7 @@ const RoleID = require('./role-id');
 module.exports = [
     {
 	banPower: true,
+	color: '#189b17',
 	count: 0,
 	insignia: '⚑',
 	roles: [
@@ -15,6 +16,7 @@ module.exports = [
     },
     {
 	banPower: true,
+	color: '#189b17',
 	count: 0,
 	insignia: '⚑',
 	roles: [
@@ -27,6 +29,7 @@ module.exports = [
     },
     {
 	banPower: true,
+	color: '#F4B400',
 	count: 0,
 	insignia: '★★★★',
 	roles: [RoleID.General, RoleID.Admin],
@@ -34,6 +37,7 @@ module.exports = [
     },
     {
 	banPower: true,
+	color: '#F4B400',
 	count: 0,
 	insignia: '★★★',
 	roles: [RoleID.General, RoleID.Admin],
@@ -41,6 +45,7 @@ module.exports = [
     },
     {
 	banPower: true,
+	color: '#F4B400',
 	count: 0,
 	insignia: '★★',
 	roles: [RoleID.General, RoleID.Admin],
@@ -48,54 +53,63 @@ module.exports = [
     },
     {
 	banPower: true,
+	color: '#F4B400',
 	count: 15,
 	insignia: '★',
 	roles: [RoleID.General, RoleID.Admin],
 	title: 'General',
     },
     {
+	color: '#DB4437',
 	count: 8,
 	insignia: '❱❱❱❱',
 	roles: [RoleID.Colonel, RoleID.Officer],
 	title: 'Colonel',
     },
     {
+	color: '#DB4437',
 	count: 8,
 	insignia: '❱❱❱',
 	roles: [RoleID.Major, RoleID.Officer],
 	title: 'Major',
     },
     {
+	color: '#DB4437',
 	count: 9,
 	insignia: '❱❱',
 	roles: [RoleID.Captain, RoleID.Officer],
 	title: 'Captain',
     },
     {
+	color: '#DB4437',
 	count: 10,
 	insignia: '❱',
 	roles: [RoleID.Lieutenant, RoleID.Officer],
 	title: 'Lieutenant',
     },
     {
+	color: '#4285F4',
 	count: 20,
 	insignia: '⦁⦁⦁⦁',
 	roles: [RoleID.StaffSergeant, RoleID.Grunt],
 	title: 'Staff Sergeant',
     },
     {
+	color: '#4285F4',
 	count: 30,
 	insignia: '⦁⦁⦁',
 	roles: [RoleID.Sergeant, RoleID.Grunt],
 	title: 'Sergeant',
     },
     {
+	color: '#4285F4',
 	count: 400,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
 	title: 'Corporal',
     },
     {
+	color: '#4285F4',
 	count: 1000 * 1000,
 	insignia: '⦁',
 	roles: [RoleID.Recruit, RoleID.Grunt],

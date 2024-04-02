@@ -324,9 +324,18 @@ class CommissarUser {
 	}
     }
 
+    getRankColor() {
+	if (!this.citizen) {
+	    return '#4285F4';
+	}
+	const rank = this.getRank();
+	const rankData = RankMetadata[rank];
+	return rankData.color;
+    }
+
     getInsignia() {
 	if (!this.citizen) {
-	    return '●';
+	    return '⦁';
 	}
 	const rank = this.getRank();
 	const rankData = RankMetadata[rank];
