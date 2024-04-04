@@ -115,7 +115,7 @@ function TryToFindUserGivenAnyKnownId(i) {
 function TryToFindDisplayNameForUserGivenAnyKnownId(i) {
     const u = TryToFindUserGivenAnyKnownId(i);
     if (u) {
-	return u.getNicknameOrTitleWithInsignia();
+	return u.getNicknameOrTitle();
     } else {
 	return null;
     }

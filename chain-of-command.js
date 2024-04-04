@@ -1,8 +1,10 @@
 const { createCanvas } = require('canvas');
 const db = require('./database');
+const DiscordUtil = require('./discord-util');
 const fs = require('fs');
 const kruskal = require('kruskal-mst');
 const moment = require('moment');
+const RankMetadata = require('./rank-definitions');
 const UserCache = require('./user-cache');
 
 const recentlyActiveSteamIds = {};
@@ -179,7 +181,7 @@ async function CalculateChainOfCommand() {
 	const v = vertices[i];
 	const hc = v.harmonic_centrality || 0;
 	const iga = v.in_game_activity || 0;
-	v.cross_platform_activity = (0.5 * hc + iga) / 3600;
+	v.cross_platform_activity = (hc + iga) / 3600;
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
@@ -319,9 +321,43 @@ async function CalculateChainOfCommand() {
 	    v.descendants = v.descendants.concat(sub.descendants);
 	}
     }
+    // Assign discrete ranks to each player.
+    let rank = 0;
+    let usersAtRank = 0;
+    for (let i = n - 1; i >=0; i--) {
+	while (usersAtRank >= RankMetadata[rank].count) {
+	    rank++;
+	    usersAtRank = 0;
+	}
+	// When we run out of ranks, this line defaults to the last/least rank.
+	rank = Math.max(0, Math.min(RankMetadata.length - 1, rank));
+	const v = verticesSortedByScore[i];
+	v.rank = rank;
+	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
+	if (cu) {
+	    // Disable promotions during the transition to the new ranks.
+	    //await AnnounceIfPromotion(user, cappedRank);
+	    await cu.setRank(rank);
+	    //console.log(cu.getNicknameOrTitleWithInsignia(), rank);
+	}
+	usersAtRank++;
+    }
+    // Assign the bottom rank to any known users that do not appear in the tree.
+    await UserCache.ForEach(async (user) => {
+	if (user.steam_id in vertices) {
+	    return;
+	}
+	if (user.discord_id in vertices) {
+	    return;
+	}
+	if (user.commissar_id in vertices) {
+	    return;
+	}
+	await user.setRank(RankMetadata.length - 1);
+    });
     // Calculate abbreviated summary tree. Kind of like a compressed version of the real massive
     // tree that is more compact to render and easier to read.
-    function RenderTree(howManyTopLeadersToExpand, pixelWidth, pixelHeight, outputImageFilename) {
+    async function RenderSummaryTree(howManyTopLeadersToExpand, pixelWidth, pixelHeight, outputImageFilename) {
 	for (let i = n - howManyTopLeadersToExpand; i < n; i++) {
 	    const v = verticesSortedByScore[i];
 	    if (v.subordinates.length > 0) {
@@ -380,7 +416,7 @@ async function CalculateChainOfCommand() {
 	console.log('CountLeafNodesOfTree', CountLeafNodesOfTree(wholeSummaryTree));
 	const maxDepth = MaxDepthOfTree(wholeSummaryTree);
 	console.log('MaxDepthOfTree', MaxDepthOfTree(wholeSummaryTree));
-	const largeFontSize = 26;
+	const largeFontSize = 18;
 	const smallFontSize = largeFontSize / 2;
 	const horizontalMargin = 8;
 	const canvas = createCanvas(pixelWidth, pixelHeight);
@@ -395,13 +431,24 @@ async function CalculateChainOfCommand() {
 	    let bottomY = topY;
 	    for (let i = 0; i < tree.members.length; i++) {
 		const vertexId = tree.members[i];
-		const cu = UserCache.TryToFindUserGivenAnyKnownId(vertexId);
-		const color = cu ? cu.getRankColor() : '#4285F4';
+		const v = vertices[vertexId];
+		const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
+		const rank = v.rank || (RankMetadata.length - 1);
+		const rankData = RankMetadata[rank];
+		let color = rankData.color || '#4285F4';
+		let insignia = rankData.insignia || '•';
+		if (cu) {
+		    if (cu.office) {
+			color = '#189b17';
+			insignia = '⚑';
+		    }
+		}
+		insignia = insignia.replaceAll('⦁', '•').replaceAll('❱', '›')
 		const fontSize = tree.children ? largeFontSize : smallFontSize;
 		const rowHeight = 2 * fontSize;
 		const nameY = topY + (i * rowHeight) + rowHeight / 2;
 		const maxColumnWidth = rightX - leftX - horizontalMargin;
-		let displayName = GetDisplayName(vertexId).replaceAll('⦁', '•').replaceAll('❱', '›');
+		let displayName = GetDisplayName(vertexId) + ' ' + insignia;
 		bottomY += rowHeight;
 		if (bottomY > canvas.height - 2 * largeFontSize) {
 		    const numHidden = tree.members.length - i;
@@ -459,10 +506,33 @@ async function CalculateChainOfCommand() {
 	const out = fs.createWriteStream(__dirname + '/' + outputImageFilename);
 	const stream = canvas.createPNGStream();
 	stream.pipe(out);
-	out.on('finish', () =>  console.log('Wrote', outputImageFilename));
+	// Wait for the image file to finish writing to disk.
+	return new Promise((resolve, reject) => {
+	    out.on('finish', () => {
+		console.log('Wrote', outputImageFilename);
+		resolve();
+	    });
+	});
     }
-    RenderTree(15, 1920, 1080, 'chain-of-command-general.png');
-    RenderTree(50, 7000, 1080, 'chain-of-command-officer.png');
+    await RenderSummaryTree(20, 1920, 1080, 'chain-of-command-general.png');
+    await RenderSummaryTree(80, 6400, 1080, 'chain-of-command-officer.png');
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch('711850971072036946');
+    await channel.bulkDelete(99);
+    await channel.send({
+	content: `**The Government Chain of Command**\nThe ranks update every 60 seconds. The structure comes from your relationships in-game and in discord. Who you base with, roam with, raid with, spend time in discord with, etc. Your rank score = (your in-game activity) + (your discord activity) + (all your followers in-game activity) + (all your followers discord activity). To climb the ranks, be a leader. Invite others into your base. Lead raids. Plan events. Be yourself and love your friends. Pair with https://rustcult.com every month to avoid missing out on your next promotion.`,
+	files: [{
+	    attachment: 'chain-of-command-general.png',
+	    name: 'chain-of-command-general.png'
+	}],
+    });
+    await channel.send({
+	content: `**More Detailed View**`,
+	files: [{
+	    attachment: 'chain-of-command-officer.png',
+	    name: 'chain-of-command-officer.png'
+	}],
+    });
 }
 
 // Helper function that reads and parses a CSV file into memory.
@@ -507,8 +577,7 @@ function GetDisplayName(vertexId) {
     } else {
 	// This user is unknown to commissar. They are a rustcult.com user only.
 	// Import their name from outside commissar.
-	const n = recentlyActiveSteamIds[vertexId] || 'John Doe';
-	return `${n} ⦁`;
+	return recentlyActiveSteamIds[vertexId] || 'John Doe';
     }
 }
 

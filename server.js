@@ -12,7 +12,6 @@ const fetch = require('./fetch');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
-const Rank = require('./rank');
 const RankMetadata = require('./rank-definitions');
 const recruiting = require('./recruiting');
 const RoleID = require('./role-id');
@@ -157,8 +156,6 @@ async function UpdateHarmonicCentrality() {
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    const mostCentral = await UserCache.GetMostCentralUsers(400);
-    await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
 async function UpdateUser(cu, guild) {
@@ -215,7 +212,7 @@ async function UpdateAllCitizens() {
     const selectedUsers = activeUsers.concat(inactiveUsers);
     console.log(`Updating ${selectedUsers.length} users`);
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const maxLoopDuration = 10 * 1000;
+    const maxLoopDuration = 90 * 1000;
     const startTime = Date.now();
     let howManyUsersGotUpdatedCounter = 0;
     for (const cu of selectedUsers) {
@@ -339,7 +336,6 @@ async function RoutineUpdate() {
     await DB.ConsolidateTimeMatrix();
     await UpdateHarmonicCentrality();
     await com.CalculateChainOfCommand();
-    await Rank.UpdateUserRanks();
     await UpdateSomeSteamNames();
     await UpdateAllCitizens();
     await yen.DoLottery();
