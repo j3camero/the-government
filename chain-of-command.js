@@ -181,7 +181,7 @@ async function CalculateChainOfCommand() {
 	const v = vertices[i];
 	const hc = v.harmonic_centrality || 0;
 	const iga = v.in_game_activity || 0;
-	v.cross_platform_activity = (hc + iga) / 3600;
+	v.cross_platform_activity = (2 * hc + iga) / 3600;
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
@@ -357,7 +357,7 @@ async function CalculateChainOfCommand() {
     });
     // Calculate abbreviated summary tree. Kind of like a compressed version of the real massive
     // tree that is more compact to render and easier to read.
-    async function RenderSummaryTree(howManyTopLeadersToExpand, pixelWidth, pixelHeight, outputImageFilename) {
+    async function RenderSummaryTree(howManyTopLeadersToExpand, pixelHeight, outputImageFilename) {
 	for (let i = n - howManyTopLeadersToExpand; i < n; i++) {
 	    const v = verticesSortedByScore[i];
 	    if (v.subordinates.length > 0) {
@@ -413,19 +413,21 @@ async function CalculateChainOfCommand() {
 	//console.log(serializedSummaryTree);
 	console.log('CountNodesOfTree', CountNodesOfTree(wholeSummaryTree));
 	console.log('CountMembersInTree', CountMembersInTree(wholeSummaryTree));
-	console.log('CountLeafNodesOfTree', CountLeafNodesOfTree(wholeSummaryTree));
+	const leafNodeCount = CountLeafNodesOfTree(wholeSummaryTree);
+	console.log('CountLeafNodesOfTree', leafNodeCount);
 	const maxDepth = MaxDepthOfTree(wholeSummaryTree);
 	console.log('MaxDepthOfTree', MaxDepthOfTree(wholeSummaryTree));
-	const largeFontSize = 18;
-	const smallFontSize = largeFontSize / 2;
+	const fontSize = 18;
+	const rowHeight = Math.floor(fontSize * 3 / 2);
 	const horizontalMargin = 8;
+	const horizontalPixelsPerLeafNode = 140;
+	const pixelWidth = leafNodeCount * horizontalPixelsPerLeafNode;
 	const canvas = createCanvas(pixelWidth, pixelHeight);
 	const ctx = canvas.getContext('2d');
 	ctx.fillStyle = '#313338';
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	function DrawTree(tree, leftX, rightX, topY) {
 	    const leafNodes = CountLeafNodesOfTree(tree);
-	    const horizontalPixelsPerLeafNode = (rightX - leftX) / leafNodes;
 	    // Draw members.
 	    const centerX = Math.floor((leftX + rightX) / 2) + 0.5;
 	    let bottomY = topY;
@@ -435,7 +437,7 @@ async function CalculateChainOfCommand() {
 		const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
 		const rank = v.rank || (RankMetadata.length - 1);
 		const rankData = RankMetadata[rank];
-		let color = rankData.color || '#4285F4';
+		let color = rankData.color || '#4285F4';	
 		let insignia = rankData.insignia || '•';
 		if (cu) {
 		    if (cu.office) {
@@ -444,36 +446,51 @@ async function CalculateChainOfCommand() {
 		    }
 		}
 		insignia = insignia.replaceAll('⦁', '•').replaceAll('❱', '›')
-		const fontSize = tree.children ? largeFontSize : smallFontSize;
-		const rowHeight = 2 * fontSize;
 		const nameY = topY + (i * rowHeight) + rowHeight / 2;
 		const maxColumnWidth = rightX - leftX - horizontalMargin;
-		let displayName = GetDisplayName(vertexId) + ' ' + insignia;
+		let displayName = GetDisplayName(vertexId).replace(/(\r\n|\n|\r)/gm, '');;
+		// Try removing characters from end of the display name to make it fit.
+		while (true) {
+		    const nameAndInsignia = displayName + ' ' + insignia;
+		    const textWidth = ctx.measureText(nameAndInsignia).width;
+		    if (textWidth < maxColumnWidth) {
+			break;
+		    } else {
+			displayName = displayName.substring(0, displayName.length - 1);
+		    }
+		}
+		if (displayName.length === 0) {
+		    displayName = 'John Doe';
+		}
+		displayName = displayName.trim() + ' ' + insignia;
 		bottomY += rowHeight;
-		if (bottomY > canvas.height - 2 * largeFontSize) {
+		if (bottomY > canvas.height - rowHeight) {
 		    const numHidden = tree.members.length - i;
 		    if (numHidden > 1) {
 			displayName = `+${numHidden} more`;
 		    }
 		}
-		ctx.font = `${fontSize}px Uni Sans Heavy`;
+		ctx.fillStyle = color;
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'middle';
-		ctx.fillStyle = color;
+		ctx.font = `${fontSize}px Uni Sans Heavy`;
 		ctx.fillText(displayName, centerX, nameY, maxColumnWidth);
-		if (bottomY > canvas.height - 2 * largeFontSize) {
+		if (bottomY > canvas.height - rowHeight) {
 		    // Reached bottom of the page. Stop drawing names.
 		    break;
 		}
 	    }
 	    // Draw children recursively.
-	    const childTopY = bottomY + 2 * largeFontSize;
-	    const bracketY = Math.floor((bottomY + childTopY) / 2) + 0.5;
-	    ctx.strokeStyle = '#D2D5DA';
 	    let leafNodesDrawn = 0;
 	    let leftBracketX = rightX;
 	    let rightBracketX = leftX;
 	    const children = tree.children || [];
+	    let childTopY = bottomY;
+	    if (children.length > 1) {
+		childTopY += 2 * rowHeight;
+	    }
+	    const bracketY = Math.floor((bottomY + childTopY) / 2) + 0.5;
+	    ctx.strokeStyle = '#D2D5DA';
 	    for (const child of children) {
 		const childLeafNodes = CountLeafNodesOfTree(child);
 		const childLeftX = leftX + leafNodesDrawn * horizontalPixelsPerLeafNode;
@@ -481,18 +498,21 @@ async function CalculateChainOfCommand() {
 		const childCenterX = Math.floor((childLeftX + childRightX) / 2) + 0.5;
 		leftBracketX = Math.min(leftBracketX, childCenterX);
 		rightBracketX = Math.max(rightBracketX, childCenterX);
-		// Draw the vertical white line that points down towards the child.
-		ctx.beginPath();
-		ctx.moveTo(childCenterX, bracketY);
-		ctx.lineTo(childCenterX, Math.floor(childTopY - 12) + 0.5);
-		ctx.stroke();
+		// Draw the child sub-trees recursively.
 		DrawTree(child, childLeftX, childRightX, childTopY);
 		leafNodesDrawn += childLeafNodes;
+		// Draw the vertical white line that points down towards the child.
+		if (children.length > 1) {
+		    ctx.beginPath();
+		    ctx.moveTo(childCenterX, bracketY);
+		    ctx.lineTo(childCenterX, bracketY + 8 + 0.5);
+		    ctx.stroke();
+		}
 	    }
-	    if (tree.children) {
+	    if (children.length > 1) {
 		// Vertical line pointing up at the parent.
 		ctx.beginPath();
-		ctx.moveTo(centerX, Math.floor(bottomY + 12) + 0.5);
+		ctx.moveTo(centerX, bracketY - 8 + 0.5);
 		ctx.lineTo(centerX, bracketY);
 		ctx.stroke();
 		// Horizontal line. Bracket that joins siblings.
@@ -502,7 +522,7 @@ async function CalculateChainOfCommand() {
 		ctx.stroke();
 	    }
 	}
-	DrawTree(wholeSummaryTree, 0, canvas.width, largeFontSize);
+	DrawTree(wholeSummaryTree, 0, canvas.width, rowHeight);
 	const out = fs.createWriteStream(__dirname + '/' + outputImageFilename);
 	const stream = canvas.createPNGStream();
 	stream.pipe(out);
@@ -514,25 +534,26 @@ async function CalculateChainOfCommand() {
 	    });
 	});
     }
-    await RenderSummaryTree(20, 1920, 1080, 'chain-of-command-general.png');
-    await RenderSummaryTree(80, 6400, 1080, 'chain-of-command-officer.png');
+    await RenderSummaryTree(20, 800, 'chain-of-command-generals.png');
+    await RenderSummaryTree(70, 800, 'chain-of-command-officers.png');
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.fetch('711850971072036946');
     await channel.bulkDelete(99);
     await channel.send({
-	content: `**The Government Chain of Command**\nThe ranks update every 60 seconds. The structure comes from your relationships in-game and in discord. Who you base with, roam with, raid with, spend time in discord with, etc. Your rank score = (your in-game activity) + (your discord activity) + (all your followers in-game activity) + (all your followers discord activity). To climb the ranks, be a leader. Invite others into your base. Lead raids. Plan events. Be yourself and love your friends. Pair with https://rustcult.com every month to avoid missing out on your next promotion.`,
+	content: `**The Government Chain of Command**`,
 	files: [{
-	    attachment: 'chain-of-command-general.png',
-	    name: 'chain-of-command-general.png'
+	    attachment: 'chain-of-command-generals.png',
+	    name: 'chain-of-command-generals.png'
 	}],
     });
     await channel.send({
 	content: `**More Detailed View**`,
 	files: [{
-	    attachment: 'chain-of-command-officer.png',
-	    name: 'chain-of-command-officer.png'
+	    attachment: 'chain-of-command-officers.png',
+	    name: 'chain-of-command-officers.png'
 	}],
     });
+    await channel.send(`Updates every 60 seconds. Your rank score = your activity in Rust + your activity in Discord + all your followers activity in Rust + all your followers activity in Discord. The structure comes from your relationships. Who you most often base with, roam with, raid with, and spend time with in Discord. To climb the ranks, be a leader. Build a base and bag people in. Lead raids. Pair with https://rustcult.com every month to avoid missing out on your next promotion.`);
 }
 
 // Helper function that reads and parses a CSV file into memory.

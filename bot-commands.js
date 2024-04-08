@@ -298,8 +298,8 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of March 2024. Report to Rustopia.gg - US Large\n`;
-    content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
+    content += `Here are your secret orders for the month of April 2024. Report to Rustafied.com - US Long III\n`;
+    content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
     if (user.rank <= 5) {
 	content += `Generals Code 1111\n`;
     }
@@ -310,9 +310,9 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
 	content += `Grunt Code 1111\n`;
 	content += `Gate Code 1111\n\n`;
     }
-    content += `Run straight to A1. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around all your bases even if you never have the app open.\n\n`;
-    content += `Want yen? Become a Government Contractor. Mr. President is paying 100 yen per box of stone at community base all day on wipe day. Offer is good for at least 10 boxes of stone so there is time for you to cash in. 10 yen per row of stone for smaller deliveries.\n\n`;
+    content += `Run straight to E24. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around your bases even if you never have the app open.\n\n`;
+    content += `Check out the new https://discord.com/channels/305840605328703500/711850971072036946. We are addressing the most longstanding problem in gov: having to put up with people you don't like to hang out with the ones you do like. Pair with rustcult.com for the best possible experience.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
@@ -334,11 +334,13 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of March 2024. Report to Rustopia.gg - US Large\n`;
-    content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
-    content += `Get the gov build location from one of your trusted friends with a high rank in The Government. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around all your bases even if you never have the app open.\n\n`;
-    content += `Want yen? Become a Government Contractor. Mr. President is paying 100 yen per box of stone at community base all day on wipe day. Offer is good for at least 10 boxes of stone so there is time for you to cash in. 10 yen per row of stone for smaller deliveries.\n\n`;
+    content += `Here are your secret orders for the month of April 2024. Report to Rustafied.com - US Long III\n`;
+    content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
+    content += `Grunt Code 1111\n`;
+    content += `Gate Code 1111\n\n`;
+    content += `Run straight to V7. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around your bases even if you never have the app open.\n\n`;
+    content += `Check out the new https://discord.com/channels/305840605328703500/711850971072036946. We are addressing the most longstanding problem in gov: having to put up with people you don't like to hang out with the ones you do like. Pair with rustcult.com for the best possible experience.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
@@ -358,6 +360,9 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
 async function SendOrdersToOneCommissarUser(user, discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const discordMember = await guild.members.fetch(user.discord_id);
+    if (discordMember.user.bot) {
+	return;
+    }
     const hasWipeBadge = await DiscordUtil.GuildMemberHasRole(discordMember, RoleID.WipeBadge);
     if (hasWipeBadge) {
 	await SendWipeBadgeOrders(user, discordMessage, discordMember);
@@ -368,8 +373,11 @@ async function SendOrdersToOneCommissarUser(user, discordMessage) {
 
 async function SendOrdersToTheseCommissarUsers(users, discordMessage) {
     await discordMessage.channel.send(`Sending orders to ${users.length} members. Restart the bot now if this is not right.`);
-    await Sleep(10 * 1000);
+    await Sleep(1 * 1000);
     for (const user of users) {
+	if (!user) {
+	    continue;
+	}
 	await SendOrdersToOneCommissarUser(user, discordMessage);
 	await Sleep(5 * 1000);
     }
