@@ -181,7 +181,7 @@ async function CalculateChainOfCommand() {
 	const v = vertices[i];
 	const hc = v.harmonic_centrality || 0;
 	const iga = v.in_game_activity || 0;
-	v.cross_platform_activity = (2 * hc + iga) / 3600;
+	v.cross_platform_activity = (hc + 0.1 * iga) / 3600;
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
@@ -191,7 +191,7 @@ async function CalculateChainOfCommand() {
 	    const e = edges[i][j];
 	    const d = e.discord_coplay_time || 0;
 	    const r = e.rust_coplay_time || 0;
-	    const t = (d + 2 * r) / 3600;
+	    const t = (0.5 * d + r) / 3600;
 	    e.cross_platform_relationship_strength = t;
 	    if (t > 0) {
 		e.cross_platform_relationship_distance = 1 / t;
