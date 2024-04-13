@@ -22,6 +22,10 @@ async function CalculateChainOfCommand() {
     let maxHC = null;
     let sumHC = 0;
     for (const v of discordVertices) {
+	if (v.ban_conviction_time && v.ban_pardon_time) {
+	    // Exclude banned members from the ranks until they do their time.
+	    continue;
+	}
 	const activeInGame = v.steam_id in recentlyActiveSteamIds;
 	if (!v.last_seen && !activeInGame) {
 	    continue;
@@ -108,6 +112,16 @@ async function CalculateChainOfCommand() {
 	if (!(i in recentlyActiveSteamIds)) {
 	    continue;
 	}
+	const cu = UserCache.GetCachedUserBySteamId(i);
+	if (cu) {
+	    if (cu.ban_conviction_time && cu.ban_pardon_time) {
+		// Exclude known banned users from the graph until they serve their time.
+		// This will still let through the steam accounts of non-linked users
+		// banned from discord but nothing much can be done about that automatically.
+		// The solution in that case is to manually link the person's account for them.
+		continue;
+	    }
+	}
 	const activity = parseFloat(line[1]);
 	if (!(i in vertices)) {
 	    vertices[i] = {};
@@ -181,7 +195,7 @@ async function CalculateChainOfCommand() {
 	const v = vertices[i];
 	const hc = v.harmonic_centrality || 0;
 	const iga = v.in_game_activity || 0;
-	v.cross_platform_activity = (hc + 0.1 * iga) / 3600;
+	v.cross_platform_activity = (0.8 * hc + 0.2 * iga) / 3600;
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
@@ -191,7 +205,7 @@ async function CalculateChainOfCommand() {
 	    const e = edges[i][j];
 	    const d = e.discord_coplay_time || 0;
 	    const r = e.rust_coplay_time || 0;
-	    const t = (0.5 * d + r) / 3600;
+	    const t = (0.2 * d + r) / 3600;
 	    e.cross_platform_relationship_strength = t;
 	    if (t > 0) {
 		e.cross_platform_relationship_distance = 1 / t;
