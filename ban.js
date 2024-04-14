@@ -8,8 +8,8 @@ const VoteDuration = require('./vote-duration');
 
 const threeTicks = '```';
 
-const banCommandRank = 5;  // General 1
-const banVoteRank = 9;  // Lieutenant
+const banCommandRank = 15;  // General 1
+const banVoteRank = 19;  // Lieutenant
 
 function SentenceLengthAsString(years) {
     if (years <= 0) {
@@ -112,7 +112,7 @@ async function UpdateTrial(cu) {
     const yesPercentage = voteCount > 0 ? yesVoteCount / voteCount : 0;
     if (member) {
 	const before = await channel.permissionOverwrites.resolve(member.id);
-	if (cu.peak_rank >= 10 && voteCount >= 5 && yesPercentage >= 0.909) {
+	if (cu.peak_rank >= 20 && voteCount >= 5 && yesPercentage >= 0.909) {
 	    await channel.permissionOverwrites.create(member, {
 		Connect: true,
 		SendMessages: false,
@@ -154,7 +154,7 @@ async function UpdateTrial(cu) {
     const underline = new Array(caseTitle.length + 1).join('-');
     const currentTime = moment();
     let startTime = moment(cu.ban_vote_start_time);
-    const totalVoters = 80;
+    const totalVoters = 100;
     let baselineVoteDurationDays;
     let nextStateChangeMessage;
     if (guilty) {

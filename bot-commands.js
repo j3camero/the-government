@@ -188,7 +188,7 @@ async function HandlePrivateRoomVoteCommand(discordMessage) {
 }
 
 function GenerateAkaStringForUser(cu) {
-    const peakRank = cu.peak_rank || 13;
+    const peakRank = cu.peak_rank || 23;
     const peakRankInsignia = RankMetadata[peakRank].insignia;
     const names = [
 	cu.steam_name,
@@ -300,13 +300,13 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     let content = `${rankNameAndInsignia},\n\n`;
     content += `Here are your secret orders for the month of April 2024. Report to Rustafied.com - US Long III\n`;
     content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
-    if (user.rank <= 5) {
+    if (user.rank <= 15) {
 	content += `Generals Code 1111\n`;
     }
-    if (user.rank <= 9) {
+    if (user.rank <= 19) {
 	content += `Officers Code 1111\n`;
     }
-    if (user.rank <= 13) {
+    if (user.rank <= 23) {
 	content += `Grunt Code 1111\n`;
 	content += `Gate Code 1111\n\n`;
     }
@@ -698,7 +698,7 @@ const sentToAFkTimes = {};
 async function HandleAfkCommand(discordMessage) {
 	const authorId = discordMessage.author.id;
     const author = await UserCache.GetCachedUserByDiscordId(authorId);
-	if (!author || author.rank > 5) {
+	if (!author || author.rank > 15) {
 		await discordMessage.channel.send(
 			`Error: Only generals can do that.`
 		)

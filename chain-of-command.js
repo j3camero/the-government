@@ -275,7 +275,7 @@ async function CalculateChainOfCommand() {
 	// boss and subordinates, turning the otherwise directionless graph into a top-down tree.
 	next.leadershipScore = minScore;
 	const displayName = GetDisplayName(next.vertex_id);
-	const formattedScore = Math.round(minScore).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	const formattedScore = Math.round(minScore).toString();  // To put commas in formatted score .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	let boss;
 	const subordinates = [];
 	next.subordinates = [];
@@ -302,6 +302,7 @@ async function CalculateChainOfCommand() {
 	}
 	const allSubs = subNames.join(' ');
 	//console.log('(', remainingVertices, ')', formattedScore, displayName, '( boss:', bossName, ') +', allSubs);
+	//console.log(formattedScore + ',' + displayName);
 	verticesSortedByScore.push(next);
     }
     // Find any isolated kings and plug them directly into the king of kings. This unites all
@@ -335,26 +336,30 @@ async function CalculateChainOfCommand() {
 	    v.descendants = v.descendants.concat(sub.descendants);
 	}
     }
-    // Assign discrete ranks to each player.
-    let rank = 0;
-    let usersAtRank = 0;
-    for (let i = n - 1; i >=0; i--) {
-	while (usersAtRank >= RankMetadata[rank].count) {
-	    rank++;
-	    usersAtRank = 0;
+    // Helper function to look up what rank someone should be by their score.
+    function ScoreToRank(score) {
+	for (let i = 0; i < RankMetadata.length; i++) {
+	    const r = RankMetadata[i];
+	    if (!r.minScore) {
+		continue;
+	    }
+	    if (score > r.minScore) {
+		return i;
+	    }
 	}
-	// When we run out of ranks, this line defaults to the last/least rank.
-	rank = Math.max(0, Math.min(RankMetadata.length - 1, rank));
-	const v = verticesSortedByScore[i];
-	v.rank = rank;
+	// Default to the most junior rank just to be safe.
+	return RankMetadata.length - 1;
+    }
+    // Assign discrete ranks to each player.
+    for (const v of verticesSortedByScore) {
+	v.rank = ScoreToRank(v.leadershipScore);
 	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
 	if (cu) {
 	    // Disable promotions during the transition to the new ranks.
 	    //await AnnounceIfPromotion(user, cappedRank);
-	    await cu.setRank(rank);
-	    //console.log(cu.getNicknameOrTitleWithInsignia(), rank);
+	    //console.log(v.rank, cu.nickname);
+	    await cu.setRank(v.rank);
 	}
-	usersAtRank++;
     }
     // Assign the bottom rank to any known users that do not appear in the tree.
     await UserCache.ForEach(async (user) => {

@@ -314,6 +314,9 @@ class CommissarUser {
 
     getNicknameOrTitle() {
 	const rank = this.getRank();
+	if (!rank && rank !== 0) {
+	    return this.steam_name || this.nick || this.nickname;
+	}
 	const job = RankMetadata[rank];
 	if (job.titleOverride) {
 	    const prefix = this.getGenderPrefix();

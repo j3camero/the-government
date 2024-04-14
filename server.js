@@ -82,8 +82,8 @@ async function UpdateMemberAppearance(member) {
     }
     // Retired Generals.
     const hasRankData = (cu.rank || cu.rank === 0) && (cu.peak_rank || cu.peak_rank === 0);
-    const hasBeenAGeneralEver = cu.peak_rank <= 5;
-    const isCurrentlyAGeneral = cu.rank <= 5;
+    const hasBeenAGeneralEver = cu.peak_rank <= 15;
+    const isCurrentlyAGeneral = cu.rank <= 15;
     if (hasRankData && hasBeenAGeneralEver && !isCurrentlyAGeneral) {
 	await DiscordUtil.AddRole(member, RoleID.RetiredGeneral);
     } else {

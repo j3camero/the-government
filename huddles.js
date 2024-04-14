@@ -45,6 +45,7 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	permissionOverwrites: [
 	    { id: guild.roles.everyone, deny: perms },
 	    { id: RoleID.Admin, allow: perms },
+	    { id: RoleID.Commander, allow: perms },
 	    { id: RoleID.General, allow: perms },
 	    { id: RoleID.Officer, allow: perms },
 	    { id: RoleID.Grunt, allow: perms },
