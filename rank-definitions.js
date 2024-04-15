@@ -190,7 +190,7 @@ module.exports = [
 	count: 30,
 	insignia: '⦁⦁⦁⦁',
 	roles: [RoleID.StaffSergeant, RoleID.Grunt],
-	minScore: 60,
+	minScore: 50,
 	title: 'Staff Sergeant',
     },
     {
@@ -198,7 +198,7 @@ module.exports = [
 	count: 50,
 	insignia: '⦁⦁⦁',
 	roles: [RoleID.Sergeant, RoleID.Grunt],
-	minScore: 30,
+	minScore: 20,
 	title: 'Sergeant',
     },
     {
@@ -206,7 +206,7 @@ module.exports = [
 	count: 200,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
-	minScore: 15,
+	minScore: 5,
 	title: 'Corporal',
     },
     {

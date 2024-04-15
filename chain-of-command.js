@@ -5,6 +5,7 @@ const fs = require('fs');
 const kruskal = require('kruskal-mst');
 const moment = require('moment');
 const RankMetadata = require('./rank-definitions');
+const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
 
 const recentlyActiveSteamIds = {};
@@ -358,6 +359,7 @@ async function CalculateChainOfCommand() {
 	    // Disable promotions during the transition to the new ranks.
 	    //await AnnounceIfPromotion(user, cappedRank);
 	    //console.log(v.rank, cu.nickname);
+	    await AnnounceIfPromotion(cu, v.rank);
 	    await cu.setRank(v.rank);
 	}
     }
@@ -573,6 +575,65 @@ async function CalculateChainOfCommand() {
 	}],
     });
     await channel.send(`Updates every 60 seconds. Your rank score = your activity in Rust + your activity in Discord + all your followers activity in Rust + all your followers activity in Discord. The structure comes from your relationships. Who you most often base with, roam with, raid with, and spend time with in Discord. To climb the ranks, be a leader. Build a base and bag people in. Lead raids. Pair with https://rustcult.com every month to avoid missing out on your next promotion.`);
+}
+
+// A temporary in-memory cache of the highest rank seen per user.
+// This is used to avoid spamming promotion notices if a user's
+// rank oscilates up and down rapidly.
+let maxRankByCommissarId = {};
+
+// Clear the recent max rank cache every few hours.
+setInterval(() => {
+    console.log('Clearing maxRankByCommissarId');
+    maxRankByCommissarId = {};
+}, 8 * 60 * 60 * 1000);
+
+// Announce a promotion in #public chat, if applicable.
+//
+// user - a commissar user.
+// newRank - integer rank index of the user's new rank.
+async function AnnounceIfPromotion(user, newRank) {
+    if (!user ||
+	user.rank === undefined || user.rank === null ||
+	newRank === undefined || newRank === null ||
+	!Number.isInteger(user.rank) || !Number.isInteger(newRank) ||
+	newRank >= user.rank) {
+	// No promotion detected. Bail.
+	return;
+    }
+    if (!user.last_seen) {
+	return;
+    }
+    const lastSeen = moment(user.last_seen);
+    if (moment().subtract(72, 'hours').isAfter(lastSeen)) {
+	// No announcements for people who are invactive the last 24 hours.
+	return;
+    }
+    const lowestPossibleRank = RankMetadata.length - 1;
+    const maxRecentRank = maxRankByCommissarId[user.commissar_id] || lowestPossibleRank;
+    // Lower rank index represents a higher-status rank.
+    // If could do it again I would. But that's how it is.
+    const newMaxRank = Math.min(newRank, maxRecentRank);
+    if (newMaxRank >= maxRecentRank) {
+	return;
+    }
+    maxRankByCommissarId[user.commissar_id] = newMaxRank;
+    // If we get past here, a promotion has been detected.
+    // Announce it in #public chat.
+    const name = user.getNicknameOrTitleWithInsignia();
+    const oldMeta = RankMetadata[user.rank];
+    const newMeta = RankMetadata[newRank];
+    const message = (
+	`${user.nickname} ${newMeta.insignia} is promoted from ` +
+        `${oldMeta.title} ${oldMeta.insignia} to ` +
+	`${newMeta.title} ${newMeta.insignia}`
+    );
+    console.log(message);
+    // Delay for a few seconds to spread out the promotion messages and
+    // also achieve a crude non-guaranteed sorting by rank.
+    const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
+    await Sleep(delayMillis);
+    await DiscordUtil.MessagePublicChatChannel(message);
 }
 
 // Helper function that reads and parses a CSV file into memory.
