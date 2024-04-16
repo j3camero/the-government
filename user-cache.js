@@ -148,7 +148,7 @@ async function CreateNewDatabaseUser(discordMember) {
 	rank,
 	last_seen,
 	office,
-	0, 12, null,
+	0, rank, null,
 	true, true,
 	null, null, null,
 	null, null, null,

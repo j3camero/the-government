@@ -200,6 +200,11 @@ async function CalculateChainOfCommand() {
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
+    const relationshipsToPrint = {
+	'76561198294876014': 'BBQ',
+	'76561198355439651': 'KEY',
+	'76561198956010410': 'JIB',
+    };
     const edgesFormattedForKruskal = [];
     for (const i in edges) {
 	for (const j in edges[i]) {
@@ -207,6 +212,11 @@ async function CalculateChainOfCommand() {
 	    const d = e.discord_coplay_time || 0;
 	    const r = e.rust_coplay_time || 0;
 	    const t = (0.2 * d + r) / 3600;
+	    if ((i in relationshipsToPrint) && (j in relationshipsToPrint)) {
+		const iName = relationshipsToPrint[i];
+		const jName = relationshipsToPrint[j];
+		console.log(iName, jName, t);
+	    }
 	    e.cross_platform_relationship_strength = t;
 	    if (t > 0) {
 		e.cross_platform_relationship_distance = 1 / t;
@@ -321,6 +331,8 @@ async function CalculateChainOfCommand() {
 	king.subordinates.push(v.vertex_id);
 	king.leadershipScore += v.leadershipScore;
     }
+    // Print out the king's score.
+    console.log('Top leadership score:', Math.round(king.leadershipScore));
     // Sort each node's subordinates.
     for (const v of verticesSortedByScore) {
 	v.subordinates.sort((a, b) => {
@@ -356,9 +368,6 @@ async function CalculateChainOfCommand() {
 	v.rank = ScoreToRank(v.leadershipScore);
 	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
 	if (cu) {
-	    // Disable promotions during the transition to the new ranks.
-	    //await AnnounceIfPromotion(user, cappedRank);
-	    //console.log(v.rank, cu.nickname);
 	    await AnnounceIfPromotion(cu, v.rank);
 	    await cu.setRank(v.rank);
 	}
@@ -623,11 +632,7 @@ async function AnnounceIfPromotion(user, newRank) {
     const name = user.getNicknameOrTitleWithInsignia();
     const oldMeta = RankMetadata[user.rank];
     const newMeta = RankMetadata[newRank];
-    const message = (
-	`${user.nickname} ${newMeta.insignia} is promoted from ` +
-        `${oldMeta.title} ${oldMeta.insignia} to ` +
-	`${newMeta.title} ${newMeta.insignia}`
-    );
+    const message = `${name} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
     console.log(message);
     // Delay for a few seconds to spread out the promotion messages and
     // also achieve a crude non-guaranteed sorting by rank.
