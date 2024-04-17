@@ -18,6 +18,7 @@ class CommissarUser {
 	gender,
 	citizen,
 	good_standing,
+        friend_role_id,
         friend_category_id,
         friend_text_chat_id,
         friend_voice_room_id,
@@ -44,6 +45,7 @@ class CommissarUser {
 	this.gender = gender;
 	this.citizen = citizen;
 	this.good_standing = good_standing;
+	this.friend_role_id = friend_role_id;
 	this.friend_category_id = friend_category_id;
 	this.friend_text_chat_id = friend_text_chat_id;
 	this.friend_voice_room_id = friend_voice_room_id;
@@ -161,6 +163,14 @@ class CommissarUser {
 	}
 	this.good_standing = good_standing;
 	await this.updateFieldInDatabase('good_standing', this.good_standing);
+    }
+
+    async setFriendRoleId(friend_role_id) {
+	if (friend_role_id === this.friend_role_id) {
+	    return;
+	}
+	this.friend_role_id = friend_role_id;
+	await this.updateFieldInDatabase('friend_role_id', this.friend_role_id);
     }
 
     async setFriendCategorityId(friend_category_id) {

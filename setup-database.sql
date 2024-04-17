@@ -24,6 +24,7 @@ CREATE TABLE users
 			-- It says so in the Bible. Everyone knows God created exactly 26 genders!
     citizen BOOLEAN DEFAULT TRUE,  -- Is this user currently a member of the main Discord guild?
     good_standing BOOLEAN DEFAULT TRUE,  -- The preliminary outcome of a pending ban vote trial.
+    friend_role_id VARCHAR(32),  -- ID of the Discord Role for a user's friends.
     friend_category_id VARCHAR(32),  -- ID of the Discord category/section for a user's friends.
     friend_text_chat_id VARCHAR(32),  -- ID of the private Discord text chatroom for a user's friends.
     friend_voice_room_id VARCHAR(32),  -- ID of the private Discord voice room for a user's friends.
