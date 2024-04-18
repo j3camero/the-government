@@ -853,6 +853,7 @@ async function UpdateSteamAccountInfo() {
 	if (!account.steamId) {
 	    return;
 	}
+	//console.log(account);
 	const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
 	if (!cu) {
 	    return;

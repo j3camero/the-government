@@ -385,6 +385,39 @@ async function CalculateChainOfCommand() {
 	}
 	await user.setRank(RankMetadata.length - 1);
     });
+    // Make sure the top leaders all have their own leader role and VC. If any
+    // are missing, create them.
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const numTopLeadersToMaintainVoiceRoomsFor = 3;
+    const k = numTopLeadersToMaintainVoiceRoomsFor;
+    for (let i = n - k; i < n; i++) {
+	const v = verticesSortedByScore[i];
+	if (!v) {
+	    continue;
+	}
+	if (!v.vertex_id) {
+	    continue;
+	}
+	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
+	if (!cu) {
+	    continue;
+	}
+	if (!cu.friend_role_id) {
+	    const name = cu.getNicknameOrTitleWithInsignia();
+	    const rankData = RankMetadata[cu.rank];
+	    const color = rankData.color;
+	    try {
+		const newFriendRole = await guild.roles.create({ name,	color });
+		await cu.setFriendRoleId(newFriendRole.id);
+	    } catch (error) {
+		console.log('Failed to create a friend role for', name);
+		console.log(error);
+	    }
+	}
+	if (!cu.friend_voice_room_id) {
+	    
+	}
+    }
     // Calculate abbreviated summary tree. Kind of like a compressed version of the real massive
     // tree that is more compact to render and easier to read.
     async function RenderSummaryTree(howManyTopLeadersToExpand, pixelHeight, outputImageFilename) {
@@ -566,7 +599,6 @@ async function CalculateChainOfCommand() {
     }
     await RenderSummaryTree(20, 800, 'chain-of-command-generals.png');
     await RenderSummaryTree(70, 800, 'chain-of-command-officers.png');
-    const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.fetch('711850971072036946');
     await channel.bulkDelete(99);
     await channel.send({
