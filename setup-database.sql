@@ -13,7 +13,7 @@ CREATE TABLE users
     battlemetrics_id VARCHAR(32),  -- User ID on Battlemetrics.com.
     nickname VARCHAR(32),  -- Last known nickname.
     nick VARCHAR(32),  -- A user-supplied preferred nickname.
-    rank INT NOT NULL DEFAULT 12,  -- Rank. 0 = President, 1 = VP, 2 = 4-star General, etc.
+    rank INT NOT NULL DEFAULT 22,  -- Rank. 0 = President, 1 = VP, 2 = 4-star General, etc.
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Last time active in voice chat.
     office VARCHAR(32),  -- Which office (executive title) the user occupies, if any.
     harmonic_centrality FLOAT DEFAULT 0,  -- A measure of this user's social influence.

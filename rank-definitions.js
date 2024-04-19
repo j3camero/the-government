@@ -33,7 +33,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 5120000,
+	minScore: 5000000,
 	title: 'Commander',
     },
     {
@@ -42,7 +42,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 2560000,
+	minScore: 2000000,
 	title: 'Commander',
     },
     {
@@ -51,7 +51,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 1280000,
+	minScore: 1000000,
 	title: 'Commander',
     },
     {
@@ -60,7 +60,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 640000,
+	minScore: 500000,
 	title: 'Commander',
     },
     {
@@ -69,7 +69,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 320000,
+	minScore: 240000,
 	title: 'Commander',
     },
     {
@@ -78,7 +78,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 160000,
+	minScore: 120000,
 	title: 'Commander',
     },
     {
@@ -87,7 +87,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 80000,
+	minScore: 60000,
 	title: 'Commander',
     },
     {
@@ -96,7 +96,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 40000,
+	minScore: 30000,
 	title: 'Commander',
     },
     {
@@ -105,7 +105,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 20000,
+	minScore: 15000,
 	title: 'Commander',
     },
     {
@@ -114,7 +114,7 @@ module.exports = [
 	count: 0,
 	insignia: '♦',
 	roles: [RoleID.Commander, RoleID.Admin],
-	minScore: 10000,
+	minScore: 7000,
 	title: 'Commander',
     },
     {
@@ -123,7 +123,7 @@ module.exports = [
 	count: 1,
 	insignia: '★★★★',
 	roles: [RoleID.General, RoleID.Admin],
-	minScore: 5000,
+	minScore: 3500,
 	title: 'General',
     },
     {
@@ -132,7 +132,7 @@ module.exports = [
 	count: 3,
 	insignia: '★★★',
 	roles: [RoleID.General, RoleID.Admin],
-	minScore: 2400,
+	minScore: 1750,
 	title: 'General',
     },
     {
@@ -141,7 +141,7 @@ module.exports = [
 	count: 5,
 	insignia: '★★',
 	roles: [RoleID.General, RoleID.Admin],
-	minScore: 1200,
+	minScore: 875,
 	title: 'General',
     },
     {
@@ -150,7 +150,7 @@ module.exports = [
 	count: 7,
 	insignia: '★',
 	roles: [RoleID.General, RoleID.Admin],
-	minScore: 600,
+	minScore: 420,
 	title: 'General',
     },
     {
@@ -158,7 +158,7 @@ module.exports = [
 	count: 15,
 	insignia: '❱❱❱❱',
 	roles: [RoleID.Colonel, RoleID.Officer],
-	minScore: 300,
+	minScore: 210,
 	title: 'Colonel',
     },
     {
@@ -166,7 +166,7 @@ module.exports = [
 	count: 15,
 	insignia: '❱❱❱',
 	roles: [RoleID.Major, RoleID.Officer],
-	minScore: 200,
+	minScore: 120,
 	title: 'Major',
     },
     {
@@ -174,7 +174,7 @@ module.exports = [
 	count: 15,
 	insignia: '❱❱',
 	roles: [RoleID.Captain, RoleID.Officer],
-	minScore: 150,
+	minScore: 50,
 	title: 'Captain',
     },
     {
@@ -182,7 +182,7 @@ module.exports = [
 	count: 15,
 	insignia: '❱',
 	roles: [RoleID.Lieutenant, RoleID.Officer],
-	minScore: 100,
+	minScore: 8,
 	title: 'Lieutenant',
     },
     {
@@ -190,7 +190,7 @@ module.exports = [
 	count: 30,
 	insignia: '⦁⦁⦁⦁',
 	roles: [RoleID.StaffSergeant, RoleID.Grunt],
-	minScore: 50,
+	minScore: 4,
 	title: 'Staff Sergeant',
     },
     {
@@ -198,7 +198,7 @@ module.exports = [
 	count: 50,
 	insignia: '⦁⦁⦁',
 	roles: [RoleID.Sergeant, RoleID.Grunt],
-	minScore: 20,
+	minScore: 2,
 	title: 'Sergeant',
     },
     {
@@ -206,7 +206,7 @@ module.exports = [
 	count: 200,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
-	minScore: 5,
+	minScore: 1,
 	title: 'Corporal',
     },
     {

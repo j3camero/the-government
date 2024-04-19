@@ -106,7 +106,7 @@ async function CalculateChainOfCommand() {
     let sumActivity = 0;
     const rustVertexLines = ReadLinesFromCsvFile('in-game-activity-points-march-2024.csv');
     for (const line of rustVertexLines) {
-	if (line.length !== 2) {
+	if (line.length !== 4) {
 	    continue;
 	}
 	const i = line[0];
@@ -130,6 +130,8 @@ async function CalculateChainOfCommand() {
 	vertices[i].in_game_activity = activity;
 	vertices[i].steam_id = i;
 	vertices[i].vertex_id = i;
+	vertices[i].distinct_date_count = parseInt(line[2]);
+	vertices[i].distinct_month_count = parseInt(line[3]);
 	if (minActivity === null || activity < minActivity) {
 	    minActivity = activity;
 	}
@@ -190,13 +192,29 @@ async function CalculateChainOfCommand() {
     console.log('mean', sumRust / rustEdgeLines.length);
     console.log(Object.keys(vertices).length, 'combined vertices');
     console.log(Object.keys(edges).length, 'edge buckets');
+    // Helper function that calculates the "new guy" demotion. This
+    // stops brand new members from power-leveling too quickly no
+    // matter their relationships and activity level.
+    function CalculateNewGuyDemotion(distinctDateCount, distinctMonthCount) {
+	const d = distinctDateCount || 1;
+	const m = distinctMonthCount || 1;
+	const newGuyDays = 45;
+	const newGuyMonths = 6;
+	const intercept = 0.2;
+	const slope = 1 - intercept;
+	const dayDemotion = Math.min(d / newGuyDays, 1) * slope + intercept;
+	const monthDemotion = Math.min(m / newGuyMonths, 1) * slope + intercept;
+	const totalDemotion = dayDemotion * monthDemotion;
+	return totalDemotion;
+    }
     // Calculate final vertex weights as a weighted combination of
     // vertex features from multiple sources.
     for (const i in vertices) {
 	const v = vertices[i];
 	const hc = v.harmonic_centrality || 0;
 	const iga = v.in_game_activity || 0;
-	v.cross_platform_activity = (0.8 * hc + 0.2 * iga) / 3600;
+	const newGuyDemotion = CalculateNewGuyDemotion(v.distinct_date_count, v.distinct_month_count);
+	v.cross_platform_activity = newGuyDemotion * (0.8 * hc + 0.2 * iga) / 3600;
     }
     // Calculate final edge weights as a weighted combination of
     // edge features from multiple sources.
@@ -211,7 +229,12 @@ async function CalculateChainOfCommand() {
 	    const e = edges[i][j];
 	    const d = e.discord_coplay_time || 0;
 	    const r = e.rust_coplay_time || 0;
-	    const t = (0.2 * d + r) / 3600;
+	    const a = vertices[i];
+	    const b = vertices[j];
+	    const iDemotion = CalculateNewGuyDemotion(a.distinct_date_count, a.distinct_month_count);
+	    const jDemotion = CalculateNewGuyDemotion(b.distinct_date_count, b.distinct_month_count);
+	    const edgeDemotion = iDemotion * jDemotion;
+	    const t = edgeDemotion * (0.2 * d + r) / 3600;
 	    if ((i in relationshipsToPrint) && (j in relationshipsToPrint)) {
 		const iName = relationshipsToPrint[i];
 		const jName = relationshipsToPrint[j];
@@ -368,7 +391,8 @@ async function CalculateChainOfCommand() {
 	v.rank = ScoreToRank(v.leadershipScore);
 	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
 	if (cu) {
-	    await AnnounceIfPromotion(cu, v.rank);
+	    // Do not await the promotion announcement. Fire and forget.
+	    await AnnounceIfPromotion(cu, cu.rank, v.rank);
 	    await cu.setRank(v.rank);
 	}
     }
@@ -633,12 +657,15 @@ setInterval(() => {
 //
 // user - a commissar user.
 // newRank - integer rank index of the user's new rank.
-async function AnnounceIfPromotion(user, newRank) {
+async function AnnounceIfPromotion(user, oldRank, newRank) {
     if (!user ||
 	user.rank === undefined || user.rank === null ||
+	oldRank === undefined || oldRank === null ||
 	newRank === undefined || newRank === null ||
-	!Number.isInteger(user.rank) || !Number.isInteger(newRank) ||
-	newRank >= user.rank) {
+	!Number.isInteger(user.rank) ||
+	!Number.isInteger(newRank) ||
+	!Number.isInteger(oldRank) ||
+	newRank >= oldRank) {
 	// No promotion detected. Bail.
 	return;
     }
@@ -662,14 +689,10 @@ async function AnnounceIfPromotion(user, newRank) {
     // If we get past here, a promotion has been detected.
     // Announce it in #public chat.
     const name = user.getNicknameOrTitleWithInsignia();
-    const oldMeta = RankMetadata[user.rank];
+    const oldMeta = RankMetadata[oldRank];
     const newMeta = RankMetadata[newRank];
     const message = `${name} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
     console.log(message);
-    // Delay for a few seconds to spread out the promotion messages and
-    // also achieve a crude non-guaranteed sorting by rank.
-    const delayMillis = 1000 * (newRank + Math.random() / 2) + 100;
-    await Sleep(delayMillis);
     await DiscordUtil.MessagePublicChatChannel(message);
 }
 
