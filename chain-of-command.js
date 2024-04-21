@@ -508,6 +508,10 @@ async function CalculateChainOfCommand() {
 	    console.log('No valid friend room or failed to create.');
 	    continue;
 	}
+	if (v.friendRoom.name !== name) {
+	    console.log('Updating room name', v.friendRoom.name, 'to', name);
+	    await v.friendRoom.setName(name);
+	}
 	// Hide room from most members while empty.
 	if (!(v.friendRoom.id in channelPermsModifiedRecently)) {
 	    if (v.friendRoom.members.size === 0) {
