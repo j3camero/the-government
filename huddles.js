@@ -18,7 +18,7 @@ const huddles = [
     { name: 'Duo', userLimit: 2, position: 2000 },
     { name: 'Trio', userLimit: 3, position: 3000 },
     { name: 'Quad', userLimit: 4, position: 4000 },
-    { name: 'Six Pack', userLimit: 6, position: 6000 },
+    //{ name: 'Six Pack', userLimit: 6, position: 6000 },
     { name: 'Squad', userLimit: 8, position: 7000 },
 ];
 const mainRoomControlledByProximity = false;
@@ -883,7 +883,7 @@ async function HuddlesUpdate() {
 	const roomsInOrder = await MoveOneRoomIfNeeded(guild);
 	isUpdateNeeded = !roomsInOrder;
     }
-    setTimeout(HuddlesUpdate, 1000);
+    setTimeout(HuddlesUpdate, 100);
 }
 
 function ScheduleUpdate() {

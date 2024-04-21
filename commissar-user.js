@@ -347,10 +347,8 @@ class CommissarUser {
     }
 
     getInsignia() {
-	if (!this.citizen) {
-	    return '⦁';
-	}
-	const rank = this.getRank();
+	const defaultRank = RankMetadata.length - 1;
+	const rank = this.getRank() || defaultRank;
 	const rankData = RankMetadata[rank];
 	return rankData.insignia;
     }

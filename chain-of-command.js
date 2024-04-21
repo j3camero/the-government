@@ -1,14 +1,23 @@
 const { createCanvas } = require('canvas');
 const db = require('./database');
+const { PermissionFlagsBits } = require('discord.js');
 const DiscordUtil = require('./discord-util');
 const fs = require('fs');
 const kruskal = require('kruskal-mst');
 const moment = require('moment');
 const RankMetadata = require('./rank-definitions');
+const RoleID = require('./role-id');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
 
 const recentlyActiveSteamIds = {};
+let channelPermsModifiedRecently = {};
+
+setInterval(() => {
+    // Clear the perms modified flags every few minutes, enabling them
+    // to be modified again.
+    channelPermsModifiedRecently = {};
+}, 9 * 60 * 1000);
 
 async function CalculateChainOfCommand() {
     console.log('Chain of command');
@@ -409,37 +418,217 @@ async function CalculateChainOfCommand() {
 	}
 	await user.setRank(RankMetadata.length - 1);
     });
+    // Initialize each vertex's friend badges to empty.
+    for (const v of verticesSortedByScore) {
+	v.badges = {};
+    }
     // Make sure the top leaders all have their own leader role and VC. If any
     // are missing, create them.
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const numTopLeadersToMaintainVoiceRoomsFor = 3;
+    console.log('Create and update friend role and rooms for top leaders');
+    const numTopLeadersToMaintainVoiceRoomsFor = 17;
     const k = numTopLeadersToMaintainVoiceRoomsFor;
-    for (let i = n - k; i < n; i++) {
-	const v = verticesSortedByScore[i];
-	if (!v) {
-	    continue;
-	}
-	if (!v.vertex_id) {
-	    continue;
-	}
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const allFriendRoles = {};
+    for (const v of verticesSortedByScore) {
 	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
 	if (!cu) {
 	    continue;
 	}
-	if (!cu.friend_role_id) {
-	    const name = cu.getNicknameOrTitleWithInsignia();
-	    const rankData = RankMetadata[cu.rank];
-	    const color = rankData.color;
+	if (cu.rank > 15) {
+	    // Higher rank index means a lower rank. 15 is General 1.
+	    continue;
+	}
+	const name = cu.getNicknameOrTitleWithInsignia();
+	const rankData = RankMetadata[cu.rank];
+	const color = rankData.color;
+	if (cu.friend_role_id) {
 	    try {
-		const newFriendRole = await guild.roles.create({ name,	color });
-		await cu.setFriendRoleId(newFriendRole.id);
+		v.friendRole = await guild.roles.fetch(cu.friend_role_id);
+	    } catch (error) {
+		console.log('Failed to fetch friend role for', name);
+		console.log(error);
+		continue;
+	    }
+	} else {
+	    try {
+		v.friendRole = await guild.roles.create({ name, color });
+		await cu.setFriendRoleId(v.friendRole.id);
 	    } catch (error) {
 		console.log('Failed to create a friend role for', name);
 		console.log(error);
+		continue;
 	    }
 	}
-	if (!cu.friend_voice_room_id) {
-	    
+	if (!v.friendRole) {
+	    console.log('No valid friend role or failed to create.');
+	    continue;
+	}
+	allFriendRoles[v.friendRole.id] = v.friendRole;
+	v.badges[v.friendRole.id] = v.friendRole;
+	if (v.friendRole.name !== name) {
+	    console.log('Updating role name', v.friendRole.name, 'to', name);
+	    await v.friendRole.setName(name);
+	}
+	const decimalColorCode = Number('0x' + color.replace('#', ''));
+	if (v.friendRole.color !== color && v.friendRole.color !== decimalColorCode) {
+	    console.log('Updating role color for', v.friendRole.name, 'from', v.friendRole.color, 'to', color);
+	    await v.friendRole.setColor(color);
+	}
+	const connect = PermissionFlagsBits.Connect;
+	const view = PermissionFlagsBits.ViewChannel;
+	if (cu.friend_voice_room_id) {
+	    try {
+		v.friendRoom = await guild.channels.fetch(cu.friend_voice_room_id);
+	    } catch (error) {
+		console.log('Failed to fetch friend room for', name);
+		console.log(error);
+		continue;
+	    }
+	} else {
+	    try {
+		v.friendRoom = await guild.channels.create({
+		    bitrate: 256000,
+		    name,
+		    permissionOverwrites: [
+			{ id: guild.roles.everyone, deny: [connect, view] },
+			{ id: v.friendRole.id, allow: [connect, view] },
+			{ id: RoleID.Bots, allow: [connect, view] },
+		    ],
+		    type: 2,
+		    userLimit: 99,
+		});
+		await cu.setFriendVoiceRoomId(v.friendRoom.id);
+	    } catch (error) {
+		console.log('Failed to create friend room for', name);
+		console.log(error);
+		continue;
+	    }
+	}
+	if (!v.friendRoom) {
+	    console.log('No valid friend room or failed to create.');
+	    continue;
+	}
+	// Hide room from most members while empty.
+	if (!(v.friendRoom.id in channelPermsModifiedRecently)) {
+	    if (v.friendRoom.members.size === 0) {
+		if (v.friendRoom.permissionOverwrites.cache.has(RoleID.Grunt)) {
+		    console.log('Hide room', v.friendRoom.name);
+		    channelPermsModifiedRecently[v.friendRoom.id] = true;
+		    await v.friendRoom.permissionOverwrites.set([
+			{ id: guild.roles.everyone, deny: [connect, view] },
+			{ id: v.friendRole.id, allow: [connect, view] },
+			{ id: RoleID.Bots, allow: [connect, view] },
+		    ]);
+		}
+	    } else {
+		if (!v.friendRoom.permissionOverwrites.cache.has(RoleID.Grunt)) {
+		    console.log('Reveal room', v.friendRoom.name);
+		    channelPermsModifiedRecently[v.friendRoom.id] = true;
+		    await v.friendRoom.permissionOverwrites.set([
+			{ id: guild.roles.everyone, deny: [connect, view] },
+			{ id: RoleID.Grunt, allow: [view] },
+			{ id: RoleID.Officer, allow: [view] },
+			{ id: RoleID.General, allow: [view] },
+			{ id: RoleID.Commander, allow: [view] },
+			{ id: v.friendRole.id, allow: [connect, view] },
+			{ id: RoleID.Bots, allow: [connect, view] },
+		    ]);
+		}
+	    }
+	}
+    }
+    // Decide which people are friends with which others.
+    console.log('Traversing edges to detect friends');
+    let edgeCount = 0;
+    let friendCount = 0;
+    for (const i in edges) {
+	for (const j in edges[i]) {
+	    edgeCount++;
+	    const e = edges[i][j];
+	    const d = e.discord_coplay_time || 0;
+	    const r = e.rust_coplay_time || 0;
+	    const t = 0.02 * d + r;
+	    if (t > 300) {
+		friendCount++;
+		const a = vertices[i];
+		const b = vertices[j];
+		if (b.friendRole) {
+		    a.badges[b.friendRole.id] = b.friendRole;
+		}
+		if (a.friendRole) {
+		    b.badges[a.friendRole.id] = a.friendRole;
+		}
+	    }
+	}
+    }
+    console.log(edgeCount, 'edges traversed');
+    console.log(friendCount, 'friends detected');
+    // Add and remove friend badges.
+    console.log('Adding and removing friend badges');
+    for (const v of verticesSortedByScore) {
+	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
+	if (!cu) {
+	    continue;
+	}
+	if (!cu.discord_id || !cu.citizen || !cu.good_standing) {
+	    continue;
+	}
+	const discordMember = await guild.members.fetch(cu.discord_id);
+	const currentRoles = await discordMember.roles.cache;
+	const rolesToRemove = {};
+	const rolesBefore = {};
+	for (const [roleId, role] of currentRoles) {
+	    rolesBefore[roleId] = role;
+	    if ((roleId in allFriendRoles) && !(roleId in v.badges)) {
+		rolesToRemove[roleId] = role;
+	    }
+	}
+	for (const roleId in rolesToRemove) {
+	    const badge = rolesToRemove[roleId];
+	    console.log('Remove role', badge.name, 'from', discordMember.nickname);
+	    await discordMember.roles.remove(badge);
+	}
+	for (const roleId in v.badges) {
+	    if (roleId in rolesBefore) {
+		continue;
+	    }
+	    const badge = v.badges[roleId];
+	    console.log('Add role', badge.name, 'to', discordMember.nickname);
+	    await discordMember.roles.add(badge);
+	}
+    }
+    // Clean up & destroy any friend roles & rooms of downranked leaders.
+    console.log('Clean up disused friend roles and rooms');
+    for (const v of verticesSortedByScore) {
+	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
+	if (!cu) {
+	    continue;
+	}
+	if (cu.rank <= 15) {
+	    // Skip Generals.
+	    continue;
+	}
+	if (cu.friend_role_id) {
+	    try {
+		const friendRole = await guild.roles.fetch(cu.friend_role_id);
+		await friendRole.delete();
+		await cu.setFriendRoleId(null);
+	    } catch (error) {
+		console.log('Failed to delete friend role for', name);
+		console.log(error);
+		continue;
+	    }
+	}
+	if (cu.friend_voice_room_id) {
+	    try {
+		const friendRoom = await guild.channels.fetch(cu.friend_voice_room_id);
+		await friendRoom.delete();
+		await cu.setFriendVoiceRoomId(null);
+	    } catch (error) {
+		console.log('Failed to delete friend room for', name);
+		console.log(error);
+		continue;
+	    }
 	}
     }
     // Calculate abbreviated summary tree. Kind of like a compressed version of the real massive
