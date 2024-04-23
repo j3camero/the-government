@@ -551,7 +551,7 @@ async function CalculateChainOfCommand() {
 	    const e = edges[i][j];
 	    const d = e.discord_coplay_time || 0;
 	    const r = e.rust_coplay_time || 0;
-	    const t = 0.02 * d + r;
+	    const t = 0.04 * d + r;
 	    if (t > 300) {
 		friendCount++;
 		const a = vertices[i];
@@ -567,6 +567,24 @@ async function CalculateChainOfCommand() {
     }
     console.log(edgeCount, 'edges traversed');
     console.log(friendCount, 'friends detected');
+    // Give friend badge to all descendants of eligible leaders.
+    let totalDescendantBadgeCount = 0;
+    for (const v of verticesSortedByScore) {
+	// For every vertex, iterate up the chain of command to find all
+	// this player's bosses up to but not including the very top leader.
+	let b = v;
+	while (b.boss) {
+	    if (b.friendRole) {
+		// Players get badges from their bosses of high enough
+		// rank going all the way up the chain of command but for
+		// the very top leader.
+		v.badges[b.friendRole.id] = b.friendRole;
+		totalDescendantBadgeCount++;
+	    }
+	    b = vertices[b.boss];
+	}
+    }
+    console.log(totalDescendantBadgeCount, 'total descendant badges issued');
     // Add and remove friend badges.
     console.log('Adding and removing friend badges');
     for (const v of verticesSortedByScore) {
