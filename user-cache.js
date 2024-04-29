@@ -313,7 +313,10 @@ function CountPresidentialElectionVotes() {
 function GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName() {
     let chosenUser = null;
     let oldestUpdateTime;
-    for (const i in commissarUserCache) {
+    const keys = Object.keys(commissarUserCache);
+    // Crawl users in reverse order to update most recent joiners by default.
+    keys.reverse();
+    for (const i of keys) {
 	const u = commissarUserCache[i];
 	if (!u.steam_id) {
 	    continue;

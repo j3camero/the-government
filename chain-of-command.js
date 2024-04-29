@@ -365,6 +365,29 @@ async function CalculateChainOfCommand() {
     }
     // Print out the king's score.
     console.log('Top leadership score:', Math.round(king.leadershipScore));
+    // Calculate 2nd in command's score as a percentage of the king's score.
+    // This measures the stability of the tree. How close is the top leader to changing?
+    const second = verticesSortedByScore[n - 2];
+    const overthrowProgress = second.leadershipScore / (king.leadershipScore - second.leadershipScore);
+    const regimeStability = 1 - overthrowProgress;
+    const overthrowP = Math.round(100 * overthrowProgress);
+    const regimeP = Math.round(100 * regimeStability);
+    let stabilityMessage;
+    if (regimeStability > 0.7) {
+	stabilityMessage = 'Rock Solid';
+    } else if (regimeStability > 0.5) {
+	stabilityMessage = 'Highly Stable';
+    } else if (regimeStability > 0.3) {
+	stabilityMessage = 'Stable';
+    } else if (regimeStability > 0.1) {
+	stabilityMessage = 'Not Stable';
+    } else {
+	stabilityMessage = 'Regime Change Imminent';
+    }
+    const kingName = UserCache.TryToFindUserGivenAnyKnownId(king.vertex_id).getRankNameAndInsignia();
+    const secondName = UserCache.TryToFindUserGivenAnyKnownId(second.vertex_id).getRankNameAndInsignia();
+    console.log(secondName, 'progress towards overthrowing', kingName, overthrowP, '%');
+    console.log('Regime stability', regimeP, '%', stabilityMessage);
     // Sort each node's subordinates.
     for (const v of verticesSortedByScore) {
 	v.subordinates.sort((a, b) => {
@@ -476,6 +499,7 @@ async function CalculateChainOfCommand() {
 	}
 	const connect = PermissionFlagsBits.Connect;
 	const view = PermissionFlagsBits.ViewChannel;
+	const send = PermissionFlagsBits.SendMessages;
 	if (cu.friend_voice_room_id) {
 	    try {
 		v.friendRoom = await guild.channels.fetch(cu.friend_voice_room_id);
@@ -487,12 +511,12 @@ async function CalculateChainOfCommand() {
 	} else {
 	    try {
 		v.friendRoom = await guild.channels.create({
-		    bitrate: 256000,
+		    bitrate: 384000,
 		    name,
 		    permissionOverwrites: [
-			{ id: guild.roles.everyone, deny: [connect, view] },
-			{ id: v.friendRole.id, allow: [connect, view] },
-			{ id: RoleID.Bots, allow: [connect, view] },
+			{ id: guild.roles.everyone, deny: [connect, send, view] },
+			{ id: v.friendRole.id, allow: [connect, send, view] },
+			{ id: RoleID.Bots, allow: [connect, send, view] },
 		    ],
 		    type: 2,
 		    userLimit: 99,
@@ -850,7 +874,12 @@ async function CalculateChainOfCommand() {
 	    name: 'chain-of-command-officers.png'
 	}],
     });
-    await channel.send(`Updates every 60 seconds. Your rank score = your activity in Rust + your activity in Discord + all your followers activity in Rust + all your followers activity in Discord. The structure comes from your relationships. Who you most often base with, roam with, raid with, and spend time with in Discord. To climb the ranks, be a leader. Build a base and bag people in. Lead raids. Pair with https://rustcult.com every month to avoid missing out on your next promotion.`);
+    await channel.send(
+	`**Political Stability**\n` +
+        `${secondName} is ${overthrowP}% of the way to overthrowing ${kingName}. ` +
+        `The current regime is ${regimeP}% stable (${stabilityMessage}).`
+    );
+    await channel.send(`**The Algorithm**\nUpdates every 60 seconds. Your rank score = your activity in Discord + your activity in Rust + all your followers activity in Discord + all your followers activity in Rust. The structure comes from your relationships. Who you usually base with, roam with, raid with, and chill with in Discord. To climb the ranks, be a leader. Build a base and bag people in. Lead raids. Pair with https://rustcult.com every month to avoid missing out on your next promotion.`);
 }
 
 // A temporary in-memory cache of the highest rank seen per user.

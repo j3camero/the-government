@@ -284,6 +284,7 @@ class CommissarUser {
 	}
 	this.steam_name = steam_name;
 	await this.updateFieldInDatabase('steam_name', this.steam_name);
+	await this.setSteamNameUpdatedNow();
     }
 
     async setSteamNameUpdatedNow() {

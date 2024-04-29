@@ -348,6 +348,13 @@ async function RoutineUpdate() {
     setTimeout(RoutineUpdate, 60 * 1000);
 }
 
+// Temporarily crawl steam names quickly to clear out the backlog.
+//setTimeout(async () => {
+//    setInterval(async () => {
+//	await UpdateSomeSteamNames();
+//    }, 500);
+//}, 9000);
+
 // Waits for the database and bot to both be connected, then finishes booting the bot.
 async function Start() {
     console.log('Waiting for Discord bot to connect.');

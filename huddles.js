@@ -17,9 +17,9 @@ const UserCache = require('./user-cache');
 const huddles = [
     { name: 'Duo', userLimit: 2, position: 2000 },
     { name: 'Trio', userLimit: 3, position: 3000 },
-    { name: 'Quad', userLimit: 4, position: 4000 },
+    //{ name: 'Quad', userLimit: 4, position: 4000 },
     //{ name: 'Six Pack', userLimit: 6, position: 6000 },
-    { name: 'Squad', userLimit: 8, position: 7000 },
+    //{ name: 'Squad', userLimit: 8, position: 7000 },
 ];
 const mainRoomControlledByProximity = false;
 if (!mainRoomControlledByProximity) {
@@ -60,18 +60,16 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 }
 
 async function CreateNewVoiceChannel(guild, huddle) {
-    const level3Bitrate = 256000;
-    const level2Bitrate = 128000;
-    try {
-	return await CreateNewVoiceChannelWithBitrate(guild, huddle, level3Bitrate);
-    } catch (err) {
+    const bitratesToTry = [384000, 256000, 128000];
+    for (const bitrate of bitratesToTry) {
 	try {
-	    return await CreateNewVoiceChannelWithBitrate(guild, huddle, level2Bitrate);
+	    return await CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate);
 	} catch (err) {
-	    console.log('Failed to create voice channel.');
-	    return null;
+	    console.log('Failed to create channel with bitrate', bitrate);
 	}
     }
+    console.log('Failed to create channel with any bitrate');
+    return null;
 }
 
 function GetMostRecentlyCreatedVoiceChannel(channels) {
@@ -533,6 +531,9 @@ async function UpdateProximityChat() {
 	//console.log(linkedAccounts);
 	for (const account of linkedAccounts) {
 	    if (account && account.discordId) {
+		//if (account.discordId === '619279800783339530') {
+		//    console.log('McLovin found:', account);
+		//}
 		if (account.steamId) {
 		    const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
 		    if (cu) {
@@ -853,7 +854,10 @@ async function UpdateSteamAccountInfo() {
 	if (!account.steamId) {
 	    return;
 	}
-	//console.log(account);
+	//if (account.discordId === '619279800783339530') {
+	//    console.log('McLovin found:', account);
+	//}
+	console.log(account);
 	const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
 	if (!cu) {
 	    return;
