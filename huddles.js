@@ -857,7 +857,7 @@ async function UpdateSteamAccountInfo() {
 	//if (account.discordId === '619279800783339530') {
 	//    console.log('McLovin found:', account);
 	//}
-	console.log(account);
+	//console.log(account);
 	const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
 	if (!cu) {
 	    return;

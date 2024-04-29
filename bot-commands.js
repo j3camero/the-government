@@ -740,6 +740,61 @@ async function HandleAfkCommand(discordMessage) {
 	}
 }
 
+async function HandleExileCommand(discordMessage) {
+    
+}
+
+async function HandleUnexileCommand(discordMessage) {
+    
+}
+
+async function HandleKickCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+    if (!author.friend_voice_room_id) {
+	// Auth: this command for leaders with their own voice room only.
+	await discordMessage.channel.send('!kick is for microcommunity leaders');
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch(author.friend_voice_room_id);
+    const mentionedMemberIsInChannel = channel.members.has(mentionedMember.id);
+    if (!mentionedMemberIsInChannel) {
+	await discordMessage.channel.send('!kick only works in your own microcommunity');
+	return;
+    }
+    // If we get here, it means the mentioned member is eligible to be kicked
+    // and the author has the right to kick them. Try to move them to the
+    // fullest Main channel.
+    let fullestMainChannel;
+    let maxPop = -1;
+    for (const [id, c] of guild.channels.cache) {
+	if (c.type === 2 && !c.parent && c.name === 'Main') {
+	    if (c.members.size > maxPop) {
+		maxPop = c.members.size;
+		fullestMainChannel = c;
+	    }
+	}
+    }
+    if (fullestMainChannel) {
+	// Move to fullest Main channel.
+	await mentionedMember.voice.setChannel(fullestMainChannel);
+    } else {
+	// In case no Main channels are found or other strange circumstance
+	// kick the member from the channel without moving them elsewhere.
+	await mentionedMember.voice.disconnect();
+    }
+    const mcName = author.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`${mentionedMember.nickname} is kicked out of microcommunity ${mcName} for 60 seconds`);
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -765,10 +820,12 @@ async function Dispatch(discordMessage) {
 	'!committee': HandleCommitteeCommand,
 	'!convert': yen.HandleConvertCommand,
 	'!convict': Ban.HandleConvictCommand,
+	'!exile': HandleExileCommand,
 	'!gender': HandleGenderCommand,
 	'!howhigh': Artillery,
 	'!hype': HandleHypeCommand,
 	'!impeach': HandleImpeachCommand,
+	'!kick': HandleKickCommand,
 	'!prez': HandlePrezCommand,
 	'!veep': HandleVeepCommand,
 	'!lottery': yen.DoLottery,
@@ -788,12 +845,16 @@ async function Dispatch(discordMessage) {
 	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
 	'!transcript': HandleTranscriptCommand,
+	'!unexile': HandleUnexileCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!yen': yen.HandleYenCommand,
 	'!yencreate': yen.HandleYenCreateCommand,
 	'!yendestroy': yen.HandleYenDestroyCommand,
 	'!yenfaq': yen.HandleYenFaqCommand,
     };
+    if (discordMessage.author.bot) {
+	return;
+    }
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;
     }
@@ -805,6 +866,7 @@ async function Dispatch(discordMessage) {
 	return;
     }
     const command = tokens[0].toLowerCase();
+    console.log('Dispatching command:', command);
     if (command in handlers) {
 	const handler = handlers[command];
 	await handler(discordMessage);
