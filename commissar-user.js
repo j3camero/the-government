@@ -348,8 +348,7 @@ class CommissarUser {
     }
 
     getInsignia() {
-	const defaultRank = RankMetadata.length - 1;
-	const rank = this.getRank() || defaultRank;
+	const rank = this.getRank();
 	const rankData = RankMetadata[rank];
 	return rankData.insignia;
     }

@@ -265,7 +265,6 @@ async function SetOpenPerms(channel) {
 	{ id: RoleID.Grunt, allow: [connect, view] },
 	{ id: RoleID.Officer, allow: [connect, view] },
 	{ id: RoleID.General, allow: [connect, view] },
-	{ id: RoleID.Marshal, allow: [connect, view] },
 	{ id: RoleID.Bots, allow: [view, connect] },
     ];
     // Do not await. Fire and forget with rate limit.
@@ -279,7 +278,6 @@ function CalculatePermsByRank(channel, rankLimit) {
     const perms = [
 	{ id: channel.guild.roles.everyone.id, allow: [view], deny: [connect] },
 	{ id: RoleID.Bots, allow: [view, connect] },
-	{ id: RoleID.Marshal, allow: [view, connect] },
     ];
     let rankIndex = 0;
     for (const rank of RankMetadata) {
@@ -753,7 +751,6 @@ async function UpdateProximityChat() {
 	    { id: RoleID.Grunt, allow: [view] },
 	    { id: RoleID.Officer, allow: [view] },
 	    { id: RoleID.General, allow: [view] },
-	    { id: RoleID.Marshal, allow: [view] },
 	    { id: RoleID.Bots, allow: [view, connect] },
 	];
 	const cluster = i < clustersWithLobby.length ? clustersWithLobby[i] : [];
