@@ -8,6 +8,7 @@ const DB = require('./database');
 const deepEqual = require('deep-equal');
 const { ContextMenuCommandBuilder, Events, ApplicationCommandType } = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const exile = require('./exile-cache');
 const fetch = require('./fetch');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
@@ -367,6 +368,8 @@ async function Start() {
     console.log('Loading ban votes from database.');
     await BanVoteCache.LoadVotesFromDatabase();
     console.log('Ban votes loaded into cache.');
+    await exile.LoadExilesFromDatabase();
+    console.log('Exiles loaded into cache');
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
     discordClient.on('guildMemberAdd', async (member) => {

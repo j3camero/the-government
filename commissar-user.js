@@ -381,6 +381,10 @@ class CommissarUser {
 	    return 'their';
 	}
     }
+
+    getSocialGraphVertexId() {
+	return this.steam_id || this.discord_id || this.commissar_id;
+    }
 }
 
 module.exports = CommissarUser;

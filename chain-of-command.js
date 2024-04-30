@@ -2,6 +2,7 @@ const { createCanvas } = require('canvas');
 const db = require('./database');
 const { PermissionFlagsBits } = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const exile = require('./exile-cache');
 const fs = require('fs');
 const kruskal = require('kruskal-mst');
 const moment = require('moment');
@@ -48,6 +49,7 @@ async function CalculateChainOfCommand() {
 	const i = v.steam_id || v.discord_id || v.commissar_id;
 	const hc = v.citizen ? v.harmonic_centrality : 0;
 	vertices[i] = {
+	    commissar_id: v.commissar_id,
 	    discord_id: v.discord_id,
 	    harmonic_centrality: v.harmonic_centrality,
 	    steam_id: v.steam_id,
@@ -614,6 +616,23 @@ async function CalculateChainOfCommand() {
 	const recruit = RankMetadata.length - 1;
 	if (v.rank >= recruit) {
 	    v.badges = {};
+	}
+    }
+    // Enforce exiles by taking away exiled badges.
+    const exiles = exile.GetAllExilesAsList();
+    for (const ex of exiles) {
+	const exiler = UserCache.GetCachedUserByCommissarId(ex.exiler);
+	if (!exiler) {
+	    continue;
+	}
+	const exilee = UserCache.GetCachedUserByCommissarId(ex.exilee);
+	if (!exilee) {
+	    continue;
+	}
+	const exileeVertexId = exilee.getSocialGraphVertexId();
+	const exileeVertex = vertices[exileeVertexId];
+	if (exiler.friend_role_id in exileeVertex.badges) {
+	    delete exileeVertex.badges[exiler.friend_role_id];
 	}
     }
     // Add and remove friend badges.

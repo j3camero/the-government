@@ -4,6 +4,7 @@ const Ban = require('./ban');
 const diff = require('diff');
 const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
+const exile = require('./exile-cache');
 const FilterUsername = require('./filter-username');
 const huddles = require('./huddles');
 const RandomPin = require('./random-pin');
@@ -741,11 +742,101 @@ async function HandleAfkCommand(discordMessage) {
 }
 
 async function HandleExileCommand(discordMessage) {
-    
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+    if (!author.friend_voice_room_id) {
+	// Auth: this command for leaders with their own voice room only.
+	await discordMessage.channel.send('!exile is for microcommunity leaders');
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
+	return;
+    }
+    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+    if (!mentionedUser) {
+	await discordMessage.channel.send('Not sure who you mean. Try again in a few minutes.');
+	return;
+    }
+    const exiler = author.commissar_id;
+    const exilee = mentionedUser.commissar_id;
+    const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
+    if (exile.IsExiled(exiler, exilee)) {
+	await discordMessage.channel.send(`${exileeName} is already exiled from microcommunity ${mcName}`);
+	return;
+    }
+    // Add exile record to the database to make it persistent.
+    await exile.AddExile(exiler, exilee);
+    // Revoke the microcommunity badge at once to avoid waiting for the next rank cycle.
+    if (mentionedMember.roles.cache.has(author.friend_role_id)) {
+	await mentionedMember.roles.remove(author.friend_role_id);
+    }
+    const mcName = author.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`${exileeName} has been exiled from microcommunity ${mcName}`);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch(author.friend_voice_room_id);
+    const mentionedMemberIsInChannel = channel.members.has(mentionedMember.id);
+    if (!mentionedMemberIsInChannel) {
+	// No need to remove member from channel. All set.
+	return;
+    }
+    // If we get here, it means the mentioned member is eligible to be kicked
+    // and the author has the right to kick them. Try to move them to the
+    // fullest Main channel.
+    let fullestMainChannel;
+    let maxPop = -1;
+    for (const [id, c] of guild.channels.cache) {
+	if (c.type === 2 && !c.parent && c.name === 'Main') {
+	    if (c.members.size > maxPop) {
+		maxPop = c.members.size;
+		fullestMainChannel = c;
+	    }
+	}
+    }
+    if (fullestMainChannel) {
+	// Move to fullest Main channel.
+	await mentionedMember.voice.setChannel(fullestMainChannel);
+    } else {
+	// In case no Main channels are found or other strange circumstance
+	// kick the member from the channel without moving them elsewhere.
+	await mentionedMember.voice.disconnect();
+    }
 }
 
 async function HandleUnexileCommand(discordMessage) {
-    
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+    if (!author.friend_voice_room_id) {
+	// Auth: this command for leaders with their own voice room only.
+	await discordMessage.channel.send('!unexile is for microcommunity leaders');
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
+	return;
+    }
+    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+    if (!mentionedUser) {
+	await discordMessage.channel.send('Not sure who you mean. Try again in a few minutes.');
+	return;
+    }
+    const exiler = author.commissar_id;
+    const exilee = mentionedUser.commissar_id;
+    const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
+    if (!exile.IsExiled(exiler, exilee)) {
+	await discordMessage.channel.send(`${exileeName} is not exiled from microcommunity ${mcName}`);
+	return;
+    }
+    // Delete exile record from the database to make it persistent.
+    await exile.Unexile(exiler, exilee);
+    const mcName = author.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`${exileeName} has been unexiled from microcommunity ${mcName}`);
 }
 
 async function HandleKickCommand(discordMessage) {

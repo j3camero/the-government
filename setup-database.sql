@@ -55,6 +55,13 @@ CREATE TABLE time_together
     INDEX user_index (lo_user_id, hi_user_id)
 );
 
+CREATE TABLE exiles
+(
+    exiler INT NOT NULL,
+    exilee INT NOT NULL,
+    PRIMARY KEY(exiler, exilee)
+);
+
 CREATE TABLE ban_votes
 (
     defendant_id INT NOT NULL,
