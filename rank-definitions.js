@@ -198,7 +198,7 @@ module.exports = [
 	count: 200,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
-	minScore: 0.03,
+	minScore: 0.01,
 	title: 'Corporal',
     },
     {

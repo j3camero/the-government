@@ -609,6 +609,13 @@ async function CalculateChainOfCommand() {
 	}
     }
     console.log(totalDescendantBadgeCount, 'total descendant badges issued');
+    // Remove friend badges from any bottom-ranked members.
+    for (const v of verticesSortedByScore) {
+	const recruit = RankMetadata.length - 1;
+	if (v.rank >= recruit) {
+	    v.badges = {};
+	}
+    }
     // Add and remove friend badges.
     console.log('Adding and removing friend badges');
     for (const v of verticesSortedByScore) {
