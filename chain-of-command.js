@@ -631,6 +631,9 @@ async function CalculateChainOfCommand() {
 	}
 	const exileeVertexId = exilee.getSocialGraphVertexId();
 	const exileeVertex = vertices[exileeVertexId];
+	if (!exileeVertex) {
+	    continue;
+	}
 	if (exiler.friend_role_id in exileeVertex.badges) {
 	    delete exileeVertex.badges[exiler.friend_role_id];
 	}
@@ -645,7 +648,13 @@ async function CalculateChainOfCommand() {
 	if (!cu.discord_id || !cu.citizen || !cu.good_standing) {
 	    continue;
 	}
-	const discordMember = await guild.members.fetch(cu.discord_id);
+	let discordMember;
+	try {
+	    discordMember = await guild.members.fetch(cu.discord_id);
+	} catch (error) {
+	    // Discord member probably left the discord. Ignore.
+	    continue;
+	}
 	const currentRoles = await discordMember.roles.cache;
 	const rolesToRemove = {};
 	const rolesBefore = {};

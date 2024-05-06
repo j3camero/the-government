@@ -299,8 +299,8 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of April 2024. Report to Rustafied.com - US Long III\n`;
-    content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
+    content += `Here are your secret orders for the month of May 2024. Report to Rusty Moose |US Monthly|\n`;
+    content += '```client.connect monthly.us.moose.gg:28010```\n';  // Only one newline after triple backticks.
     if (user.rank <= 15) {
 	content += `Generals Code 1111\n`;
     }
@@ -311,9 +311,10 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
 	content += `Grunt Code 1111\n`;
 	content += `Gate Code 1111\n\n`;
     }
-    content += `Run straight to E24. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Run straight to E15. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
     content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around your bases even if you never have the app open.\n\n`;
-    content += `Check out the new https://discord.com/channels/305840605328703500/711850971072036946. We are addressing the most longstanding problem in gov: having to put up with people you don't like to hang out with the ones you do like. Pair with rustcult.com for the best possible experience.\n\n`;
+    content += `Check out the new https://discord.com/channels/305840605328703500/711850971072036946. Every General has their own AI powered comms. Pair with rustcult.com to avoid being left out.\n\n`;
+    content += `The Government is doing something special this month to show off our new tech. We are invading Rusty Moose with several large groups. Each group takes a different sector of the map and uses rustcult.com to avoid raiding each other. The main gov village will be the largest group and work the same as always. The effect of all these groups working together could be dramatic around mid-wipe. There is a chance we could make Rusty Moose a gov-only server. Dozens of leaders from past eras of the gov have reactivated this month because they don't want to miss this event. Come slap down a base on Moose and bag in a friend or 2. This is going to be a wipe weekend to remember.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
@@ -321,8 +322,8 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
 	await discordMember.send({
 	    content,
 	    files: [{
-		attachment: 'nov-2023-village-heatmap.png',
-		name: 'nov-2023-village-heatmap.png'
+		attachment: 'chain-of-command-generals.png',
+		name: 'chain-of-command-generals.png'
 	    }]
 	});
     } catch (error) {
@@ -364,12 +365,12 @@ async function SendOrdersToOneCommissarUser(user, discordMessage) {
     if (discordMember.user.bot) {
 	return;
     }
-    const hasWipeBadge = await DiscordUtil.GuildMemberHasRole(discordMember, RoleID.WipeBadge);
-    if (hasWipeBadge) {
+    //const hasWipeBadge = await DiscordUtil.GuildMemberHasRole(discordMember, RoleID.WipeBadge);
+    //if (hasWipeBadge) {
 	await SendWipeBadgeOrders(user, discordMessage, discordMember);
-    } else {
-	await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
-    }
+    //} else {
+	//await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
+    //}
 }
 
 async function SendOrdersToTheseCommissarUsers(users, discordMessage) {

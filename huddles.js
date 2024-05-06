@@ -884,7 +884,7 @@ async function HuddlesUpdate() {
 	const roomsInOrder = await MoveOneRoomIfNeeded(guild);
 	isUpdateNeeded = !roomsInOrder;
     }
-    setTimeout(HuddlesUpdate, 100);
+    setTimeout(HuddlesUpdate, 1000);
 }
 
 function ScheduleUpdate() {
