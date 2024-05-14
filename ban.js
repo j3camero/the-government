@@ -8,8 +8,11 @@ const VoteDuration = require('./vote-duration');
 
 const threeTicks = '```';
 
-const banCommandRank = 15;  // General 1
-const banVoteRank = 19;  // Lieutenant
+// General 1 = 15
+// Major = 17
+// Lieutenant = 19
+const banCommandRank = 17;
+const banVoteRank = 19;
 
 function SentenceLengthAsString(years) {
     if (years <= 0) {

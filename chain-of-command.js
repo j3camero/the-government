@@ -513,7 +513,7 @@ async function CalculateChainOfCommand() {
 	} else {
 	    try {
 		v.friendRoom = await guild.channels.create({
-		    bitrate: 384000,
+		    bitrate: 256000,
 		    name,
 		    permissionOverwrites: [
 			{ id: guild.roles.everyone, deny: [connect, send, view] },
