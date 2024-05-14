@@ -250,6 +250,7 @@ async function CalculateChainOfCommand() {
     // Assign discrete ranks to each player.
     let rank = 0;
     let usersAtRank = 0;
+    let rankIndex = 1;
     const recruitRank = RankMetadata.length - 1;
     for (const v of verticesSortedByScore) {
 	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
@@ -258,6 +259,8 @@ async function CalculateChainOfCommand() {
 	}
 	if (!cu.citizen) {
 	    await cu.setRank(recruitRank);
+	    await cu.setRankScore(0);
+	    await cu.setRankIndex(9999999);
 	    continue;
 	}
 	while (usersAtRank >= RankMetadata[rank].count) {
@@ -271,6 +274,9 @@ async function CalculateChainOfCommand() {
 	// Do not await the promotion announcement. Fire and forget.
 	//AnnounceIfPromotion(cu, cu.rank, rank);
 	await cu.setRank(rank);
+	await cu.setRankScore(v.rank_score);
+	await cu.setRankIndex(rankIndex);
+	rankIndex++;
 	usersAtRank++;
     }
     // Initialize each vertex's friend badges to empty.

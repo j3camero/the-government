@@ -19,6 +19,8 @@ async function LoadAllUsersFromDatabase() {
 	    row.nickname,
 	    row.nick,
 	    row.rank,
+	    row.rank_score,
+	    row.rank_index,
 	    row.last_seen,
 	    row.office,
 	    row.harmonic_centrality,
@@ -136,6 +138,8 @@ async function CreateNewDatabaseUser(discordMember) {
     const nickname = FilterUsername(discordMember.user.username);
     console.log(`Create a new DB user for ${nickname}`);
     const rank = RankMetadata.length - 1;
+    const rank_score = 0;
+    const rank_index = 9999999;
     const last_seen = null;
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};
@@ -146,7 +150,7 @@ async function CreateNewDatabaseUser(discordMember) {
 	discord_id,
 	nickname,
 	null,
-	rank,
+	rank, rank_score, rank_index,
 	last_seen,
 	office,
 	0, rank, null,

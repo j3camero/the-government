@@ -11,6 +11,8 @@ class CommissarUser {
 	nickname,
 	nick,
 	rank,
+	rank_score,
+	rank_index,
 	last_seen,
 	office,
 	harmonic_centrality,
@@ -38,6 +40,8 @@ class CommissarUser {
 	this.nickname = nickname;
 	this.nick = nick;
 	this.rank = rank;
+	this.rank_score = rank_score;
+	this.rank_index = rank_index;
 	this.last_seen = last_seen;
 	this.office = office;
 	this.harmonic_centrality = harmonic_centrality;
@@ -96,6 +100,22 @@ class CommissarUser {
 	this.rank = rank;
 	await this.updateFieldInDatabase('rank', this.rank);
 	await this.setPeakRank(this.rank);
+    }
+
+    async setRankScore(rank_score) {
+	if (rank_score === this.rank_score) {
+	    return;
+	}
+	this.rank_score = rank_score;
+	await this.updateFieldInDatabase('rank_score', this.rank_score);
+    }
+
+    async setRankIndex(rank_index) {
+	if (rank_index === this.rank_index) {
+	    return;
+	}
+	this.rank_index = rank_index;
+	await this.updateFieldInDatabase('rank_index', this.rank_index);
     }
 
     async seenNow() {
@@ -353,6 +373,21 @@ class CommissarUser {
 	return rankData.insignia;
     }
 
+    getFormattedRankIndex() {
+	const i = this.rank_index;
+	if (!i) {
+	    return '999';
+	}
+	if (i > 999 || i < 1) {
+	    return '999';
+	}
+	let s = Math.round(i).toString();
+	while (s.length < 3) {
+	    s = '0' + s;
+	}
+	return s;
+    }
+
     getNicknameWithInsignia() {
 	const name = this.steam_name || this.nick || this.nickname || 'John Doe';
 	const insignia = this.getInsignia();
@@ -362,7 +397,8 @@ class CommissarUser {
     getNicknameOrTitleWithInsignia() {
 	const name = this.getNicknameOrTitle();
 	const insignia = this.getInsignia();
-	return `${name} ${insignia}`;
+	const formattedRankIndex = this.getFormattedRankIndex();
+	return `${formattedRankIndex} ${name} ${insignia}`;
     }
 
     getRankNameAndInsignia() {
