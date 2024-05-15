@@ -157,7 +157,7 @@ async function UpdateTrial(cu) {
     const underline = new Array(caseTitle.length + 1).join('-');
     const currentTime = moment();
     let startTime = moment(cu.ban_vote_start_time);
-    const totalVoters = 100;
+    const totalVoters = 59;
     let baselineVoteDurationDays;
     let nextStateChangeMessage;
     if (guilty) {

@@ -175,13 +175,15 @@ async function HandlePrivateRoomVoteCommand(discordMessage) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create('private-comms-for-generals');
+    const channel = await guild.channels.create({ name: 'vote-on-gov-future' });
     const message = await channel.send(
-	`__**Should Generals Have Private Comms?**__\n` +
-	`Recently we have tried an experiment where all 15 Generals have their own private comms. Access is controlled by the Badge system.\n\n` +
-	`Vote YES to continue the experiment.\n\n` +
-        `Vote NO to delete all private comms except the Raid channel.\n\n` +
-	`The Generals decide. A simple majority is needed for this motion to pass. The vote ends March 2, 2023.`);
+	`__**Vote on the Future of the Government Community**__\n` +
+	`Should we keep the microcommunities, the 3 digit barcodes, and the New Guy Demotion that slows down new recruits from ranking up too quickly?\n\n` +
+	`The hierarchical ranks are obsolete, but they were not in vain. We needed to explore that direction to discover the concept of microcommunities that we are voting on now.\n\n` +
+	`The ranks we have now are almost identical to the original ones that reigned from March 2021 to March 2024. This vote is not primarily about the ranks after all. This vote is about whether to keep the microcommunities, the 3 digit barcodes, and the New Guy Demotion that slows down new recruits from ranking up too quickly.\n\n` +
+	`Vote YES to keep things how they are now\n\n` +
+        `Vote NO to go back to how everything was in March\n\n` +
+	`The vote ends May 30, 2024. All Generals past & present can vote.`);
     await message.react('✅');
     await message.react('❌');
     const voteSectionId = '1043778293612163133';
@@ -609,6 +611,7 @@ async function HandleBoopCommand(discordMessage) {
     }
     const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
     if (cu) {
+	await cu.setCitizen(true);
 	await discordMessage.channel.send(`Member already exists.`);
     } else {
 	// We have no record of this Discord user. Create a new record in the cache.

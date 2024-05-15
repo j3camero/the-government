@@ -37,15 +37,6 @@ async function CalculateChainOfCommand() {
 	    // Exclude banned members from the ranks until they do their time.
 	    continue;
 	}
-	const activeInGame = v.steam_id in recentlyActiveSteamIds;
-	if (!v.last_seen && !activeInGame) {
-	    continue;
-	}
-	const lastSeen = moment(v.last_seen);
-	const limit = moment().subtract(90, 'days');
-	if (lastSeen.isBefore(limit) && !activeInGame) {
-	    continue;
-	}
 	const i = v.steam_id || v.discord_id || v.commissar_id;
 	const hc = v.citizen ? v.harmonic_centrality : 0;
 	vertices[i] = {
@@ -252,6 +243,7 @@ async function CalculateChainOfCommand() {
     let usersAtRank = 0;
     let rankIndex = 1;
     const recruitRank = RankMetadata.length - 1;
+    console.log('verticesSortedByScore.length', verticesSortedByScore.length);
     for (const v of verticesSortedByScore) {
 	const cu = UserCache.TryToFindUserGivenAnyKnownId(v.vertex_id);
 	if (!cu) {
