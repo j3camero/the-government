@@ -207,13 +207,13 @@ async function UpdateAllCitizens() {
 	}
     });
     console.log(`${activeUsers.length} active users ${inactiveUsers.length} inactive users`);
-    //const activeSample = RandomSample(activeUsers, 100);
-    //const inactiveSample = RandomSample(inactiveUsers, 100);
-    //const selectedUsers = activeSample.concat(inactiveSample);
-    const selectedUsers = activeUsers.concat(inactiveUsers);
+    const activeSample = RandomSample(activeUsers, 100);
+    const inactiveSample = RandomSample(inactiveUsers, 100);
+    const selectedUsers = activeSample.concat(inactiveSample);
+    //const selectedUsers = activeUsers.concat(inactiveUsers);
     console.log(`Updating ${selectedUsers.length} users`);
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const maxLoopDuration = 90 * 1000;
+    const maxLoopDuration = 60 * 1000;
     const startTime = Date.now();
     let howManyUsersGotUpdatedCounter = 0;
     for (const cu of selectedUsers) {
@@ -226,6 +226,8 @@ async function UpdateAllCitizens() {
     }
     if (howManyUsersGotUpdatedCounter < selectedUsers.length) {
 	console.log(`Update cycle timed out after updating ${howManyUsersGotUpdatedCounter} users`);
+    } else {
+	console.log(`Updated all discord members successfully`);
     }
 }
 
@@ -346,15 +348,9 @@ async function RoutineUpdate() {
     const endTime = new Date().getTime();
     const elapsed = endTime - startTime;
     console.log(`Update Time: ${elapsed} ms`);
-    setTimeout(RoutineUpdate, 60 * 1000);
+    const sleepTime = Math.max(9000, 60000 - elapsed);
+    setTimeout(RoutineUpdate, sleepTime);
 }
-
-// Temporarily crawl steam names quickly to clear out the backlog.
-//setTimeout(async () => {
-//    setInterval(async () => {
-//	await UpdateSomeSteamNames();
-//    }, 500);
-//}, 9000);
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
 async function Start() {

@@ -217,7 +217,9 @@ async function CalculateChainOfCommand() {
 	const iga = v.in_game_activity || 0;
 	v.cross_platform_activity = 0.8 * hc + 0.2 * iga;
 	const newGuyDemotion = CalculateNewGuyDemotion(v.distinct_date_count, v.distinct_month_count);
-	v.rank_score = newGuyDemotion * v.cross_platform_activity;
+	const cid = v.commissar_id || 9999999;
+	const joinOrderBonus = 3600 / cid;
+	v.rank_score = newGuyDemotion * v.cross_platform_activity + joinOrderBonus;
     }
     // Sort the vertices by score.
     const verticesSortedByScore = [];
@@ -264,7 +266,7 @@ async function CalculateChainOfCommand() {
 	// Write the rank to the vertex record.
 	v.rank = rank;
 	// Do not await the promotion announcement. Fire and forget.
-	//AnnounceIfPromotion(cu, cu.rank, rank);
+	AnnounceIfPromotion(cu, cu.rank, rank);
 	await cu.setRank(rank);
 	await cu.setRankScore(v.rank_score);
 	await cu.setRankIndex(rankIndex);

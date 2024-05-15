@@ -397,6 +397,9 @@ class CommissarUser {
     getNicknameOrTitleWithInsignia() {
 	const name = this.getNicknameOrTitle();
 	const insignia = this.getInsignia();
+	if (!insignia) {
+	    return '999 Recruit';
+	}
 	const formattedRankIndex = this.getFormattedRankIndex();
 	return `${formattedRankIndex} ${name} ${insignia}`;
     }

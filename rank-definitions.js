@@ -179,16 +179,23 @@ module.exports = [
     },
     {
 	color: '#4285F4',
-	count: 200,
+	count: 100,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
 	title: 'Corporal',
     },
     {
 	color: '#4285F4',
-	count: 1000 * 1000,
+	count: 700,
 	insignia: '⦁',
-	roles: [RoleID.Recruit, RoleID.Grunt],
+	roles: [RoleID.Private, RoleID.Grunt],
+	title: 'Private',
+    },
+    {
+	color: '#189b17',
+	count: 1000 * 1000,
+	insignia: null,
+	roles: [RoleID.Recruit],
 	title: 'Recruit',
     },
 ];

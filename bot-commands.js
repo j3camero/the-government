@@ -191,7 +191,7 @@ async function HandlePrivateRoomVoteCommand(discordMessage) {
 }
 
 function GenerateAkaStringForUser(cu) {
-    const peakRank = cu.peak_rank || 23;
+    const peakRank = cu.peak_rank || 24;
     const peakRankInsignia = RankMetadata[peakRank].insignia;
     const names = [
 	cu.steam_name,
@@ -309,7 +309,7 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     if (user.rank <= 19) {
 	content += `Officers Code 1111\n`;
     }
-    if (user.rank <= 23) {
+    if (user.rank <= 24) {
 	content += `Grunt Code 1111\n`;
 	content += `Gate Code 1111\n\n`;
     }

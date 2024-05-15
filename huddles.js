@@ -48,6 +48,7 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	    { id: RoleID.General, allow: perms },
 	    { id: RoleID.Officer, allow: perms },
 	    { id: RoleID.Grunt, allow: perms },
+	    { id: RoleID.Recruit, allow: perms },
 	    { id: RoleID.Bots, allow: perms },
 	],
 	name: huddle.name,
