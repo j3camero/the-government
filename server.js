@@ -207,13 +207,13 @@ async function UpdateAllCitizens() {
 	}
     });
     console.log(`${activeUsers.length} active users ${inactiveUsers.length} inactive users`);
-    const activeSample = RandomSample(activeUsers, 100);
-    const inactiveSample = RandomSample(inactiveUsers, 100);
+    const activeSample = RandomSample(activeUsers, 1000);
+    const inactiveSample = RandomSample(inactiveUsers, 1000);
     const selectedUsers = activeSample.concat(inactiveSample);
     //const selectedUsers = activeUsers.concat(inactiveUsers);
     console.log(`Updating ${selectedUsers.length} users`);
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const maxLoopDuration = 60 * 1000;
+    const maxLoopDuration = 3 * 60 * 1000;
     const startTime = Date.now();
     let howManyUsersGotUpdatedCounter = 0;
     for (const cu of selectedUsers) {
