@@ -79,7 +79,7 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for May 2024.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for June 2024.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
@@ -112,9 +112,9 @@ async function HandlePresidentVoteCommand(discordMessage) {
 	name: 'presidential-election',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in May 2024. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. This vote ends <t:1714413600:R>.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in June 2024. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. This vote ends <t:1717447740:R>.');
     await message.react('❤️');
-    const generalRankUsers = await UserCache.GetMostCentralUsers(15);
+    const generalRankUsers = await UserCache.GetMostCentralUsers(159);
     const candidateNames = [];
     for (const user of generalRankUsers) {
 	if (user.commissar_id === 7) {
@@ -745,6 +745,47 @@ async function HandleAfkCommand(discordMessage) {
 	}
 }
 
+async function HandleFriendCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+    if (!author.friend_voice_room_id) {
+	// Auth: this command for leaders with their own voice room only.
+	await discordMessage.channel.send('!friend is for microcommunity leaders');
+	return;
+    }
+    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
+    if (!mentionedMember) {
+	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
+	return;
+    }
+    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
+    if (!mentionedUser) {
+	await discordMessage.channel.send('Not sure who you mean. Try again in a few minutes.');
+	return;
+    }
+    const exiler = author.commissar_id;
+    const exilee = mentionedUser.commissar_id;
+    const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
+    const mcName = author.getNicknameOrTitleWithInsignia();
+    if (exile.IsFriend(exiler, exilee)) {
+	await discordMessage.channel.send(`${exileeName} is already a friend of ${mcName}`);
+	return;
+    }
+    // Add friend record to the database to make it persistent.
+    await exile.SetIsFriend(exiler, exilee, true);
+    // Give the microcommunity badge at once to avoid waiting for the next rank cycle.
+    if (!mentionedMember.roles.cache.has(author.friend_role_id)) {
+	await mentionedMember.roles.add(author.friend_role_id);
+    }
+    await discordMessage.channel.send(`${exileeName} is invited to microcommunity ${mcName}`);
+}
+
+async function HandleUnfriendCommand(discordMessage) {
+    await HandleExileCommand(discordMessage);
+}
+
 async function HandleExileCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author) {
@@ -768,17 +809,17 @@ async function HandleExileCommand(discordMessage) {
     const exiler = author.commissar_id;
     const exilee = mentionedUser.commissar_id;
     const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
+    const mcName = author.getNicknameOrTitleWithInsignia();
     if (exile.IsExiled(exiler, exilee)) {
 	await discordMessage.channel.send(`${exileeName} is already exiled from microcommunity ${mcName}`);
 	return;
     }
     // Add exile record to the database to make it persistent.
-    await exile.AddExile(exiler, exilee);
+    await exile.SetIsFriend(exiler, exilee, false);
     // Revoke the microcommunity badge at once to avoid waiting for the next rank cycle.
     if (mentionedMember.roles.cache.has(author.friend_role_id)) {
 	await mentionedMember.roles.remove(author.friend_role_id);
     }
-    const mcName = author.getNicknameOrTitleWithInsignia();
     await discordMessage.channel.send(`${exileeName} has been exiled from microcommunity ${mcName}`);
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.fetch(author.friend_voice_room_id);
@@ -833,13 +874,13 @@ async function HandleUnexileCommand(discordMessage) {
     const exiler = author.commissar_id;
     const exilee = mentionedUser.commissar_id;
     const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
+    const mcName = author.getNicknameOrTitleWithInsignia();
     if (!exile.IsExiled(exiler, exilee)) {
 	await discordMessage.channel.send(`${exileeName} is not exiled from microcommunity ${mcName}`);
 	return;
     }
     // Delete exile record from the database to make it persistent.
     await exile.Unexile(exiler, exilee);
-    const mcName = author.getNicknameOrTitleWithInsignia();
     await discordMessage.channel.send(`${exileeName} has been unexiled from microcommunity ${mcName}`);
 }
 
@@ -916,6 +957,7 @@ async function Dispatch(discordMessage) {
 	'!convert': yen.HandleConvertCommand,
 	'!convict': Ban.HandleConvictCommand,
 	'!exile': HandleExileCommand,
+	'!friend': HandleFriendCommand,
 	'!gender': HandleGenderCommand,
 	'!howhigh': Artillery,
 	'!hype': HandleHypeCommand,
@@ -941,6 +983,7 @@ async function Dispatch(discordMessage) {
 	'!tip': yen.HandleTipCommand,
 	'!transcript': HandleTranscriptCommand,
 	'!unexile': HandleUnexileCommand,
+	'!unfriend': HandleUnfriendCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!yen': yen.HandleYenCommand,
 	'!yencreate': yen.HandleYenCreateCommand,

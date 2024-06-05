@@ -173,12 +173,13 @@ function CompareRooms(a, b) {
     // Rules from here on down are mainly intended for sorting the empty
     // VC rooms at the bottom amongst themselves.
     const roomOrder = ['Main', 'Duo', 'Trio', 'Quad', 'Squad'];
+    roomOrder.reverse();
     for (const roomName of roomOrder) {
 	if (a.name.startsWith(roomName) && !b.name.startsWith(roomName)) {
-	    return -1;
+	    return 1;
 	}
 	if (!a.name.startsWith(roomName) && b.name.startsWith(roomName)) {
-	    return 1;
+	    return -1;
 	}
     }
     // Rooms with lower capacity sort up.

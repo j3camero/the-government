@@ -61,6 +61,7 @@ CREATE TABLE exiles
 (
     exiler INT NOT NULL,
     exilee INT NOT NULL,
+    is_friend BOOL NOT NULL DEFAULT FALSE,
     PRIMARY KEY(exiler, exilee)
 );
 

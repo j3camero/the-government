@@ -19,6 +19,10 @@ const client = new Discord.Client({
 	Discord.GatewayIntentBits.GuildVoiceStates,
 	Discord.GatewayIntentBits.MessageContent,
     ],
+    partials: [
+	Discord.Partials.Channel,
+	Discord.Partials.Message,
+    ]
 });
 
 // Set to true once the guild roles have been cached once.
