@@ -428,6 +428,8 @@ async function CalculateChainOfCommand() {
 	if (!exiler) {
 	    continue;
 	}
+	const exilerVertexId = exiler.getSocialGraphVertexId();
+	const exilerVertex = vertices[exilerVertexId];
 	const exilee = UserCache.GetCachedUserByCommissarId(ex.exilee);
 	if (!exilee) {
 	    continue;
@@ -437,8 +439,12 @@ async function CalculateChainOfCommand() {
 	if (!exileeVertex) {
 	    continue;
 	}
-	if (exiler.friend_role_id in exileeVertex.badges) {
-	    delete exileeVertex.badges[exiler.friend_role_id];
+	if (ex.is_friend) {
+	    exileeVertex.badges[exiler.friend_role_id] = exilerVertex.friendRole;
+	} else {
+	    if (exiler.friend_role_id in exileeVertex.badges) {
+		delete exileeVertex.badges[exiler.friend_role_id];
+	    }
 	}
     }
     // Add and remove friend badges.
