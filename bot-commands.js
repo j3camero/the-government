@@ -112,7 +112,7 @@ async function HandlePresidentVoteCommand(discordMessage) {
 	name: 'presidential-election',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in June 2024. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can. This vote ends <t:1717447740:R>.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in July 2024. This vote ends <t:1720065600:R>.');
     await message.react('❤️');
     const generalRankUsers = await UserCache.GetMostCentralUsers(159);
     const candidateNames = [];
@@ -301,31 +301,18 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of May 2024. Report to Rusty Moose |US Monthly|\n`;
-    content += '```client.connect monthly.us.moose.gg:28010```\n';  // Only one newline after triple backticks.
-    if (user.rank <= 15) {
-	content += `Generals Code 1111\n`;
-    }
-    if (user.rank <= 19) {
-	content += `Officers Code 1111\n`;
-    }
-    if (user.rank <= 24) {
-	content += `Grunt Code 1111\n`;
-	content += `Gate Code 1111\n\n`;
-    }
-    content += `Run straight to E15. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around your bases even if you never have the app open.\n\n`;
-    content += `Check out the new https://discord.com/channels/305840605328703500/711850971072036946. Every General has their own AI powered comms. Pair with rustcult.com to avoid being left out.\n\n`;
-    content += `The Government is doing something special this month to show off our new tech. We are invading Rusty Moose with several large groups. Each group takes a different sector of the map and uses rustcult.com to avoid raiding each other. The main gov village will be the largest group and work the same as always. The effect of all these groups working together could be dramatic around mid-wipe. There is a chance we could make Rusty Moose a gov-only server. Dozens of leaders from past eras of the gov have reactivated this month because they don't want to miss this event. Come slap down a base on Moose and bag in a friend or 2. This is going to be a wipe weekend to remember.\n\n`;
-    content += `Yours truly,\n`;
-    content += `The Government  <3`;
+    content += `It's a special wipe day. RustGalaxy is 3 servers hosted in USA, Europe, and Australia. Use the telephone at Outpost to travel between islands - with your loot.\n`;
+    content += '```client.connect usa.rustgalaxy.com\nclient.connect europe.rustgalaxy.com\nclient.connect australia.rustgalaxy.com```\n';  // Only one newline after triple backticks.
+    content += `RustGalaxy was created by gov members. The admins and moderators are all gov members. We have beat Facepunch to the Nexus system, live right now in the Community tab. Being the first to unlock a multi-island universe gives our community a massive first-mover advantage. It is already gaining pop and it seems inevitable that we will give the biggest servers a run for their money. The existing tech can support over 100,000 concurrent players _in one connected world_ putting all the competition to shame. This moment is a big big deal. Come slap down a base and be part of the hype. Most gov members are building solo or duo or trio, and the usual gov rules about raiding don't apply.\n\n`;
+    content += `RustGalaxy never wipes BPs. Your blueprints are synced across all the islands.\n\n`;
+    content += `See you in there! <3\n`;
     console.log('Content length', content.length, 'characters.');
     try {
 	await discordMember.send({
 	    content,
 	    files: [{
-		attachment: 'chain-of-command-generals.png',
-		name: 'chain-of-command-generals.png'
+		attachment: 'galaxy-map-3.png',
+		name: 'galaxy-map-3.png'
 	    }]
 	});
     } catch (error) {

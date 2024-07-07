@@ -173,13 +173,13 @@ function CompareRooms(a, b) {
     // Rules from here on down are mainly intended for sorting the empty
     // VC rooms at the bottom amongst themselves.
     const roomOrder = ['Main', 'Duo', 'Trio', 'Quad', 'Squad'];
-    roomOrder.reverse();
+    //roomOrder.reverse();  // Makes Main sort to bottom.
     for (const roomName of roomOrder) {
 	if (a.name.startsWith(roomName) && !b.name.startsWith(roomName)) {
-	    return 1;
+	    return -1;
 	}
 	if (!a.name.startsWith(roomName) && b.name.startsWith(roomName)) {
-	    return -1;
+	    return 1;
 	}
     }
     // Rooms with lower capacity sort up.
@@ -456,7 +456,8 @@ async function GetAllDiscordAccountsFromRustCultApi() {
 	console.log('Cannot update prox because no api token.');
 	return null;
     }
-    const url = 'https://rustcult.com/getalldiscordaccounts?token=' + config.rustCultApiToken;
+    const randomNonce = Math.random().toString();
+    const url = 'https://rustcult.com/getalldiscordaccounts?token=' + config.rustCultApiToken + '&nonce=' + randomNonce;
     let response;
     try {
 	response = await fetch(url);
@@ -473,365 +474,6 @@ async function GetAllDiscordAccountsFromRustCultApi() {
 	return null;
     }
     return response;
-}
-
-// Details of last seen in-game movement, keyed by discord ID.
-const lastSeenCache = {};
-
-async function UpdateProximityChat() {
-    // Get all Proximity VC rooms & members in them.
-    const lobbyName = mainRoomControlledByProximity ? 'Main' : 'Proximity';
-    const proxRoomNames = {
-	Proximity: true,
-	Roaming: true,
-	Village: true,
-    };
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const allChannels = await guild.channels.fetch();
-    let lobbyChannel;
-    const proxChannels = {};
-    const proxMembers = {};
-    for (const [channelId, channel] of allChannels) {
-	if (channel.type !== 2) {
-	    continue;
-	}
-	if (channel.name === lobbyName) {
-	    lobbyChannel = channel;
-	    for (const [memberId, member] of channel.members) {
-		proxMembers[memberId] = member;
-	    }
-	} else if (channel.name in proxRoomNames) {
-	    proxChannels[channelId] = channel;
-	    for (const [memberId, member] of channel.members) {
-		proxMembers[memberId] = member;
-	    }
-	}
-    }
-    if (!lobbyChannel) {
-	console.log('No prox lobby channel found. Bailing.');
-	return;
-    }
-    console.log('Found', lobbyChannel ? 1 : 0, 'lobby channels');
-    console.log('Found', Object.keys(proxChannels).length, 'prox channels');
-    console.log('Found', Object.keys(proxMembers).length, 'prox members');
-    // Ideally we want to bail early if there's no work to do, but there are some things
-    // like a chatroom's name switching after minutes of being rate limited that
-    // still need to happen in weird corner cases even with no people in the VC rooms.
-    //if (Object.keys(proxChannels).length === 1 && Object.keys(proxMembers).length === 0) {
-    //    return;
-    //}
-    const draggableDiscordIds = {};
-    const villageDiscordIds = {};
-    // Hit the rustcult.com API to get updated player positions.
-    const response = await GetAllDiscordAccountsFromRustCultApi();
-    if (response) {
-	const linkedAccounts = JSON.parse(response);
-	console.log(linkedAccounts.length, 'linked accounts downloaded from rustcult.com API.');
-	//console.log(linkedAccounts);
-	for (const account of linkedAccounts) {
-	    if (account && account.discordId) {
-		//if (account.discordId === '619279800783339530') {
-		//    console.log('McLovin found:', account);
-		//}
-		if (account.steamId) {
-		    const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
-		    if (cu) {
-			await cu.setSteamId(account.steamId);
-			await cu.setSteamName(account.steamName);
-		    }
-		}
-		if (account.server && account.x && account.y) {
-		    lastSeenCache[account.discordId] = account;
-		}
-		const sslm = account.secondsSinceLastMovement;
-		const ssbc = account.secondsSinceBreadcrumb;
-		if ((sslm || sslm === 0) && (ssbc || ssbc === 0)) {
-		    if (sslm < 10 && ssbc < 30) {
-			draggableDiscordIds[account.discordId] = true;
-		    }
-		}
-		if (account.howManyBasesNearby && account.howManyBasesNearby >= 10) {
-		    villageDiscordIds[account.discordId] = true;
-		}
-	    }
-	}
-    }
-    console.log(Object.keys(lastSeenCache).length, 'cached member locations.');
-    // Make distance matrix.
-    function Distance(a, b) {
-	if (!a || !b || !a.server || !b.server || a.server !== b.server) {
-	    // Different server or missing server = infinite distance.
-	    return 999999;
-	}
-	const dx = a.x - b.x;
-	const dy = a.y - b.y;
-	const distance = Math.sqrt(dx * dx + dy * dy);
-	return distance;
-    }
-    const distanceMatrix = {};
-    for (const i in proxMembers) {
-	const a = lastSeenCache[i];
-	distanceMatrix[i] = {};
-	for (const j in proxMembers) {
-	    const b = lastSeenCache[j];
-	    distanceMatrix[i][j] = Distance(a, b);
-	}
-    }
-    console.log('distanceMatrix', distanceMatrix);
-    // Distance between clusters of Discord IDs.
-    function ClusterDistance(a, b) {
-	let minDist = null;
-	for (const i of a) {
-	    for (const j of b) {
-		const d = distanceMatrix[i][j];
-		if (minDist === null || d < minDist) {
-		    minDist = d;
-		}
-	    }
-	}
-	return minDist;
-    }
-    // Cluster diameter. ie: max distance between two points.
-    function ClusterDiameter(c) {
-	let maxDist = null;
-	const n = c.length;
-	for (let i = 0; i < n; i++) {
-	    for (let j = i + 1; j < n; j++) {
-		const ci = c[i];
-		const cj = c[j];
-		const d = distanceMatrix[ci][cj];
-		if (maxDist === null || d > maxDist) {
-		    maxDist = d;
-		}
-	    }
-	}
-	return maxDist;
-    }
-    // Diameter of 2 clusters combined.
-    function TwoClusterDiameter(a, b) {
-	const c = a.concat(b);
-	return ClusterDiameter(c);
-    }
-    // Initialize clusters. Start with n clusters: one per member in proximity VC.
-    const clusters = [];
-    for (const discordId in proxMembers) {
-	clusters.push([discordId]);
-    }
-    // Merge clusters until no longer possible.
-    while (true) {
-	const n = clusters.length;
-	let bestI;
-	let bestJ;
-	let bestDistance = null;
-	for (let i = 0; i < n; i++) {
-	    for (let j = i + 1; j < n; j++) {
-		const a = clusters[i];
-		const b = clusters[j];
-		const distance = ClusterDistance(a, b);
-		if (distance < 438) {
-		    const diameter = TwoClusterDiameter(a, b);
-		    if (diameter < 730) {
-			if (bestDistance === null || distance < bestDistance) {
-			    bestDistance = distance;
-			    bestI = i;
-			    bestJ = j;
-			}
-		    }
-		}
-	    }
-	}
-	if (bestDistance === null) {
-	    break;
-	}
-	// Combine two closest clusters.
-	const a = clusters[bestI];
-	const b = clusters[bestJ];
-	const newCluster = a.concat(b);
-	clusters.splice(bestJ, 1);
-	clusters.splice(bestI, 1);
-	clusters.push(newCluster);
-    }
-    // Put solos and randos together into one lobby.
-    const clustersWithLobby = [[]];
-    for (const cluster of clusters) {
-	if (cluster.length > 1) {
-	    // Cluster with 2 or more members.
-	    clustersWithLobby.push(cluster);
-	} else {
-	    // Solo cluster. Isolated player detected. Add to lobby.
-	    const solo = cluster[0];
-	    clustersWithLobby[0].push(solo);
-	}
-    }
-    console.log('Prox clusters', clustersWithLobby);
-    // Create new channel(s) if needed.
-    // Don't delete extra channels here. Do that at the end.
-    while (Object.keys(proxChannels).length < clustersWithLobby.length - 1) {
-	const newChannel = await CreateNewVoiceChannel(guild, { name: lobbyName, userLimit: 99 });
-	proxChannels[newChannel.id] = newChannel;
-    }
-    // Helper functions for generating permutations of the channel list.
-    function ForAllPermutationsRecursive(permuted, remaining, callback) {
-	const n = remaining.length;
-	if (n === 0) {
-	    callback(permuted);
-	}
-	for (let i = 0; i < n; i++) {
-	    const newPermuted = permuted.slice();
-	    newPermuted.push(remaining[i]);
-	    const newRemaining = remaining.slice();
-	    newRemaining.splice(i, 1);
-	    ForAllPermutationsRecursive(newPermuted, newRemaining, callback);
-	}
-    }
-    function ForAllPermutations(arr, callback) {
-	ForAllPermutationsRecursive([], arr, callback);
-    }
-    // Permute clusters to minimize number of drags.
-    const proxChannelsAsList = Object.values(proxChannels);
-    let bestPermutation;
-    let minFails;
-    let minDrags;
-    let bestPlan;
-    ForAllPermutations(proxChannelsAsList, (perm) => {
-	console.log('Imagining permutation');
-	const plan = {};
-	let failCount = 0;
-	for (let i = 0; i < perm.length; i++) {
-	    const channel = perm[i];
-	    const discordIdsInChannel = {};
-	    for (const [memberId, member] of channel.members) {
-		discordIdsInChannel[memberId] = true;
-	    }
-	    const cluster = i < (clustersWithLobby.length - 1) ? clustersWithLobby[i + 1] : [];
-	    for (const discordId of cluster) {
-		if (!(discordId in discordIdsInChannel)) {
-		    if (discordId in draggableDiscordIds) {
-			plan[discordId] = channel.id;
-		    } else {
-			failCount++;
-		    }
-		}
-	    }
-	}
-	// Do lobby calculation.
-	const discordIdsInLobby = {};
-	for (const [memberId, member] of lobbyChannel.members) {
-	    discordIdsInLobby[memberId] = true;
-	}
-	const lobbyCluster = clustersWithLobby[0];
-	for (const discordId of lobbyCluster) {
-	    if (!(discordId in discordIdsInLobby)) {
-		if (discordId in draggableDiscordIds) {
-		    plan[discordId] = lobbyChannel.id;
-		} else {
-		    failCount++;
-		}
-	    }
-	}
-	const dragCount = Object.keys(plan).length;
-	if (!bestPermutation ||
-	    failCount < minFails ||
-	    (failCount === minFails && dragCount < minDrags)) {
-	    minFails = failCount;
-	    minDrags = dragCount;
-	    bestPlan = plan;
-	    bestPermutation = perm;
-	}
-    });
-    console.log('Calculated enforcement plan requires', minDrags, 'drags and has', minFails, 'fails.');
-    // Open perms for the lobby (ie: channel zero).
-    await SetOpenPerms(lobbyChannel);
-    await DiscordUtil.TryToSetChannelNameWithRateLimit(lobbyChannel, lobbyName);
-    // Private perms for the rest of the prox channels that are not the lobby.
-    for (let i = 1; i < clustersWithLobby.length; i++) {
-	const connect = PermissionFlagsBits.Connect;
-	const view = PermissionFlagsBits.ViewChannel;
-	const perms = [
-	    { id: guild.roles.everyone.id, deny: [connect, view] },
-	    { id: RoleID.Grunt, allow: [view] },
-	    { id: RoleID.Officer, allow: [view] },
-	    { id: RoleID.General, allow: [view] },
-	    { id: RoleID.Bots, allow: [view, connect] },
-	];
-	const cluster = i < clustersWithLobby.length ? clustersWithLobby[i] : [];
-	let villagePeopleDetected = false;
-	for (const discordId of cluster) {
-	    perms.push({ id: discordId, allow: [view, connect] });
-	    if (discordId in villageDiscordIds) {
-		villagePeopleDetected = true;
-	    }
-	}
-	// Add perms for users who are not in proximity VC but who are geographically
-	// nearby in-game to let them know which prox VC room they can join.
-	for (const discordId in lastSeenCache) {
-	    // Don't make duplicate perms for users already in prox VC rooms.
-	    if (discordId in proxMembers) {
-		continue;
-	    }
-	    const a = lastSeenCache[discordId];
-	    if (!a.server || !a.x || !a.y) {
-		continue;
-	    }
-	    // Get min distance to a cluster member.
-	    let minDist = null;
-	    for (const c of cluster) {
-		const b = lastSeenCache[c];
-		const d = Distance(a, b);
-		if (minDist === null || d < minDist) {
-		    minDist = d;
-		}
-	    }
-	    if (!guild.members.cache.has(discordId)) {
-		continue;
-	    }
-	    // Give perms if close enough.
-	    if (minDist !== null && minDist < 400) {
-		perms.push({ id: discordId, allow: [view, connect] });
-	    }
-	}
-	// Send the accumulated perms to the discord channel.
-	const channel = bestPermutation[i - 1];
-	console.log('Setting perms', perms);
-	try {
-	    console.log('BEGIN SET PERMS');
-	    // Do not await. This is rate limited so we just move on.
-	    DiscordUtil.TryToSetChannelPermsWithRateLimit(channel, perms);
-	    //await channel.permissionOverwrites.set(perms);
-	    console.log('END SET PERMS');
-	} catch (error) {
-	    console.log('Error while setting perms on prox channel.');
-	    // Do nothing.
-	}
-	// Set the channel name. Village or Roaming.
-	const newChannelName = villagePeopleDetected ? 'Village' : 'Roaming';
-	await DiscordUtil.TryToSetChannelNameWithRateLimit(channel, newChannelName);
-    }
-    console.log('Done setting perms');
-    // Drag people who need to be dragged.
-    for (const discordId in bestPlan) {
-	const member = proxMembers[discordId];
-	if (!member) {
-	    continue;
-	}
-	const channelId = bestPlan[discordId];
-	if (!channelId) {
-	    continue;
-	}
-	const channel = proxChannels[channelId];
-	if (!channel) {
-	    continue;
-	}
-	console.log('Dragging a member');
-	await member.voice.setChannel(channel);
-    }
-    // Delete an extra channel if there are any.
-    console.log('Thinking about deleting prox channel.', Object.keys(proxChannels).length, clustersWithLobby.length);
-    if (Object.keys(proxChannels).length > clustersWithLobby.length) {
-	console.log('Deleting leftover Prox channel.');
-	const channelToDelete = bestPermutation[bestPermutation.length - 1];
-	await channelToDelete.delete();
-    }
 }
 
 async function UpdateSteamAccountInfo() {
@@ -852,16 +494,17 @@ async function UpdateSteamAccountInfo() {
 	if (!account.steamId) {
 	    return;
 	}
-	//if (account.discordId === '619279800783339530') {
-	//    console.log('McLovin found:', account);
-	//}
-	//console.log(account);
+	if (account.discordId === '294544723518029824') {
+	    console.log('crudeoil found!!!');
+	}
 	const cu = UserCache.GetCachedUserByDiscordId(account.discordId);
 	if (!cu) {
-	    return;
+	    console.log('Discord ID not found ' + account.discordId);
+	    continue;
 	}
 	await cu.setSteamId(account.steamId);
 	await cu.setSteamName(account.steamName);
+	console.log('Linked account ' + cu.getNicknameOrTitleWithInsignia() + ' ' + account.discordId + ' ' + account.steamId);
     }
 }
 

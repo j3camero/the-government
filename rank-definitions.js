@@ -194,7 +194,6 @@ module.exports = [
     {
 	color: '#189b17',
 	count: 1000 * 1000,
-	insignia: null,
 	roles: [RoleID.Recruit],
 	title: 'Recruit',
     },

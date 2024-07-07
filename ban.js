@@ -11,7 +11,7 @@ const threeTicks = '```';
 // General 1 = 15
 // Major = 17
 // Lieutenant = 19
-const banCommandRank = 17;
+const banCommandRank = 19;
 const banVoteRank = 19;
 
 function SentenceLengthAsString(years) {
@@ -143,17 +143,13 @@ async function UpdateTrial(cu) {
 	// How guilty the defendant is based on the vote margin. Ranges between 0 and 1.
 	// One extra "mercy vote" is added to the denominator. This creates a bias in the
 	// system towards more lenient sentences that wears off as more voters weigh in.
-	// The mercy vote also prevents infinite sentences by avoiding the asymptote in
-	// the tan() function.
 	const howGuilty = (yesVoteCount - noVoteCount) / (yesVoteCount + noVoteCount + 1);
-	const degrees90 = 0.5 * Math.PI;
-	const radians = howGuilty * degrees90;
-	const sentenceYears = Math.tan(radians);
+	const sentenceYears = howGuilty;
 	const banLengthInSeconds = Math.round(sentenceYears * 365.25 * 86400);
 	banPardonTime = moment().add(banLengthInSeconds, 'seconds').format();
 	outcomeString = 'banned for ' + SentenceLengthAsString(sentenceYears);
     }
-    const caseTitle = `THE GOVERNMENT v ${cu.getNicknameWithInsignia()}`;
+    const caseTitle = `THE GOVERNMENT v ${cu.getNicknameOrTitleWithInsignia()}`;
     const underline = new Array(caseTitle.length + 1).join('-');
     const currentTime = moment();
     let startTime = moment(cu.ban_vote_start_time);
@@ -220,7 +216,7 @@ async function UpdateTrial(cu) {
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
 	    `Voting NO against the ban:${noVoteCount}\n\n` +
-	    `${cu.getNicknameWithInsignia()} is ${outcomeString}` +
+	    `${cu.getNicknameOrTitleWithInsignia()} is ${outcomeString}` +
 	    `${threeTicks}`
 	);
 	await message.edit(trialSummary);
@@ -255,7 +251,7 @@ async function UpdateTrial(cu) {
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
 	    `Voting NO against the ban: ${noVoteCount}\n\n` +
-	    `${cu.getNicknameWithInsignia()} is ${outcomeString}. ` +
+	    `${cu.getNicknameOrTitleWithInsignia()} is ${outcomeString}. ` +
 	    `The vote ends ${timeRemaining}.` +
 	    `${threeTicks}`
 	);
@@ -391,7 +387,7 @@ async function HandlePardonCommand(discordMessage) {
     await mentionedUser.setGoodStanding(true);
     await BanVoteCache.DeleteVotesForDefendant(mentionedUser.commissar_id);
     try {
-	await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameWithInsignia()}!`);
+	await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameOrTitleWithInsignia()}!`);
     } catch (error) {
 	// In case the command was issued inside the courtroom, which no longer exists.
     }
@@ -435,7 +431,7 @@ async function HandleConvictCommand(discordMessage) {
     await defendantUser.setGoodStanding(false);
     await BanVoteCache.DeleteVotesForDefendant(defendantUser.commissar_id);
     try {
-	await discordMessage.channel.send(`Convicted ${defendantUser.getNicknameWithInsignia()}!`);
+	await discordMessage.channel.send(`Convicted ${defendantUser.getNicknameOrTitleWithInsignia()}!`);
     } catch (error) {
 	// In case the command was issued inside the courtroom, which no longer exists.
     }

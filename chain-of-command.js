@@ -429,7 +429,13 @@ async function CalculateChainOfCommand() {
 	    continue;
 	}
 	const exilerVertexId = exiler.getSocialGraphVertexId();
+	if (!exilerVertexId) {
+	    continue;
+	}
 	const exilerVertex = vertices[exilerVertexId];
+	if (!exilerVertex) {
+	    continue;
+	}
 	const exilee = UserCache.GetCachedUserByCommissarId(ex.exilee);
 	if (!exilee) {
 	    continue;
@@ -479,11 +485,16 @@ async function CalculateChainOfCommand() {
 	    await discordMember.roles.remove(badge);
 	}
 	for (const roleId in v.badges) {
+	    if (!roleId) {
+		continue;
+	    }
 	    if (roleId in rolesBefore) {
 		continue;
 	    }
 	    const badge = v.badges[roleId];
-	    console.log('Add role', badge.name, 'to', discordMember.nickname);
+	    if (!badge) {
+		continue;
+	    }
 	    await discordMember.roles.add(badge);
 	}
     }

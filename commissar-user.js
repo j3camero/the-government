@@ -388,12 +388,6 @@ class CommissarUser {
 	return s;
     }
 
-    getNicknameWithInsignia() {
-	const name = this.steam_name || this.nick || this.nickname || 'John Doe';
-	const insignia = this.getInsignia();
-	return `${name} ${insignia}`;
-    }
-
     getNicknameOrTitleWithInsignia() {
 	const name = this.getNicknameOrTitle();
 	const insignia = this.getInsignia();
