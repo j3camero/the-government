@@ -39,6 +39,8 @@ CREATE TABLE users
     ban_pardon_time TIMESTAMP,  -- When this user was convicted & banned in ban court.
     presidential_election_vote INT,  -- The commissar_id that this user is voting for in the presidential election. NULL if has not voted.
     presidential_election_message_id VARCHAR(32),  -- ID of the discord message used to display this user on the presidential election ballot.
+    trump_cards INT NOT NULL DEFAULT 0,  -- How many Trump Cards owned by this member. Can be negative.
+    cost_basis INT NOT NULL DEFAULT 0,  -- How many yen spend on Trump Cards. Used to calculate profit/loss.
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );

@@ -79,7 +79,7 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for June 2024.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for August 2024.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
@@ -112,7 +112,7 @@ async function HandlePresidentVoteCommand(discordMessage) {
 	name: 'presidential-election',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in July 2024. This vote ends <t:1720065600:R>.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in August 2024.');
     await message.react('❤️');
     const generalRankUsers = await UserCache.GetMostCentralUsers(159);
     const candidateNames = [];
@@ -918,6 +918,20 @@ async function HandleKickCommand(discordMessage) {
     await discordMessage.channel.send(`${mentionedMember.nickname} is kicked out of microcommunity ${mcName} for 60 seconds`);
 }
 
+async function HandleBuyCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+}
+
+async function HandleSellCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+}
+
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
     // TODO: add permission checks. Only high enough ranks should get a error
@@ -939,6 +953,7 @@ async function Dispatch(discordMessage) {
 	'!balance': yen.HandleYenCommand,
 	'!ban': Ban.HandleBanCommand,
 	'!boop': HandleBoopCommand,
+	'!buy': HandleBuyCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
 	'!convert': yen.HandleConvertCommand,
@@ -965,6 +980,7 @@ async function Dispatch(discordMessage) {
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!presidentvotefix': HandlePresidentVoteFixCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
+	'!sell': HandleSellCommand,
 	'!tax': yen.HandleTaxCommand,
 	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,

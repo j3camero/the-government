@@ -34,7 +34,9 @@ class CommissarUser {
         presidential_election_vote,
         presidential_election_message_id,
         steam_id,
-        steam_name) {
+        steam_name,
+        trump_cards,
+        cost_basis) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -65,6 +67,8 @@ class CommissarUser {
 	this.steam_id = steam_id;
 	this.steam_name = steam_name;
 	this.steam_name_update_time = null;
+	this.trump_cards = trump_cards;
+	this.cost_basis = cost_basis;
     }
 
     async setDiscordId(discord_id) {
@@ -311,6 +315,22 @@ class CommissarUser {
 	const t = moment().format();
 	this.steam_name_update_time = t;
 	await this.updateFieldInDatabase('steam_name_update_time', t);
+    }
+
+    async setTrumpCards(trump_cards) {
+	if (trump_cards === this.trump_cards) {
+	    return;
+	}
+	this.trump_cards = trump_cards;
+	await this.updateFieldInDatabase('trump_cards', this.trump_cards);
+    }
+
+    async setCostBasis(cost_basis) {
+	if (cost_basis === this.cost_basis) {
+	    return;
+	}
+	this.cost_basis = cost_basis;
+	await this.updateFieldInDatabase('cost_basis', this.cost_basis);
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {
