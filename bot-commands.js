@@ -22,14 +22,6 @@ async function HandlePingCommand(discordMessage) {
     await discordMessage.channel.send('Pong!');
 }
 
-// A cheap live test harness to test the code that finds the main chat channel.
-// This lets me test it anytime I'm worried it's broken.
-async function HandlePingPublicChatCommand(discordMessage) {
-    // TODO: add permissions so only high ranking people can use
-    // this command.
-    await DiscordUtil.MessagePublicChatChannel('Pong!');
-}
-
 // A message that starts with !code.
 async function HandleCodeCommand(discordMessage) {
     const discordId = discordMessage.author.id;
@@ -125,22 +117,6 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     for (const name of candidateNames) {
 	await MakeOnePresidentVoteOption(channel, name);
-    }
-}
-
-async function HandlePresidentVoteFixCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.resolve('1100498416162844772');
-    const candidates = [
-	'EviL',
-    ];
-    for (const candidate of candidates) {
-	await MakeOnePresidentVoteOption(channel, candidate);
     }
 }
 
@@ -257,27 +233,6 @@ async function HandleAmnestyCommand(discordMessage) {
     await discordMessage.channel.send(`${unbanCountForDiscord} discord users unbanned`);
     const total = unbanCountForGov + unbanCountForDiscord;
     await discordMessage.channel.send(`These ${total} bans have been pardoned by order of the Generals`);
-}
-
-async function HandleTermLengthVoteCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create('president-term');
-    const message = await channel.send(
-	'__**Presidential Term of Service**__\n' +
-	'Vote YES to turn Mr. President back into a General at the end of each wipe day. The main reason for Mr. President to exist is to pick the build spot in case the map is a surprise on wipe day. With their job done, the first rain (2 AM on wipe night) will cleanse Mr. President of their title.\n\n' +
-	'Vote NO to keep Mr. President for the full month, until the beginning of the next presidential election.\n\n' +
-	'The convention that the Generals choose now will be the one used going forward. It will apply to next month and the one after that, not only this month. We will not have this vote again next month.\n\n' +
-	'This vote will end with the first rain of the new wipe (2 AM Eastern after wipe day). It requires a simple majority to pass (50% + 1).'
-    );
-    await message.react('✅');
-    await message.react('❌');
-    const voteSectionId = '1043778293612163133';
-    await channel.setParent(voteSectionId);
 }
 
 async function HandleVoiceActiveUsersCommand(discordMessage) {
@@ -732,192 +687,6 @@ async function HandleAfkCommand(discordMessage) {
 	}
 }
 
-async function HandleFriendCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author) {
-	return;
-    }
-    if (!author.friend_voice_room_id) {
-	// Auth: this command for leaders with their own voice room only.
-	await discordMessage.channel.send('!friend is for microcommunity leaders');
-	return;
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
-	return;
-    }
-    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
-    if (!mentionedUser) {
-	await discordMessage.channel.send('Not sure who you mean. Try again in a few minutes.');
-	return;
-    }
-    const exiler = author.commissar_id;
-    const exilee = mentionedUser.commissar_id;
-    const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
-    const mcName = author.getNicknameOrTitleWithInsignia();
-    if (exile.IsFriend(exiler, exilee)) {
-	await discordMessage.channel.send(`${exileeName} is already a friend of ${mcName}`);
-	return;
-    }
-    // Add friend record to the database to make it persistent.
-    await exile.SetIsFriend(exiler, exilee, true);
-    // Give the microcommunity badge at once to avoid waiting for the next rank cycle.
-    if (!mentionedMember.roles.cache.has(author.friend_role_id)) {
-	await mentionedMember.roles.add(author.friend_role_id);
-    }
-    await discordMessage.channel.send(`${exileeName} is invited to microcommunity ${mcName}`);
-}
-
-async function HandleUnfriendCommand(discordMessage) {
-    await HandleExileCommand(discordMessage);
-}
-
-async function HandleExileCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author) {
-	return;
-    }
-    if (!author.friend_voice_room_id) {
-	// Auth: this command for leaders with their own voice room only.
-	await discordMessage.channel.send('!exile is for microcommunity leaders');
-	return;
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
-	return;
-    }
-    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
-    if (!mentionedUser) {
-	await discordMessage.channel.send('Not sure who you mean. Try again in a few minutes.');
-	return;
-    }
-    const exiler = author.commissar_id;
-    const exilee = mentionedUser.commissar_id;
-    const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
-    const mcName = author.getNicknameOrTitleWithInsignia();
-    if (exile.IsExiled(exiler, exilee)) {
-	await discordMessage.channel.send(`${exileeName} is already exiled from microcommunity ${mcName}`);
-	return;
-    }
-    // Add exile record to the database to make it persistent.
-    await exile.SetIsFriend(exiler, exilee, false);
-    // Revoke the microcommunity badge at once to avoid waiting for the next rank cycle.
-    if (mentionedMember.roles.cache.has(author.friend_role_id)) {
-	await mentionedMember.roles.remove(author.friend_role_id);
-    }
-    await discordMessage.channel.send(`${exileeName} has been exiled from microcommunity ${mcName}`);
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.fetch(author.friend_voice_room_id);
-    const mentionedMemberIsInChannel = channel.members.has(mentionedMember.id);
-    if (!mentionedMemberIsInChannel) {
-	// No need to remove member from channel. All set.
-	return;
-    }
-    // If we get here, it means the mentioned member is eligible to be kicked
-    // and the author has the right to kick them. Try to move them to the
-    // fullest Main channel.
-    let fullestMainChannel;
-    let maxPop = -1;
-    for (const [id, c] of guild.channels.cache) {
-	if (c.type === 2 && !c.parent && c.name === 'Main') {
-	    if (c.members.size > maxPop) {
-		maxPop = c.members.size;
-		fullestMainChannel = c;
-	    }
-	}
-    }
-    if (fullestMainChannel) {
-	// Move to fullest Main channel.
-	await mentionedMember.voice.setChannel(fullestMainChannel);
-    } else {
-	// In case no Main channels are found or other strange circumstance
-	// kick the member from the channel without moving them elsewhere.
-	await mentionedMember.voice.disconnect();
-    }
-}
-
-async function HandleUnexileCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author) {
-	return;
-    }
-    if (!author.friend_voice_room_id) {
-	// Auth: this command for leaders with their own voice room only.
-	await discordMessage.channel.send('!unexile is for microcommunity leaders');
-	return;
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
-	return;
-    }
-    const mentionedUser = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
-    if (!mentionedUser) {
-	await discordMessage.channel.send('Not sure who you mean. Try again in a few minutes.');
-	return;
-    }
-    const exiler = author.commissar_id;
-    const exilee = mentionedUser.commissar_id;
-    const exileeName = mentionedUser.getNicknameOrTitleWithInsignia();
-    const mcName = author.getNicknameOrTitleWithInsignia();
-    if (!exile.IsExiled(exiler, exilee)) {
-	await discordMessage.channel.send(`${exileeName} is not exiled from microcommunity ${mcName}`);
-	return;
-    }
-    // Delete exile record from the database to make it persistent.
-    await exile.Unexile(exiler, exilee);
-    await discordMessage.channel.send(`${exileeName} has been unexiled from microcommunity ${mcName}`);
-}
-
-async function HandleKickCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author) {
-	return;
-    }
-    if (!author.friend_voice_room_id) {
-	// Auth: this command for leaders with their own voice room only.
-	await discordMessage.channel.send('!kick is for microcommunity leaders');
-	return;
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send('Not sure who you mean. Try again without any extra spaces.');
-	return;
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.fetch(author.friend_voice_room_id);
-    const mentionedMemberIsInChannel = channel.members.has(mentionedMember.id);
-    if (!mentionedMemberIsInChannel) {
-	await discordMessage.channel.send('!kick only works in your own microcommunity');
-	return;
-    }
-    // If we get here, it means the mentioned member is eligible to be kicked
-    // and the author has the right to kick them. Try to move them to the
-    // fullest Main channel.
-    let fullestMainChannel;
-    let maxPop = -1;
-    for (const [id, c] of guild.channels.cache) {
-	if (c.type === 2 && !c.parent && c.name === 'Main') {
-	    if (c.members.size > maxPop) {
-		maxPop = c.members.size;
-		fullestMainChannel = c;
-	    }
-	}
-    }
-    if (fullestMainChannel) {
-	// Move to fullest Main channel.
-	await mentionedMember.voice.setChannel(fullestMainChannel);
-    } else {
-	// In case no Main channels are found or other strange circumstance
-	// kick the member from the channel without moving them elsewhere.
-	await mentionedMember.voice.disconnect();
-    }
-    const mcName = author.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`${mentionedMember.nickname} is kicked out of microcommunity ${mcName} for 60 seconds`);
-}
-
 async function HandleBuyCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author) {
@@ -946,7 +715,6 @@ async function Dispatch(discordMessage) {
     const handlers = {
 	'!afk': HandleAfkCommand,
 	'!amnesty': HandleAmnestyCommand,
-	'!art': Artillery,
 	'!artillery': Artillery,
 	'!badge': HandleBadgeCommand,
 	'!bal': yen.HandleYenCommand,
@@ -956,15 +724,10 @@ async function Dispatch(discordMessage) {
 	'!buy': HandleBuyCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
-	'!convert': yen.HandleConvertCommand,
 	'!convict': Ban.HandleConvictCommand,
-	'!exile': HandleExileCommand,
-	'!friend': HandleFriendCommand,
 	'!gender': HandleGenderCommand,
-	'!howhigh': Artillery,
 	'!hype': HandleHypeCommand,
 	'!impeach': HandleImpeachCommand,
-	'!kick': HandleKickCommand,
 	'!prez': HandlePrezCommand,
 	'!veep': HandleVeepCommand,
 	'!lottery': yen.DoLottery,
@@ -975,18 +738,13 @@ async function Dispatch(discordMessage) {
 	'!pardon': Ban.HandlePardonCommand,
 	'!pay': yen.HandlePayCommand,
 	'!ping': HandlePingCommand,
-	'!pingpublic': HandlePingPublicChatCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
-	'!presidentvotefix': HandlePresidentVoteFixCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
 	'!sell': HandleSellCommand,
 	'!tax': yen.HandleTaxCommand,
-	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
 	'!transcript': HandleTranscriptCommand,
-	'!unexile': HandleUnexileCommand,
-	'!unfriend': HandleUnfriendCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!yen': yen.HandleYenCommand,
 	'!yencreate': yen.HandleYenCreateCommand,
