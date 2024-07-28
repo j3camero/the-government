@@ -366,7 +366,7 @@ class CommissarUser {
     getNicknameOrTitle() {
 	const rank = this.getRank();
 	if (!rank && rank !== 0) {
-	    return this.steam_name || this.nick || this.nickname;
+	    return this.nick || this.nickname;
 	}
 	const job = RankMetadata[rank];
 	if (job.titleOverride) {
@@ -374,7 +374,7 @@ class CommissarUser {
 	    return `${prefix} ${job.title}`;
 	} else {
 	    // User-supplied nickname overrides their Discord-wide nickname.
-	    return this.steam_name || this.nick || this.nickname;
+	    return this.nick || this.nickname;
 	}
     }
 
@@ -433,10 +433,6 @@ class CommissarUser {
 	} else {
 	    return 'their';
 	}
-    }
-
-    getSocialGraphVertexId() {
-	return this.steam_id || this.discord_id || this.commissar_id;
     }
 }
 

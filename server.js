@@ -90,10 +90,6 @@ async function UpdateMemberAppearance(member) {
     } else {
 	await DiscordUtil.RemoveRole(member, RoleID.RetiredGeneral);
     }
-    // ID Badge for all members with a linked steam account.
-    if (cu.steam_id) {
-	await DiscordUtil.AddRole(member, RoleID.IdBadge);
-    }
 }
 
 const afkLoungeId = '703716669452714054';
@@ -254,79 +250,6 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
     return matchingRecords;
 }
 
-// Crawl and update the steam names of some steam-connected users.
-// This routine happens often so not every user has to get updated
-// every cycle.
-async function UpdateSomeSteamNames() {
-    const u = UserCache.GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName();
-    if (!u) {
-	return;
-    }
-    console.log('UpdateSomeSteamNames', u.steam_name, u.steam_id);
-    const steamWebApiKey = '22A69A4E939F0D8EC4689D6CAA5D79EE';
-    const url = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${steamWebApiKey}&steamids=${u.steam_id}`;
-    let response;
-    try {
-	response = await fetch(url);
-    } catch (error) {
-	console.log(error);
-    }
-    if (!response) {
-	console.log('No response');
-	return;
-    }
-    let json;
-    try {
-	json = JSON.parse(response);
-    } catch (error) {
-	console.log(error);
-    }
-    if (!json) {
-	console.log('Failed to parse json');
-	return;
-    }
-    if (!json.response) {
-	console.log('Json has wrong format');
-	return;
-    }
-    if (!json.response.players) {
-	console.log('Could not get list of players');
-	return;
-    }
-    const players = json.response.players;
-    if (!players.length || players.length === 0) {
-	console.log('No valid player records received');
-	return;
-    }
-    const p = players[0];
-    if (p.steamid !== u.steam_id) {
-	console.log('Steam ID does not match response');
-	return;
-    }
-    const n = p.personaname;
-    if (!n) {
-	console.log('No personaname (steam name) in response');
-	return;
-    }
-    if (typeof n !== 'string') {
-	console.log('Steam name is not a string');
-	return;
-    }
-    if (n.length === 0) {
-	console.log('Steam name has zero length');
-	return;
-    }
-    // At this point we crawled the user's steam name successfully so we mark them
-    // as updated to send them to the back of the crawling queue.
-    await u.setSteamNameUpdatedNow();
-    if (u.steam_name === n) {
-	console.log('Steam name already up to date');
-	return;
-    }
-    console.log('Updating steam name of', u.steam_id, 'from', u.steam_name, 'to', n);
-    await u.setSteamName(n);
-}
-
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
 async function RoutineUpdate() {
     console.log('Routine update');
@@ -339,7 +262,6 @@ async function RoutineUpdate() {
     await DB.ConsolidateTimeMatrix();
     await UpdateHarmonicCentrality();
     await com.CalculateChainOfCommand();
-    await UpdateSomeSteamNames();
     await UpdateAllCitizens();
     await yen.DoLottery();
     await recruiting.ScanInvitesForChanges();
