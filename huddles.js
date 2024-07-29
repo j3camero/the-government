@@ -15,16 +15,13 @@ const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
 
 const huddles = [
+    { name: 'Main', userLimit: 99, position: 1000 },
     { name: 'Duo', userLimit: 2, position: 2000 },
     { name: 'Trio', userLimit: 3, position: 3000 },
     { name: 'Quad', userLimit: 4, position: 4000 },
     //{ name: 'Six Pack', userLimit: 6, position: 6000 },
     //{ name: 'Squad', userLimit: 8, position: 7000 },
 ];
-const mainRoomControlledByProximity = false;
-if (!mainRoomControlledByProximity) {
-    huddles.push({ name: 'Main', userLimit: 99, position: 1000 });
-}
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
     const matchingChannels = [];

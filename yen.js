@@ -529,7 +529,7 @@ async function HandlePayCommandWithAmount(discordMessage, amount) {
 }
 
 async function HandlePayCommand(discordMessage) {
-    const tokens = discordMessage.content.split(' ');
+    const tokens = discordMessage.content.split(' ').filter(n => n);
     if (tokens.length !== 3) {
 	await discordMessage.channel.send('Error. Wrong number of parameters. Example: `!pay @Jeff 42`');
 	return;

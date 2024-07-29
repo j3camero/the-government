@@ -702,10 +702,57 @@ async function HandleAfkCommand(discordMessage) {
 	}
 }
 
+function ChooseRandomTrumpCard() {
+    const n = 32;
+    const r = Math.floor(n * Math.random());
+    return `trump-cards/${r}.png`;
+}
+
+let trumpNftPrice = 50;
+
 async function HandleBuyCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author) {
 	return;
+    }
+    const oldYen = author.yen || 0;
+    const oldCards = author.trump_cards || 0;
+    const tradePrice = trumpNftPrice;
+    let actionMessage = `purchased this Donald Trump NFT for ${tradePrice} yen`;
+    let newYen = oldYen - tradePrice;
+    if (authorCards < 0) {
+	newYen += 100;
+	actionMessage += ' then destroyed it, gaining 100 yen';
+    }
+    const newCards = oldCards + 1;
+    if (newYen >= 0) {
+	trumpNftPrice++;
+	await author.setYen(newYen);
+	await author.setTrumpCards(newCards);
+    } else {
+	await discordMessage.channel.send('Not enough yen. Use !yen to check how much money you have.');
+	return;
+    }
+    const name = author.getNicknameOrTitleWithInsignia();
+    const prefixes = [
+	'The probability that Donald Trump will win the 2024 US presidential election is',
+	'The odds that Trump will win are',
+	'The probability of a Trump win is',
+    ];
+    const r = Math.floor(prefixes.length * Math.random());
+    const randomPrefix = prefixes[r];
+    let content = `${name} purchased this Donald Trump NFT for ${tradePrice} yen. ${randomPrefix} ${tradePrice}%`;
+    const trumpCard = ChooseRandomTrumpCard();
+    try {
+	await discordMessage.channel.send({
+	    content,
+	    files: [{
+		attachment: trumpCard,
+		name: trumpCard,
+	    }]
+	});
+    } catch (error) {
+	console.log('Failed to send orders to', name);
     }
 }
 
