@@ -766,4 +766,5 @@ module.exports = {
     HandleYenCreateCommand,
     HandleYenDestroyCommand,
     HandleYenFaqCommand,
+    UpdateYenChannel,
 };

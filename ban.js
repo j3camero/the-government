@@ -71,12 +71,21 @@ async function UpdateTrial(cu) {
     // Update or create the ban vote message itself. The votes are reactions to this message.
     let message;
     if (cu.ban_vote_message) {
-	message = await channel.messages.fetch(cu.ban_vote_message);
+	try {
+	    message = await channel.messages.fetch(cu.ban_vote_message);
+	} catch (error) {
+	    console.log('Failed to find or create ban court voting message', cu.ban_vote_message);
+	    message = null;
+	}
     } else {
 	message = await channel.send('Welcome to the Ban Court');
 	await message.react('✅');
 	await message.react('❌');
 	await message.pin();
+    }
+    if (!message) {
+	console.log('Failed to find or create ban court voting message', cu.ban_vote_message);
+	return;
     }
     await cu.setBanVoteMessage(message.id);
     // Count up all the votes. Remove any unauthorized votes.

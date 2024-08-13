@@ -35,6 +35,7 @@ class CommissarUser {
         presidential_election_message_id,
         steam_id,
         steam_name,
+	steam_name_update_time,
         trump_cards,
         cost_basis) {
 	this.commissar_id = commissar_id;
@@ -66,7 +67,7 @@ class CommissarUser {
 	this.presidential_election_message_id = presidential_election_message_id;
 	this.steam_id = steam_id;
 	this.steam_name = steam_name;
-	this.steam_name_update_time = null;
+	this.steam_name_update_time = steam_name_update_time;
 	this.trump_cards = trump_cards;
 	this.cost_basis = cost_basis;
     }

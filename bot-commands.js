@@ -6,6 +6,7 @@ const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
 const exile = require('./exile-cache');
 const FilterUsername = require('./filter-username');
+const fs = require('fs');
 const huddles = require('./huddles');
 const RandomPin = require('./random-pin');
 const RankMetadata = require('./rank-definitions');
@@ -256,18 +257,16 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `It's a special wipe day. RustGalaxy is 3 servers hosted in USA, Europe, and Australia. Use the telephone at Outpost to travel between islands - with your loot.\n`;
-    content += '```client.connect usa.rustgalaxy.com\nclient.connect europe.rustgalaxy.com\nclient.connect australia.rustgalaxy.com```\n';  // Only one newline after triple backticks.
-    content += `RustGalaxy was created by gov members. The admins and moderators are all gov members. We have beat Facepunch to the Nexus system, live right now in the Community tab. Being the first to unlock a multi-island universe gives our community a massive first-mover advantage. It is already gaining pop and it seems inevitable that we will give the biggest servers a run for their money. The existing tech can support over 100,000 concurrent players _in one connected world_ putting all the competition to shame. This moment is a big big deal. Come slap down a base and be part of the hype. Most gov members are building solo or duo or trio, and the usual gov rules about raiding don't apply.\n\n`;
-    content += `RustGalaxy never wipes BPs. Your blueprints are synced across all the islands.\n\n`;
-    content += `See you in there! <3\n`;
+    content += `Here are your secret orders for August 2024. The gov is taking it easy and zerging on Rusty Moose US Monthly.\n`;
+    content += '```client.connect monthly.us.moose.gg:28010```\n';  // Only one newline after triple backticks.
+    content += `We have a sweet plan involving a cave and a big monument. You are invited.\n\n`;
     console.log('Content length', content.length, 'characters.');
     try {
 	await discordMember.send({
 	    content,
 	    files: [{
-		attachment: 'galaxy-map-3.png',
-		name: 'galaxy-map-3.png'
+		attachment: 'nov-2023-village-heatmap.png',
+		name: 'nov-2023-village-heatmap.png'
 	    }]
 	});
     } catch (error) {
@@ -708,32 +707,72 @@ function ChooseRandomTrumpCard() {
     return `trump-cards/${r}.png`;
 }
 
-let trumpNftPrice = 50;
+let trumpNftPrice = null;
+const buyQueue = [];
+const sellQueue = [];
+
+function LoadPrice() {
+    if (trumpNftPrice === null) {
+	const trumpPriceAsString = fs.readFileSync('trump-price.csv');
+	trumpNftPrice = parseInt(trumpPriceAsString);
+    }
+}
+
+function SavePrice() {
+    LoadPrice();
+    fs.writeFileSync('trump-price.csv', trumpNftPrice.toString());
+}
+
+function IncreasePrice() {
+    LoadPrice();
+    if (trumpNftPrice < 99) {
+	trumpNftPrice++;
+    }
+    SavePrice();
+}
+
+function DecreasePrice() {
+    LoadPrice();
+    if (trumpNftPrice > 1) {
+	trumpNftPrice--;
+    }
+    SavePrice();
+}
 
 async function HandleBuyCommand(discordMessage) {
+    buyQueue.push(discordMessage);
+}
+
+async function FulfillBuyOrder(discordMessage) {
+    LoadPrice();
+    if (trumpNftPrice > 99) {
+	await discordMessage.channel.send('Cannot buy when the price is maxed out to 100. Wait for someone to sell then try again.');
+	return;
+    }
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author) {
 	return;
     }
     const oldYen = author.yen || 0;
     const oldCards = author.trump_cards || 0;
+    console.log('oldCards', oldCards);
     const tradePrice = trumpNftPrice;
-    let actionMessage = `purchased this Donald Trump NFT for ${tradePrice} yen`;
+    const name = author.getNicknameOrTitleWithInsignia();
+    let actionMessage = `${name} purchased this one-of-a-kind Donald Trump NFT for ${tradePrice} yen`;
     let newYen = oldYen - tradePrice;
-    if (authorCards < 0) {
+    if (oldCards < 0) {
 	newYen += 100;
-	actionMessage += ' then destroyed it, gaining 100 yen';
+	actionMessage += ' and got back their 100 yen deposit';
     }
     const newCards = oldCards + 1;
     if (newYen >= 0) {
-	trumpNftPrice++;
+	IncreasePrice();
 	await author.setYen(newYen);
 	await author.setTrumpCards(newCards);
     } else {
 	await discordMessage.channel.send('Not enough yen. Use !yen to check how much money you have.');
 	return;
     }
-    const name = author.getNicknameOrTitleWithInsignia();
     const prefixes = [
 	'The probability that Donald Trump will win the 2024 US presidential election is',
 	'The odds that Trump will win are',
@@ -741,7 +780,19 @@ async function HandleBuyCommand(discordMessage) {
     ];
     const r = Math.floor(prefixes.length * Math.random());
     const randomPrefix = prefixes[r];
-    let content = `${name} purchased this Donald Trump NFT for ${tradePrice} yen. ${randomPrefix} ${tradePrice}%`;
+    const probabilityAnnouncement = `${randomPrefix} ${trumpNftPrice}%`;
+    let positionStatement;
+    const plural = Math.abs(newCards) !== 1 ? 's' : '';
+    if (newCards > 0) {
+	const positivePayout = newCards * 100;
+	positionStatement = `They have ${newCards} NFT${plural} that will pay out ${positivePayout} yen if Trump wins`;
+    } else if (newCards < 0) {
+	const negativePayout = -newCards * 100;
+	positionStatement = `They are short ${-newCards} more NFT${plural} that will pay out ${negativePayout} yen if Trump does not win`;
+    } else {
+	positionStatement = 'They have no NFTs left';
+    }
+    let content = '```' + `${actionMessage}. ${positionStatement}. ${probabilityAnnouncement}` + '```';
     const trumpCard = ChooseRandomTrumpCard();
     try {
 	await discordMessage.channel.send({
@@ -752,16 +803,144 @@ async function HandleBuyCommand(discordMessage) {
 	    }]
 	});
     } catch (error) {
-	console.log('Failed to send orders to', name);
+	console.log(error);
     }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch('1267202328243732480');
+    let message = '```' + probabilityAnnouncement + '\n\n';
+    if (trumpNftPrice < 100) {
+	message += `!buy a Donald Trump NFT for ${trumpNftPrice} yen\n`;
+    }
+    if (trumpNftPrice > 1) {
+	const sellPrice = trumpNftPrice - 1;
+	message += `!sell a Donald Trump NFT for ${sellPrice} yen\n`;
+    }
+    message += '\n';
+    message += 'Every Donald Trump NFT pays out 100 yen if Donald Trump is declared the winner of the 2024 US presidential election by the Associated Press. Short-selling is allowed. If you believe that Trump will win then !buy. If you believe that he will not win then !sell.\n\n';
+    message += '!buy low !sell high. It\'s just business. Personal politics aside, if the price does not reflect the true probability, then consider a !buy or !sell. See a news event that is not priced in yet? Quickly !buy or !sell to profit from being the first to bring new information to market.\n\n';
+    message += 'Do you believe that one or both sides suffer from bias? Here is your chance to fine a random idiot from the internet for disagreeing with you. Make them pay!';
+    message += '```';
+    console.log('message:', message);
+    await channel.bulkDelete(99);
+    await channel.send({
+	content: message,
+	files: [{
+	    attachment: trumpCard,
+	    name: trumpCard,
+	}]
+    });
+    await yen.UpdateYenChannel();
 }
 
 async function HandleSellCommand(discordMessage) {
+    sellQueue.push(discordMessage);
+}
+
+async function FulfillSellOrder(discordMessage) {
+    LoadPrice();
+    if (trumpNftPrice < 2) {
+	await discordMessage.channel.send('Cannot sell when the price is bottomed out to 1. Wait for someone to buy then try again.');
+	return;
+    }
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author) {
 	return;
     }
+    const oldYen = author.yen || 0;
+    const oldCards = author.trump_cards || 0;
+    const tradePrice = trumpNftPrice - 1;
+    const name = author.getNicknameOrTitleWithInsignia();
+    let actionMessage = `${name} sold this Donald Trump NFT for ${tradePrice} yen`;
+    let newYen = oldYen + tradePrice;
+    const newCards = oldCards - 1;
+    if (newCards < 0) {
+	newYen -= 100;
+	actionMessage = `${name} deposited 100 yen to mint a new Donald Trump NFT then sold it for ${tradePrice} yen`;
+    }
+    if (newYen >= 0) {
+	DecreasePrice();
+	await author.setYen(newYen);
+	await author.setTrumpCards(newCards);
+    } else {
+	await discordMessage.channel.send('Not enough yen to short-sell. Use !yen to check how much money you have.');
+	return;
+    }
+    const prefixes = [
+	'The probability that Donald Trump will win the 2024 US presidential election is',
+	'The odds that Trump will win are',
+	'The probability of a Trump win is',
+    ];
+    const r = Math.floor(prefixes.length * Math.random());
+    const randomPrefix = prefixes[r];
+    const probabilityAnnouncement = `${randomPrefix} ${trumpNftPrice}%`;
+    let positionStatement;
+    const plural = Math.abs(newCards) !== 1 ? 's' : '';
+    if (newCards > 0) {
+	const positivePayout = newCards * 100;
+	positionStatement = `They have ${newCards} NFT${plural} left that will pay out ${positivePayout} yen if Trump wins`;
+    } else if (newCards < 0) {
+	const negativePayout = -newCards * 100;
+	positionStatement = `They are short ${-newCards} NFT${plural} that will pay out ${negativePayout} yen if Trump does not win`;
+    } else {
+	positionStatement = 'They have no NFTs left';
+    }
+    let content = '```' + `${actionMessage}. ${positionStatement}. ${probabilityAnnouncement}` + '```';
+    const trumpCard = ChooseRandomTrumpCard();
+    try {
+	await discordMessage.channel.send({
+	    content,
+	    files: [{
+		attachment: trumpCard,
+		name: trumpCard,
+	    }]
+	});
+    } catch (error) {
+	console.log(error);
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch('1267202328243732480');
+    let message = '```' + probabilityAnnouncement + '\n\n';
+    if (trumpNftPrice < 100) {
+	message += `!buy a Donald Trump NFT for ${trumpNftPrice} yen\n`;
+    }
+    if (trumpNftPrice > 1) {
+	const sellPrice = trumpNftPrice - 1;
+	message += `!sell a Donald Trump NFT for ${sellPrice} yen\n`;
+    }
+    message += '\n';
+    message += 'Every Donald Trump NFT pays out 100 yen if Donald Trump is declared the winner of the 2024 US presidential election by the Associated Press. Short-selling is allowed. If you believe that Trump will win then !buy. If you believe that he will not win then !sell.\n\n';
+    message += '!buy low !sell high. It\'s just business. Personal politics aside, if the price does not reflect the true probability, then consider a !buy or !sell. See a news event that is not priced in yet? Quickly !buy or !sell to profit from being the first to bring new information to market.\n\n';
+    message += 'Do you believe that one or both sides suffer from bias? Here is your chance to fine a random idiot from the internet for disagreeing with you. Make them pay!';
+    message += '```';
+    console.log('message:', message);
+    await channel.bulkDelete(99);
+    await channel.send({
+	content: message,
+	files: [{
+	    attachment: trumpCard,
+	    name: trumpCard,
+	}]
+    });
+    await yen.UpdateYenChannel();
 }
+
+async function ProcessOneBuyAndOneSellOrder() {
+    if (buyQueue.length === 0 && sellQueue.length === 0) {
+	setTimeout(ProcessOneBuyAndOneSellOrder, 1000);
+	return;
+    }
+    if (buyQueue.length > 0) {
+	const buyOrder = buyQueue.shift();
+	await FulfillBuyOrder(buyOrder);
+	await Sleep(100);
+    }
+    if (sellQueue.length > 0) {
+	const sellOrder = sellQueue.shift();
+	await FulfillSellOrder(sellOrder);
+    }
+    setTimeout(ProcessOneBuyAndOneSellOrder, 100);
+}
+setTimeout(ProcessOneBuyAndOneSellOrder, 1000);
 
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {

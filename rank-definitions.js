@@ -167,8 +167,8 @@ module.exports = [
 	color: '#4285F4',
 	count: 40,
 	insignia: '⦁⦁⦁⦁',
-	roles: [RoleID.StaffSergeant, RoleID.Grunt],
-	title: 'Staff Sergeant',
+	roles: [RoleID.Ensign, RoleID.Grunt],
+	title: 'Ensign',
     },
     {
 	color: '#4285F4',
@@ -179,14 +179,14 @@ module.exports = [
     },
     {
 	color: '#4285F4',
-	count: 100,
+	count: 200,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
 	title: 'Corporal',
     },
     {
 	color: '#4285F4',
-	count: 700,
+	count: 600,
 	insignia: '⦁',
 	roles: [RoleID.Private, RoleID.Grunt],
 	title: 'Private',
