@@ -37,7 +37,11 @@ class CommissarUser {
         steam_name,
 	steam_name_update_time,
         trump_cards,
-        cost_basis) {
+        cost_basis,
+	calendar_day_count,
+	last_calendar_day,
+	calendar_month_count,
+	last_calendar_month) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
@@ -70,6 +74,10 @@ class CommissarUser {
 	this.steam_name_update_time = steam_name_update_time;
 	this.trump_cards = trump_cards;
 	this.cost_basis = cost_basis;
+        this.calendar_day_count = calendar_day_count;
+        this.last_calendar_day = last_calendar_day;
+        this.calendar_month_count = calendar_month_count;
+        this.last_calendar_month = last_calendar_month;
     }
 
     async setDiscordId(discord_id) {
@@ -332,6 +340,40 @@ class CommissarUser {
 	}
 	this.cost_basis = cost_basis;
 	await this.updateFieldInDatabase('cost_basis', this.cost_basis);
+    }
+
+    async setCalendarDayCount(c) {
+	if (c === this.calendar_day_count) {
+	    return;
+	}
+	this.calendar_day_count = c;
+	await this.updateFieldInDatabase('calendar_day_count', this.calendar_day_count);
+    }
+
+    async setCalendarMonthCount(c) {
+	if (c === this.calendar_month_count) {
+	    return;
+	}
+	this.calendar_month_count = c;
+	await this.updateFieldInDatabase('calendar_month_count', this.calendar_month_count);
+    }
+
+    async updateCalendarDayCount() {
+	const t = moment();
+	const calendarDay = t.format('YYYY-MM-DD');
+	const calendarMonth = t.format('YYYY-MM');
+	if (calendarDay !== this.last_calendar_day) {
+	    this.calendar_day_count++;
+	    this.last_calendar_day = calendarDay;
+	    await this.updateFieldInDatabase('calendar_day_count', this.calendar_day_count);
+	    await this.updateFieldInDatabase('last_calendar_day', this.last_calendar_day);
+	}
+	if (calendarMonth !== this.last_calendar_month) {
+	    this.calendar_month_count++;
+	    this.last_calendar_month = calendarMonth;
+	    await this.updateFieldInDatabase('calendar_month_count', this.calendar_month_count);
+	    await this.updateFieldInDatabase('last_calendar_month', this.last_calendar_month);
+	}
     }
 
     async updateFieldInDatabase(fieldName, fieldValue) {

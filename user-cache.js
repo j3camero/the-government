@@ -46,6 +46,10 @@ async function LoadAllUsersFromDatabase() {
 	    row.steam_name_update_time,
 	    row.trump_cards,
 	    row.cost_basis,
+	    row.calendar_day_count,
+	    row.last_calendar_day,
+	    row.calendar_month_count,
+	    row.last_calendar_month,
 	);
 	newCache[row.commissar_id] = newUser;
     });

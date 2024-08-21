@@ -10,6 +10,7 @@ const { ContextMenuCommandBuilder, Events, ApplicationCommandType } = require('d
 const DiscordUtil = require('./discord-util');
 const exile = require('./exile-cache');
 const fetch = require('./fetch');
+const fs = require('fs');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
@@ -274,6 +275,35 @@ async function RoutineUpdate() {
     setTimeout(RoutineUpdate, sleepTime);
 }
 
+async function MigrateCalendarDayCounts() {
+    const fileContents = fs.readFileSync('in-game-activity-points-march-2024.csv', 'utf8');
+    const lines = fileContents.split('\n');
+    for (const line of lines) {
+	if (line.length < 10) {
+	    continue;
+	}
+	const columns = line.trim().split(',');
+	if (columns.length !== 4) {
+	    continue;
+	}
+	const steamId = columns[0];
+	const dayCount = parseInt(columns[2]);
+	const monthCount = parseInt(columns[3]);
+	const cu = UserCache.GetCachedUserBySteamId(steamId);
+	if (!cu) {
+	    continue;
+	}
+	if (dayCount > cu.calendar_day_count) {
+	    await cu.setCalendarDayCount(dayCount);
+	    console.log('day count updated', steamId, dayCount);
+	}
+	if (monthCount > cu.calendar_month_count) {
+	    await cu.setCalendarMonthCount(monthCount);
+	    console.log('month count updated', steamId, monthCount);
+	}
+    }
+}
+
 // Waits for the database and bot to both be connected, then finishes booting the bot.
 async function Start() {
     console.log('Waiting for Discord bot to connect.');
@@ -288,6 +318,7 @@ async function Start() {
     console.log('Ban votes loaded into cache.');
     await exile.LoadExilesFromDatabase();
     console.log('Exiles loaded into cache');
+    await MigrateCalendarDayCounts();
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
     discordClient.on('guildMemberAdd', async (member) => {
@@ -363,6 +394,7 @@ async function Start() {
 	}
 	await cu.setCitizen(true);
 	await cu.seenNow();
+	await cu.updateCalendarDayCount();
 	if (cu.good_standing === false) {
 	    await newVoiceState.member.voice.kick();
 	}

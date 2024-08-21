@@ -41,6 +41,10 @@ CREATE TABLE users
     presidential_election_message_id VARCHAR(32),  -- ID of the discord message used to display this user on the presidential election ballot.
     trump_cards INT NOT NULL DEFAULT 0,  -- How many Trump Cards owned by this member. Can be negative.
     cost_basis INT NOT NULL DEFAULT 0,  -- How many yen spend on Trump Cards. Used to calculate profit/loss.
+    calendar_day_count INT NOT NULL DEFAULT 0,
+    last_calendar_day VARCHAR(16) NOT NULL DEFAULT '2000-01-01',
+    calendar_month_count INT NOT NULL DEFAULT 0,
+    last_calendar_month VARCHAR(16) NOT NULL DEFAULT '2000-01',
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );
