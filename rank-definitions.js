@@ -132,7 +132,6 @@ module.exports = [
 	title: 'General',
     },
     {
-	banPower: true,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱❱❱❱',
@@ -140,7 +139,6 @@ module.exports = [
 	title: 'Colonel',
     },
     {
-	banPower: true,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱❱❱',
@@ -148,7 +146,6 @@ module.exports = [
 	title: 'Major',
     },
     {
-	banPower: true,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱❱',
@@ -156,7 +153,6 @@ module.exports = [
 	title: 'Captain',
     },
     {
-	banPower: true,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱',

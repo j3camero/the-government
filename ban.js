@@ -11,7 +11,7 @@ const threeTicks = '```';
 // General 1 = 15
 // Major = 17
 // Lieutenant = 19
-const banCommandRank = 19;
+const banCommandRank = 15;
 const banVoteRank = 19;
 
 function SentenceLengthAsString(years) {
