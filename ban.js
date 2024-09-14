@@ -135,7 +135,7 @@ async function UpdateTrial(cu) {
 	}
     }
     let outcomeString = 'NOT GUILTY';
-    const guilty = VoteDuration.SimpleMajority(yesVoteCount, noVoteCount);
+    const guilty = yesVoteCount > noVoteCount;
     let banPardonTime;
     if (guilty) {
 	const clippedYesPercentage = Math.max(Math.min(yesPercentage, 0.67), 0.5);
@@ -182,8 +182,8 @@ async function UpdateTrial(cu) {
 	await cu.setGoodStanding(true);
     }
     await cu.setBanVoteStartTime(startTime.format());
-    const fivePercent = 0.05;
-    const durationDays = VoteDuration.EstimateVoteDuration(totalVoters, yesVoteCount, noVoteCount, baselineVoteDurationDays, fivePercent, VoteDuration.SimpleMajority);
+    const turnout = voteCount / totalVoters;
+    const durationDays = baselineVoteDurationDays * (1 - turnout);
     const durationSeconds = durationDays * 86400;
     const endTime = startTime.add(durationSeconds, 'seconds');
     if (currentTime.isAfter(endTime)) {
@@ -214,7 +214,8 @@ async function UpdateTrial(cu) {
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
-	    `Voting NO against the ban:${noVoteCount}\n\n` +
+	    `Voting NO against the ban: ${noVoteCount}\n` +
+	    `Total Votes: ${voteCount}\n\n` +
 	    `${cu.getNicknameOrTitleWithInsignia()} is ${outcomeString}` +
 	    `${threeTicks}`
 	);
@@ -249,7 +250,8 @@ async function UpdateTrial(cu) {
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
 	    `Voting YES to ban: ${yesVoteCount}\n` +
-	    `Voting NO against the ban: ${noVoteCount}\n\n` +
+	    `Voting NO against the ban: ${noVoteCount}\n` +
+	    `Total Votes: ${voteCount}\n\n` +
 	    `${cu.getNicknameOrTitleWithInsignia()} is ${outcomeString}. ` +
 	    `The vote ends ${timeRemaining}.` +
 	    `${threeTicks}`

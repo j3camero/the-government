@@ -117,6 +117,7 @@ async function UpdateVoiceActiveMembersForMainDiscordGuild() {
 		continue;
 	    }
 	    channelActive.push(cu.commissar_id);
+	    await cu.updateCalendarDayCount();
 	}
 	if (channelActive.length >= 2) {
 	    listOfLists.push(channelActive);
