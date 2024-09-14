@@ -9,39 +9,33 @@ const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
 
 async function CalculateChainOfCommand() {
-    console.log('Chain of command');
-    // Populate vertex data from discord.
+    const recruitRank = RankMetadata.length - 1;
     const members = UserCache.GetAllUsersAsFlatList();
+    for (const m of members) {
+	if (!m.citizen || m.ban_conviction_time || m.ban_pardon_time) {
+	    await m.setRank(recruitRank);
+	    await m.setRankScore(0);
+	    await m.setRankIndex(999);
+	    await m.setHarmonicCentrality(0);
+	    continue;
+	}
+	//console.log(`${m.getNicknameOrTitleWithInsignia()},${m.harmonic_centrality},${m.calendar_day_count},${m.calendar_month_count}`);
+	const hc = m.harmonic_centrality || 0;
+	const dc = m.calendar_day_count || 0;
+	const mc = m.calendar_month_count || 0;
+	const r = hc * Math.sqrt(dc * mc);
+	await m.setRankScore(r);
+    }
     members.sort((a, b) => {
-	let aScore = a.harmonic_centrality || 0;
-	let bScore = b.harmonic_centrality || 0;
-	if (a.ban_conviction_time && a.ban_pardon_time) {
-	    aScore = 0;
-	}
-	if (b.ban_conviction_time && b.ban_pardon_time) {
-	    bScore = 0;
-	}
-	if (!a.citizen) {
-	    aScore = 0;
-	}
-	if (!b.citizen) {
-	    bScore = 0;
-	}
-	return bScore - aScore;
+	return b.rank_score - a.rank_score;
     });
-    // TODO: bring back the new guy demotion with daily and monthly activity counters
-    // linked to discord activity instead of Rust+ activity.
     // Assign discrete ranks to each player.
     let rank = 0;
     let usersAtRank = 0;
     let rankIndex = 1;
-    const recruitRank = RankMetadata.length - 1;
     console.log('members.length', members.length);
     for (const m of members) {
 	if (!m.citizen) {
-	    await m.setRank(recruitRank);
-	    await m.setRankScore(0);
-	    await m.setRankIndex(999);
 	    continue;
 	}
 	while (usersAtRank >= RankMetadata[rank].count) {
@@ -51,11 +45,8 @@ async function CalculateChainOfCommand() {
 	// When we run out of ranks, this line defaults to the last/least rank.
 	rank = Math.max(0, Math.min(RankMetadata.length - 1, rank));
 	// Write the rank to the vertex record.
-	m.rank = rank;
-	// Do not await the promotion announcement. Fire and forget.
-	AnnounceIfPromotion(m, m.rank, rank);
+	await AnnounceIfPromotion(m, m.rank, rank);
 	await m.setRank(rank);
-	await m.setRankScore(m.harmonic_centrality);
 	await m.setRankIndex(rankIndex);
 	rankIndex++;
 	usersAtRank++;

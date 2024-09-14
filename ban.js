@@ -125,11 +125,16 @@ async function UpdateTrial(cu) {
     if (member) {
 	const before = await channel.permissionOverwrites.resolve(member.id);
 	if (cu.peak_rank >= 20 && voteCount >= 5 && yesPercentage >= 0.909) {
-	    await channel.permissionOverwrites.create(member, {
-		Connect: true,
-		SendMessages: false,
-		ViewChannel: true,
-	    });
+	    try {
+		await channel.permissionOverwrites.create(member, {
+		    Connect: true,
+		    SendMessages: false,
+		    ViewChannel: true,
+		});
+	    } catch (error) {
+		console.log('Error setting defendant perms for ban court chat channel:');
+		console.log(error);
+	    }
 	    if (!before || before.allow.has('SendMessages')) {
 		await channel.send(threeTicks + 'The defendant has been removed from the courtroom.' + threeTicks);
 	    }

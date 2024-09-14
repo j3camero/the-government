@@ -72,7 +72,7 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for August 2024.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for September 2024.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
@@ -107,7 +107,7 @@ async function HandlePresidentVoteCommand(discordMessage) {
     });
     const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in August 2024.');
     await message.react('❤️');
-    const generalRankUsers = await UserCache.GetMostCentralUsers(159);
+    const generalRankUsers = await UserCache.GetTopRankedUsers(19);
     const candidateNames = [];
     for (const user of generalRankUsers) {
 	if (user.commissar_id === 7) {
@@ -257,9 +257,17 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for August 2024. The gov is taking it easy and zerging on Rusty Moose US Monthly.\n`;
-    content += '```client.connect monthly.us.moose.gg:28010```\n';  // Only one newline after triple backticks.
-    content += `We have a sweet plan involving a cave and a big monument. You are invited.\n\n`;
+    content += `September 2024 is shaping up to be a huge month for The Government. Lots of big groups with great leaders are committed to building nearby each other with common walls. If you miss the big old gov wipes, you need to check this out!\n\n`;
+    if (user.rank <= 21) {
+	content += `The build spot is P25. Use the wipe code to get into community base.\n\n`;
+    }
+    content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
+    if (user.rank <= 15) {
+	content += `Generals Code 3677\n`;
+    }
+    if (user.rank <= 19) {
+	content += `Wipe Code 0425\n`;
+    }
     console.log('Content length', content.length, 'characters.');
     try {
 	await discordMember.send({

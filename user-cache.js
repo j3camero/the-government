@@ -185,9 +185,6 @@ async function GetAllNicknames() {
 //
 // topN - the number of top most central users to return. Omit this
 //        to return all citizens sorted by centrality.
-//
-// Returns a list of pairs:
-//   [(commissar_id, centrality), ...]
 function GetMostCentralUsers(topN) {
     const flat = [];
     for (const [commissarId, user] of Object.entries(commissarUserCache)) {
@@ -197,6 +194,22 @@ function GetMostCentralUsers(topN) {
     }
     flat.sort((a, b) => {
 	return b.harmonic_centrality - a.harmonic_centrality;
+    });
+    return flat.slice(0, topN);
+}
+
+// Get the N top users by rank score.
+//
+// topN - the number of top users to return.
+function GetTopRankedUsers(topN) {
+    const flat = [];
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.citizen) {
+	    flat.push(user);
+	}
+    }
+    flat.sort((a, b) => {
+	return b.rank_score - a.rank_score;
     });
     return flat.slice(0, topN);
 }
@@ -360,6 +373,7 @@ module.exports = {
     GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName,
     GetMostCentralUsers,
     GetOrCreateUserByDiscordId,
+    GetTopRankedUsers,
     GetUsersSortedByLastSeen,
     GetUsersWithRankAndScoreHigherThan,
     LoadAllUsersFromDatabase,
