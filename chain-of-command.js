@@ -98,10 +98,16 @@ async function AnnounceIfPromotion(user, oldRank, newRank) {
     maxRankByCommissarId[user.commissar_id] = newMaxRank;
     // If we get past here, a promotion has been detected.
     // Announce it in #public chat.
-    const name = user.getNicknameOrTitleWithInsignia();
+    const name = user.nick || user.nickname || 'John Doe';
     const oldMeta = RankMetadata[oldRank];
     const newMeta = RankMetadata[newRank];
-    const message = `${name} is promoted from ${oldMeta.title} ${oldMeta.insignia} to ${newMeta.title} ${newMeta.insignia}`;
+    const oldInsignia;
+    if (oldMeta.insignia) {
+	oldInsignia = oldMeta.insignia + ' ';
+    } else {
+	oldInsignia = '';
+    }
+    const message = `${name} is promoted from ${oldMeta.title} ${oldInsignia}to ${newMeta.title} ${newMeta.insignia}`;
     console.log(message);
     await DiscordUtil.MessagePublicChatChannel(message);
 }
