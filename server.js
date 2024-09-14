@@ -266,6 +266,7 @@ async function RoutineUpdate() {
     await yen.DoLottery();
     await recruiting.ScanInvitesForChanges();
     await BanVoteCache.ExpungeVotesWithNoOngoingTrial();
+    await Ban.UnbanEligibleUsers();
     await AutoUpdate();
     const endTime = new Date().getTime();
     const elapsed = endTime - startTime;

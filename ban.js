@@ -499,11 +499,85 @@ async function RateLimitBanCourtMessage(discordMessage) {
     }
 }
 
+// Discord IDs with known issues to avoid wasting the bot's time and rate limit.
+const temporarilyIgnoreTheseDiscordIdsFromUnbanning = {};
+
+async function UnbanEligibleUsers() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const currentTime = moment();
+    const bannedUsers = UserCache.GetAllBannedUsers();
+    for (const u of bannedUsers) {
+	if (u.discord_id in temporarilyIgnoreTheseDiscordIdsFromUnbanning) {
+	    continue;
+	}
+	if (!u.ban_conviction_time) {
+	    continue;
+	}
+	const convictionTime = moment(u.ban_conviction_time);
+	const defaultPardonTime = convictionTime.clone().add(365, 'days');
+	let pardonTime;
+	if (u.ban_pardon_time) {
+	    pardonTime = moment(u.ban_pardon_time);
+	} else {
+	    pardonTime = defaultPardonTime;
+	}
+	if (pardonTime.year() === 0) {
+	    pardonTime = defaultPardonTime;
+	}
+	const sentenceLengthInDays = pardonTime.diff(convictionTime, 'days');
+	if (sentenceLengthInDays < 0 || sentenceLengthInDays > 9000) {
+	    console.log('Weird sentence length', sentenceLengthInDays, 'for user', u.discord_id, u.nickname, u.nick);
+	    console.log(pardonTime.format(), convictionTime.format());
+	    temporarilyIgnoreTheseDiscordIdsFromUnbanning[u.discord_id] = true;
+	    continue;
+	}
+	if (currentTime.isAfter(pardonTime)) {
+	    try {
+		console.log('Trying to unban user', u.discord_id, u.commissar_id, u.nickname, u.nick);
+		let banRecord = null;
+		try {
+		    banRecord = await guild.bans.fetch(u.discord_id);
+		} catch (innerError) {
+		    banRecord = null;
+		}
+		if (!banRecord) {
+		    console.log('WARNING: Could not locate discord ban record for', u.discord_id);
+		    temporarilyIgnoreTheseDiscordIdsFromUnbanning[u.discord_id] = true;
+		    continue;
+		}
+		const unbannedDiscordUser = await guild.bans.remove(u.discord_id);
+		if (!unbannedDiscordUser) {
+		    console.log('User banned in database but failed to unban from discord');
+		    temporarilyIgnoreTheseDiscordIdsFromUnbanning[u.discord_id] = true;
+		    continue;
+		}
+		await u.setGoodStanding(true);
+		await u.setBanConvictionTime(null);
+		await u.setBanPardonTime(null);
+		await u.setBanVoteStartTime(null);
+		await u.setBanVoteChatroom(null);
+		await u.setBanVoteMessage(null);
+		const name = u.nick || u.nickname || 'John Doe';
+		const message = '```' + `${name} is unbanned after ${sentenceLengthInDays} days in the hole. They have not been notified. ID ${u.discord_id}` + '```';
+		await DiscordUtil.MessagePublicChatChannel(message);
+		console.log(message);
+		console.log('Successfully unbanned user', u.discord_id, u.commissar_id, u.nickname, u.nick);
+		// Bail on successful unban so that we only unban one person at a time.
+		break;
+	    } catch (error) {
+		console.log('Failed to unban user', u.discord_id, u.commissar_id, u.nickname, u.nick);
+		console.log(error);
+	    }
+	}
+    }
+}
+
 module.exports = {
     HandleBanCommand,
     HandleConvictCommand,
     HandlePardonCommand,
     HandlePossibleReaction,
     RateLimitBanCourtMessage,
+    UnbanEligibleUsers,
     UpdateTrial,
 };

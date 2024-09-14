@@ -357,11 +357,23 @@ function GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName() {
     return chosenUser;
 }
 
+function GetAllBannedUsers() {
+    const flat = [];
+    for (const i in commissarUserCache) {
+	const u = commissarUserCache[i];
+	if (u.ban_conviction_time && u.ban_pardon_time) {
+	    flat.push(u);
+	}
+    }
+    return flat;
+}
+
 module.exports = {
     BulkCentralityUpdate,
     CountVoiceActiveUsers,
     CreateNewDatabaseUser,
     ForEach,
+    GetAllBannedUsers,
     GetAllCitizenCommissarIds,
     GetAllNicknames,
     GetAllUsersAsFlatList,
