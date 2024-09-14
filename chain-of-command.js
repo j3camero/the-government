@@ -101,7 +101,7 @@ async function AnnounceIfPromotion(user, oldRank, newRank) {
     const name = user.nick || user.nickname || 'John Doe';
     const oldMeta = RankMetadata[oldRank];
     const newMeta = RankMetadata[newRank];
-    const oldInsignia;
+    let oldInsignia;
     if (oldMeta.insignia) {
 	oldInsignia = oldMeta.insignia + ' ';
     } else {
