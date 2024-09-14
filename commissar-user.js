@@ -438,6 +438,9 @@ class CommissarUser {
 
     getFormattedRankIndex() {
 	const i = this.rank_index;
+	if (i === 0) {
+	    return '000';
+	}
 	if (!i) {
 	    return '999';
 	}
