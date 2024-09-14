@@ -33,7 +33,6 @@ async function CalculateChainOfCommand() {
     let rank = 0;
     let usersAtRank = 0;
     let rankIndex = 0;
-    console.log('members.length', members.length);
     for (const m of members) {
 	if (!m.citizen) {
 	    continue;

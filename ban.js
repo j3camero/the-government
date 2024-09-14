@@ -14,22 +14,6 @@ const threeTicks = '```';
 const banCommandRank = 15;
 const banVoteRank = 19;
 
-function SentenceLengthAsString(years) {
-    if (years <= 0) {
-	return '0 days';
-    }
-    const daysPerYear = 365.25;
-    const days = years * daysPerYear;
-    if (days < 50) {
-	return `${Math.round(days)} days`;
-    }
-    const months = 12 * days / daysPerYear;
-    if (months < 23) {
-	return `${Math.round(months)} months`;
-    }
-    return `${Math.round(years)} years`;
-}
-
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_start_time) {
 	// No trial to update.
@@ -154,14 +138,15 @@ async function UpdateTrial(cu) {
     const guilty = VoteDuration.SimpleMajority(yesVoteCount, noVoteCount);
     let banPardonTime;
     if (guilty) {
-	// How guilty the defendant is based on the vote margin. Ranges between 0 and 1.
-	// One extra "mercy vote" is added to the denominator. This creates a bias in the
-	// system towards more lenient sentences that wears off as more voters weigh in.
-	const howGuilty = (yesVoteCount - noVoteCount) / (yesVoteCount + noVoteCount + 1);
-	const sentenceYears = howGuilty;
-	const banLengthInSeconds = Math.round(sentenceYears * 365.25 * 86400);
+	const clippedYesPercentage = Math.max(Math.min(yesPercentage, 0.67), 0.5);
+	const sentenceFraction = (clippedYesPercentage - 0.5) / (0.67 - 0.5);
+	const sentenceDays = Math.round(365 * sentenceFraction);
+	const banLengthInSeconds = Math.round(sentenceDays * 24 * 60 * 60);
 	banPardonTime = moment().add(banLengthInSeconds, 'seconds').format();
-	outcomeString = 'banned for ' + SentenceLengthAsString(sentenceYears);
+	outcomeString = `banned for ${sentenceDays} days`;
+	if (sentenceDays === 365) {
+	    outcomeString += ' (life sentence)';
+	}
     }
     const caseTitle = `THE GOVERNMENT v ${cu.getNicknameOrTitleWithInsignia()}`;
     const underline = new Array(caseTitle.length + 1).join('-');
