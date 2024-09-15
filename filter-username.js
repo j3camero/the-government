@@ -34,6 +34,7 @@ function FilterUsername(username) {
 	'ł': 'l',
 	'ø': 'o',
 	'Ł': 'L',
+	'$': 's',
     };
     for (const [before, after] of Object.entries(substitutions)) {
 	username = username.split(before).join(after);

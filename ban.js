@@ -214,7 +214,7 @@ async function UpdateTrial(cu) {
 	    `${underline}\n` +
 	    `Voting YES to ban: ${formattedYesPercentage}\n` +
 	    `Voting NO against the ban: ${formattedNoPercentage}\n` +
-	    `Votes: ${voteCount}\n\n` +
+	    `Voters: ${voteCount}\n\n` +
 	    `${roomName} is ${outcomeString}` +
 	    `${threeTicks}`
 	);
@@ -250,12 +250,18 @@ async function UpdateTrial(cu) {
 	    `${underline}\n` +
 	    `Voting YES to ban: ${formattedYesPercentage}\n` +
 	    `Voting NO against the ban: ${formattedNoPercentage}\n` +
-	    `Votes: ${voteCount}\n\n` +
+	    `Voters: ${voteCount}\n\n` +
 	    `${roomName} is ${outcomeString}. ` +
 	    `The vote ends ${timeRemaining}.` +
 	    `${threeTicks}`
 	);
-	await message.edit(trialMessage);
+	await message.edit({
+	    content: trialMessage,
+	    files: [{
+		attachment: 'may-2023-rustopia-gov-village.png',
+		name: 'may-2023-rustopia-gov-village.png'
+	    }],
+	});
     }
 }
 
