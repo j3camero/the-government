@@ -125,6 +125,7 @@ module.exports = [
     },
     {
 	banPower: true,
+	collectiveVoteWeight: 40,
 	color: '#F4B400',
 	count: 20,
 	insignia: '★',
@@ -132,6 +133,7 @@ module.exports = [
 	title: 'General',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱❱❱❱',
@@ -139,6 +141,7 @@ module.exports = [
 	title: 'Colonel',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱❱❱',
@@ -146,6 +149,7 @@ module.exports = [
 	title: 'Major',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱❱',
@@ -153,6 +157,7 @@ module.exports = [
 	title: 'Captain',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#DB4437',
 	count: 10,
 	insignia: '❱',
@@ -160,6 +165,7 @@ module.exports = [
 	title: 'Lieutenant',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#4285F4',
 	count: 40,
 	insignia: '⦁⦁⦁⦁',
@@ -167,6 +173,7 @@ module.exports = [
 	title: 'Ensign',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#4285F4',
 	count: 100,
 	insignia: '⦁⦁⦁',
@@ -174,6 +181,7 @@ module.exports = [
 	title: 'Sergeant',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#4285F4',
 	count: 300,
 	insignia: '⦁⦁',
@@ -181,6 +189,7 @@ module.exports = [
 	title: 'Corporal',
     },
     {
+	collectiveVoteWeight: 10,
 	color: '#4285F4',
 	count: 500,
 	insignia: '⦁',

@@ -1,4 +1,5 @@
 const db = require('./database');
+const RankMetadata = require('./rank-definitions');
 const UserCache = require('./user-cache');
 
 const voteCache = {};
@@ -10,8 +11,13 @@ async function DeleteVotesForDefendant(defendantId) {
     await db.Query('DELETE FROM ban_votes WHERE defendant_id = ?', [defendantId]);
 }
 
-function CountVotesForDefendant(defendantId) {
-    const totals = {
+function CountTotalVotesForDefendant(defendantId) {
+    const votes = voteCache[defendantId] || {};
+    return Object.keys(votes).length;
+}
+
+function CountWeightedVotesForDefendant(defendantId) {
+    const w = {
 	0: 0,
 	1: 0,
 	2: 0,
@@ -19,9 +25,16 @@ function CountVotesForDefendant(defendantId) {
     const votes = voteCache[defendantId] || {};
     for (const voterId in votes) {
 	const vote = votes[voterId];
-	totals[vote]++;
+	const voter = UserCache.GetCachedUserByCommissarId(voterId);
+	const rankData = RankMetadata[voter.rank];
+	const individualVoteWeight = rankData.collectiveVoteWeight / rankData.count;
+	w[vote] += individualVoteWeight;
     }
-    return totals;
+    //const m = 1 / (w[0] + w[1] + w[2]);
+    //w[0] *= m;
+    //w[1] *= m;
+    //w[2] *= m;
+    return w;
 }
 
 async function ExpungeVotesWithNoOngoingTrial() {
@@ -71,7 +84,8 @@ async function RecordVoteIfChanged(defendantId, voterId, vote) {
 }
 
 module.exports = {
-    CountVotesForDefendant,
+    CountTotalVotesForDefendant,
+    CountWeightedVotesForDefendant,
     DeleteVotesForDefendant,
     ExpungeVotesWithNoOngoingTrial,
     LoadVotesFromDatabase,

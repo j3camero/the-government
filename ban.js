@@ -101,11 +101,16 @@ async function UpdateTrial(cu) {
 	    await reaction.users.remove(juror);
 	}
     }
-    const voteTotals = BanVoteCache.CountVotesForDefendant(cu.commissar_id);
-    const yesVoteCount = voteTotals[1];
-    const noVoteCount = voteTotals[2];
-    const voteCount = yesVoteCount + noVoteCount;
-    const yesPercentage = voteCount > 0 ? yesVoteCount / voteCount : 0;
+    const weighted = BanVoteCache.CountWeightedVotesForDefendant(cu.commissar_id);
+    const yesWeight = weighted[1];
+    const noWeight = weighted[2];
+    const combinedWeight = yesWeight + noWeight;
+    const availableWeight = 120;
+    const voteCount = BanVoteCache.CountTotalVotesForDefendant(cu.commissar_id);
+    const yesPercentage = voteCount > 0 ? yesWeight / combinedWeight : 0;
+    const noPercentage = voteCount > 0 ? noWeight / combinedWeight : 0;
+    const formattedYesPercentage = Math.round(yesPercentage * 100).toString() + '%';
+    const formattedNoPercentage = Math.round(noPercentage * 100).toString() + '%';
     if (member) {
 	const before = await channel.permissionOverwrites.resolve(member.id);
 	if (cu.peak_rank >= 20 && voteCount >= 5 && yesPercentage >= 0.909) {
@@ -135,7 +140,7 @@ async function UpdateTrial(cu) {
 	}
     }
     let outcomeString = 'NOT GUILTY';
-    const guilty = yesVoteCount > noVoteCount;
+    const guilty = yesWeight > noWeight;
     let banPardonTime;
     if (guilty) {
 	const clippedYesPercentage = Math.max(Math.min(yesPercentage, 0.67), 0.5);
@@ -152,13 +157,9 @@ async function UpdateTrial(cu) {
     const underline = new Array(caseTitle.length + 1).join('-');
     const currentTime = moment();
     let startTime = moment(cu.ban_vote_start_time);
-    const totalVoters = 59;
     let baselineVoteDurationDays;
-    let nextStateChangeMessage;
     if (guilty) {
 	baselineVoteDurationDays = 3;
-	const n = VoteDuration.HowManyMoreNoVotes(yesVoteCount, noVoteCount, VoteDuration.SimpleMajority);
-	nextStateChangeMessage = `${n} more NO votes to unban`;
 	if (cu.good_standing) {
 	    // Vote outcome flipped. Reset the clock.
 	    startTime = currentTime;
@@ -173,8 +174,6 @@ async function UpdateTrial(cu) {
 	}
     } else {
 	baselineVoteDurationDays = 1;
-	const n = VoteDuration.HowManyMoreYesVotes(yesVoteCount, noVoteCount, VoteDuration.SimpleMajority);
-	nextStateChangeMessage = `${n} more YES votes to ban`;
 	if (!cu.good_standing) {
 	    // Vote outcome flipped. Reset the clock.
 	    startTime = currentTime;
@@ -182,7 +181,7 @@ async function UpdateTrial(cu) {
 	await cu.setGoodStanding(true);
     }
     await cu.setBanVoteStartTime(startTime.format());
-    const turnout = voteCount / totalVoters;
+    const turnout = combinedWeight / availableWeight;
     const durationDays = baselineVoteDurationDays * (1 - turnout);
     const durationSeconds = durationDays * 86400;
     const endTime = startTime.add(durationSeconds, 'seconds');
@@ -213,9 +212,9 @@ async function UpdateTrial(cu) {
 	    `${threeTicks}` +
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
-	    `Voting YES to ban: ${yesVoteCount}\n` +
-	    `Voting NO against the ban: ${noVoteCount}\n` +
-	    `Total Votes: ${voteCount}\n\n` +
+	    `Voting YES to ban: ${formattedYesPercentage}\n` +
+	    `Voting NO against the ban: ${formattedNoPercentage}\n` +
+	    `Votes: ${voteCount}\n\n` +
 	    `${roomName} is ${outcomeString}` +
 	    `${threeTicks}`
 	);
@@ -249,9 +248,9 @@ async function UpdateTrial(cu) {
 	    `${threeTicks}` +
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
-	    `Voting YES to ban: ${yesVoteCount}\n` +
-	    `Voting NO against the ban: ${noVoteCount}\n` +
-	    `Total Votes: ${voteCount}\n\n` +
+	    `Voting YES to ban: ${formattedYesPercentage}\n` +
+	    `Voting NO against the ban: ${formattedNoPercentage}\n` +
+	    `Votes: ${voteCount}\n\n` +
 	    `${roomName} is ${outcomeString}. ` +
 	    `The vote ends ${timeRemaining}.` +
 	    `${threeTicks}`
