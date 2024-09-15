@@ -126,7 +126,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#F4B400',
-	count: 19,
+	count: 20,
 	insignia: '★',
 	roles: [RoleID.General],
 	title: 'General',

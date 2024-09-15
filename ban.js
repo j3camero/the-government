@@ -148,7 +148,7 @@ async function UpdateTrial(cu) {
 	    outcomeString += ' (life sentence)';
 	}
     }
-    const caseTitle = `THE GOVERNMENT v ${cu.getNicknameOrTitleWithInsignia()}`;
+    const caseTitle = `THE GOVERNMENT v ${roomName}`;
     const underline = new Array(caseTitle.length + 1).join('-');
     const currentTime = moment();
     let startTime = moment(cu.ban_vote_start_time);
@@ -216,7 +216,7 @@ async function UpdateTrial(cu) {
 	    `Voting YES to ban: ${yesVoteCount}\n` +
 	    `Voting NO against the ban: ${noVoteCount}\n` +
 	    `Total Votes: ${voteCount}\n\n` +
-	    `${cu.getNicknameOrTitleWithInsignia()} is ${outcomeString}` +
+	    `${roomName} is ${outcomeString}` +
 	    `${threeTicks}`
 	);
 	await message.edit(trialSummary);
@@ -252,7 +252,7 @@ async function UpdateTrial(cu) {
 	    `Voting YES to ban: ${yesVoteCount}\n` +
 	    `Voting NO against the ban: ${noVoteCount}\n` +
 	    `Total Votes: ${voteCount}\n\n` +
-	    `${cu.getNicknameOrTitleWithInsignia()} is ${outcomeString}. ` +
+	    `${roomName} is ${outcomeString}. ` +
 	    `The vote ends ${timeRemaining}.` +
 	    `${threeTicks}`
 	);

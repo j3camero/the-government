@@ -107,7 +107,7 @@ async function AnnounceIfPromotion(user, oldRank, newRank) {
     } else {
 	oldInsignia = '';
     }
-    const message = `${name} is promoted from ${oldMeta.title} ${oldInsignia}to ${newMeta.title} ${newMeta.insignia}`;
+    const message = `${name} ${newMeta.insignia} is promoted from ${oldMeta.title} ${oldInsignia}to ${newMeta.title} ${newMeta.insignia}`;
     console.log(message);
     await DiscordUtil.MessagePublicChatChannel(message);
 }
