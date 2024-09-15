@@ -21,8 +21,8 @@ async function CalculateChainOfCommand() {
 	}
 	//console.log(`${m.getNicknameOrTitleWithInsignia()},${m.harmonic_centrality},${m.calendar_day_count},${m.calendar_month_count}`);
 	const hc = m.harmonic_centrality || 0;
-	const dc = m.calendar_day_count || 0;
-	const mc = m.calendar_month_count || 0;
+	const dc = m.calendar_day_count || 1;
+	const mc = m.calendar_month_count || 1;
 	const r = hc * Math.sqrt(dc * mc);
 	await m.setRankScore(r);
     }
