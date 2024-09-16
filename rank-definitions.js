@@ -130,7 +130,7 @@ module.exports = [
 	count: 20,
 	insignia: '★',
 	roles: [RoleID.General],
-	secondaryColor: '#a37800',
+	secondaryColor: '#7a5900',
 	title: 'General',
     },
     {
@@ -139,7 +139,7 @@ module.exports = [
 	count: 10,
 	insignia: '❱❱❱❱',
 	roles: [RoleID.Colonel, RoleID.Officer],
-	secondaryColor: '#922d25',
+	secondaryColor: '#6d221b',
 	title: 'Colonel',
     },
     {
@@ -148,7 +148,7 @@ module.exports = [
 	count: 10,
 	insignia: '❱❱❱',
 	roles: [RoleID.Major, RoleID.Officer],
-	secondaryColor: '#922d25',
+	secondaryColor: '#6d221b',
 	title: 'Major',
     },
     {
@@ -157,7 +157,7 @@ module.exports = [
 	count: 10,
 	insignia: '❱❱',
 	roles: [RoleID.Captain, RoleID.Officer],
-	secondaryColor: '#922d25',
+	secondaryColor: '#6d221b',
 	title: 'Captain',
     },
     {
@@ -166,7 +166,7 @@ module.exports = [
 	count: 10,
 	insignia: '❱',
 	roles: [RoleID.Lieutenant, RoleID.Officer],
-	secondaryColor: '#922d25',
+	secondaryColor: '#6d221b',
 	title: 'Lieutenant',
     },
     {
@@ -175,7 +175,7 @@ module.exports = [
 	count: 40,
 	insignia: '⦁⦁⦁⦁',
 	roles: [RoleID.Ensign, RoleID.Grunt],
-	secondaryColor: '#2c59a3',
+	secondaryColor: '#21427a',
 	title: 'Ensign',
     },
     {
@@ -184,7 +184,7 @@ module.exports = [
 	count: 100,
 	insignia: '⦁⦁⦁',
 	roles: [RoleID.Sergeant, RoleID.Grunt],
-	secondaryColor: '#2c59a3',
+	secondaryColor: '#21427a',
 	title: 'Sergeant',
     },
     {
@@ -193,7 +193,7 @@ module.exports = [
 	count: 300,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
-	secondaryColor: '#2c59a3',
+	secondaryColor: '#21427a',
 	title: 'Corporal',
     },
     {
@@ -202,7 +202,7 @@ module.exports = [
 	count: 500,
 	insignia: '⦁',
 	roles: [RoleID.Private, RoleID.Grunt],
-	secondaryColor: '#2c59a3',
+	secondaryColor: '#21427a',
 	title: 'Private',
     },
     {
@@ -210,7 +210,7 @@ module.exports = [
 	color: '#189b17',
 	count: 1000 * 1000,
 	roles: [RoleID.Recruit],
-	secondaryColor: '#10670f',
+	secondaryColor: '#0c4d0c',
 	title: 'Recruit',
     },
 ];
