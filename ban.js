@@ -1,5 +1,6 @@
 const BadWords = require('./bad-words');
 const BanVoteCache = require('./ban-vote-cache');
+const Canvas = require('canvas');
 const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
 const moment = require('moment');
@@ -11,8 +12,9 @@ const threeTicks = '```';
 // General 1 = 15
 // Major = 17
 // Lieutenant = 19
+// Private = 23
 const banCommandRank = 15;
-const banVoteRank = 19;
+const banVoteRank = 23;
 
 async function UpdateTrial(cu) {
     if (!cu.ban_vote_start_time) {
@@ -143,15 +145,12 @@ async function UpdateTrial(cu) {
     const guilty = yesWeight > noWeight;
     let banPardonTime;
     if (guilty) {
-	const clippedYesPercentage = Math.max(Math.min(yesPercentage, 0.67), 0.5);
-	const sentenceFraction = (clippedYesPercentage - 0.5) / (0.67 - 0.5);
-	const sentenceDays = Math.round(365 * sentenceFraction);
+	const clippedYesPercentage = Math.max(Math.min(yesPercentage, 0.7), 0.5);
+	const sentenceFraction = (clippedYesPercentage - 0.5) / (0.7 - 0.5);
+	const sentenceDays = Math.max(1, Math.round(365 * sentenceFraction));
 	const banLengthInSeconds = Math.round(sentenceDays * 24 * 60 * 60);
 	banPardonTime = moment().add(banLengthInSeconds, 'seconds').format();
 	outcomeString = `banned for ${sentenceDays} days`;
-	if (sentenceDays === 365) {
-	    outcomeString += ' (life sentence)';
-	}
     }
     const caseTitle = `THE GOVERNMENT v ${roomName}`;
     const underline = new Array(caseTitle.length + 1).join('-');
@@ -212,10 +211,10 @@ async function UpdateTrial(cu) {
 	    `${threeTicks}` +
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
-	    `Voting YES to ban: ${formattedYesPercentage}\n` +
-	    `Voting NO against the ban: ${formattedNoPercentage}\n` +
-	    `Voters: ${voteCount}\n\n` +
-	    `${roomName} is ${outcomeString}` +
+	    `${roomName} is ${outcomeString}\n` +
+	    `${formattedYesPercentage} vote YES to ban\n` +
+	    `${formattedNoPercentage} vote NO against the ban\n` +
+	    `${voteCount} voters` +
 	    `${threeTicks}`
 	);
 	await message.edit(trialSummary);
@@ -248,18 +247,71 @@ async function UpdateTrial(cu) {
 	    `${threeTicks}` +
 	    `${caseTitle}\n` +
 	    `${underline}\n` +
-	    `Voting YES to ban: ${formattedYesPercentage}\n` +
-	    `Voting NO against the ban: ${formattedNoPercentage}\n` +
-	    `Voters: ${voteCount}\n\n` +
-	    `${roomName} is ${outcomeString}. ` +
-	    `The vote ends ${timeRemaining}.` +
+	    `${roomName} is ${outcomeString}\n` +
+	    `The vote ends ${timeRemaining}\n\n` +
+	    `${formattedYesPercentage} vote YES to ban\n` +
+	    `${formattedNoPercentage} vote NO against the ban\n` +
+	    `${voteCount} voters` +
 	    `${threeTicks}`
 	);
+	const canvas = new Canvas.Canvas(360, 40);
+	const context = canvas.getContext('2d');
+	context.fillStyle = '#313338';  // Discord grey.
+	context.fillRect(0, 0, canvas.width, canvas.height);
+	const sortedVotes = BanVoteCache.GetSortedVotesForDefendant(cu.commissar_id);
+	console.log('sortedVotes[0]', sortedVotes[0]);
+	console.log('sortedVotes[1]', sortedVotes[1]);
+	console.log('sortedVotes[2]', sortedVotes[2]);
+	if (voteCount > 0) {
+	    const gap = 2;
+	    const widthMinusGap = yesWeight > 0 && noWeight > 0 ? canvas.width - gap : canvas.width;
+	    const maxWeight = Math.max(yesWeight, noWeight);
+	    const yesPixels = Math.round(yesPercentage * widthMinusGap);
+	    const yesVotes = sortedVotes[1];
+	    let cumulativeYesWeight = 0;
+	    for (const vote of yesVotes) {
+		const left = Math.floor(yesPixels * cumulativeYesWeight / yesWeight);
+		cumulativeYesWeight += vote.weight;
+		const right = Math.floor(yesPixels * cumulativeYesWeight / yesWeight);
+		let rectangleWidth = right - left - gap;
+		if (rectangleWidth <= 0) {
+		    rectangleWidth = yesPixels - left - gap;
+		}
+		if (rectangleWidth <= 0) {
+		    break;
+		}
+		context.fillStyle = vote.color;
+		context.fillRect(left, 0, rectangleWidth, canvas.height);
+	    }
+	    const noPixels = widthMinusGap - yesPixels;
+	    const noVotes = sortedVotes[2];
+	    let cumulativeNoWeight = 0;
+	    for (const vote of noVotes) {
+		const left = Math.floor(noPixels * cumulativeNoWeight / noWeight);
+		cumulativeNoWeight += vote.weight;
+		const right = Math.floor(noPixels * cumulativeNoWeight / noWeight);
+		let rectangleWidth = right - left - gap;
+		if (rectangleWidth <= 0) {
+		    rectangleWidth = noPixels - left - gap;
+		}
+		if (rectangleWidth <= 0) {
+		    break;
+		}
+		context.fillStyle = vote.color;
+		context.fillRect(canvas.width - left - rectangleWidth, 0, rectangleWidth, canvas.height);
+	    }
+	    if (yesWeight > 0 && noWeight > 0) {
+		context.fillStyle = '#FFFFFF';
+		context.fillRect(yesPixels, 19, 2, 2);
+	    }
+	}
+	const buffer = canvas.toBuffer();
+	const imageFilename = `case-${cu.commissar_id}.png`;
 	await message.edit({
 	    content: trialMessage,
 	    files: [{
-		attachment: 'may-2023-rustopia-gov-village.png',
-		name: 'may-2023-rustopia-gov-village.png'
+		attachment: buffer,
+		name: imageFilename,
 	    }],
 	});
     }

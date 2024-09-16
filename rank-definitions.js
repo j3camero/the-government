@@ -197,6 +197,7 @@ module.exports = [
 	title: 'Private',
     },
     {
+	collectiveVoteWeight: 0,
 	color: '#189b17',
 	count: 1000 * 1000,
 	roles: [RoleID.Recruit],

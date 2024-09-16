@@ -272,7 +272,7 @@ async function RoutineUpdate() {
     const endTime = new Date().getTime();
     const elapsed = endTime - startTime;
     console.log(`Update Time: ${elapsed} ms`);
-    const sleepTime = Math.max(9000, 60000 - elapsed);
+    const sleepTime = 60000;
     setTimeout(RoutineUpdate, sleepTime);
 }
 

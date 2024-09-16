@@ -16,6 +16,30 @@ function CountTotalVotesForDefendant(defendantId) {
     return Object.keys(votes).length;
 }
 
+function GetSortedVotesForDefendant(defendantId) {
+    const w = {
+	0: [],
+	1: [],
+	2: [],
+    };
+    const votes = voteCache[defendantId] || {};
+    for (const voterId in votes) {
+	const vote = votes[voterId];
+	const voter = UserCache.GetCachedUserByCommissarId(voterId);
+	const rankData = RankMetadata[voter.rank];
+	const individualVoteWeight = rankData.collectiveVoteWeight / rankData.count;
+	w[vote].push({
+	    color: rankData.color,
+	    weight: individualVoteWeight,
+	});
+    }
+    const compareWeight = (a, b) => (b.weight - a.weight);
+    w[0].sort(compareWeight);
+    w[1].sort(compareWeight);
+    w[2].sort(compareWeight);
+    return w;
+}
+
 function CountWeightedVotesForDefendant(defendantId) {
     const w = {
 	0: 0,
@@ -30,10 +54,6 @@ function CountWeightedVotesForDefendant(defendantId) {
 	const individualVoteWeight = rankData.collectiveVoteWeight / rankData.count;
 	w[vote] += individualVoteWeight;
     }
-    //const m = 1 / (w[0] + w[1] + w[2]);
-    //w[0] *= m;
-    //w[1] *= m;
-    //w[2] *= m;
     return w;
 }
 
@@ -88,6 +108,7 @@ module.exports = {
     CountWeightedVotesForDefendant,
     DeleteVotesForDefendant,
     ExpungeVotesWithNoOngoingTrial,
+    GetSortedVotesForDefendant,
     LoadVotesFromDatabase,
     RecordVoteIfChanged,
 };
