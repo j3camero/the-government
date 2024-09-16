@@ -363,13 +363,13 @@ class CommissarUser {
 	const calendarDay = t.format('YYYY-MM-DD');
 	const calendarMonth = t.format('YYYY-MM');
 	if (calendarDay !== this.last_calendar_day) {
-	    this.calendar_day_count++;
+	    this.calendar_day_count = (this.calendar_day_count || 0) + 1;
 	    this.last_calendar_day = calendarDay;
 	    await this.updateFieldInDatabase('calendar_day_count', this.calendar_day_count);
 	    await this.updateFieldInDatabase('last_calendar_day', this.last_calendar_day);
 	}
 	if (calendarMonth !== this.last_calendar_month) {
-	    this.calendar_month_count++;
+	    this.calendar_month_count = (this.calendar_month_count || 0) + 1;
 	    this.last_calendar_month = calendarMonth;
 	    await this.updateFieldInDatabase('calendar_month_count', this.calendar_month_count);
 	    await this.updateFieldInDatabase('last_calendar_month', this.last_calendar_month);

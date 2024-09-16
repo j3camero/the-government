@@ -27,11 +27,9 @@ function GetSortedVotesForDefendant(defendantId) {
 	const vote = votes[voterId];
 	const voter = UserCache.GetCachedUserByCommissarId(voterId);
 	const rankData = RankMetadata[voter.rank];
-	const individualVoteWeight = rankData.collectiveVoteWeight / rankData.count;
-	w[vote].push({
-	    color: rankData.color,
-	    weight: individualVoteWeight,
-	});
+	const weight = rankData.collectiveVoteWeight / rankData.count;
+	const color = (vote === 1) ? rankData.color : rankData.secondaryColor;
+	w[vote].push({ color, weight });
     }
     const compareWeight = (a, b) => (b.weight - a.weight);
     w[0].sort(compareWeight);
