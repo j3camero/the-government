@@ -264,9 +264,8 @@ async function UpdateTrial(cu) {
 	console.log('sortedVotes[2]', sortedVotes[2]);
 	if (voteCount > 0) {
 	    const gap = 2;
-	    const widthMinusGap = yesWeight > 0 && noWeight > 0 ? canvas.width - gap : canvas.width;
 	    const maxWeight = Math.max(yesWeight, noWeight);
-	    const yesPixels = Math.round(yesPercentage * widthMinusGap);
+	    const yesPixels = Math.round(yesPercentage * canvas.width) + (gap / 2);
 	    const yesVotes = sortedVotes[1];
 	    let cumulativeYesWeight = 0;
 	    for (const vote of yesVotes) {
@@ -283,7 +282,7 @@ async function UpdateTrial(cu) {
 		context.fillStyle = vote.color;
 		context.fillRect(left, 0, rectangleWidth, canvas.height);
 	    }
-	    const noPixels = widthMinusGap - yesPixels;
+	    const noPixels = canvas.width - yesPixels + gap;
 	    const noVotes = sortedVotes[2];
 	    let cumulativeNoWeight = 0;
 	    for (const vote of noVotes) {
@@ -299,10 +298,6 @@ async function UpdateTrial(cu) {
 		}
 		context.fillStyle = vote.color;
 		context.fillRect(canvas.width - left - rectangleWidth, 0, rectangleWidth, canvas.height);
-	    }
-	    if (yesWeight > 0 && noWeight > 0) {
-		context.fillStyle = '#FFFFFF';
-		context.fillRect(yesPixels, 19, 2, 2);
 	    }
 	}
 	const buffer = canvas.toBuffer();
