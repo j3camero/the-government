@@ -27,3 +27,7 @@ bearer-token.js
 # Weird temp files.
 \#*
 .#*
+
+temp-ranks.txt
+trump-cards/*
+trump-price.csv
