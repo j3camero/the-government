@@ -254,14 +254,20 @@ async function UpdateTrial(cu) {
 	    `${voteCount} voters` +
 	    `${threeTicks}`
 	);
-	const canvas = new Canvas.Canvas(360, 40);
+	const canvas = new Canvas.Canvas(360, 16 + 32 + 16);
 	const context = canvas.getContext('2d');
 	context.fillStyle = '#313338';  // Discord grey.
 	context.fillRect(0, 0, canvas.width, canvas.height);
+	context.strokeStyle = '#FFFFFF';
+	context.beginPath();
+	const halfX = Math.floor(canvas.width / 2) + 0.5;
+	context.moveTo(halfX, 8);
+	context.lineTo(halfX, 56);
+	context.stroke();
 	const sortedVotes = BanVoteCache.GetSortedVotesForDefendant(cu.commissar_id);
-	console.log('sortedVotes[0]', sortedVotes[0]);
-	console.log('sortedVotes[1]', sortedVotes[1]);
-	console.log('sortedVotes[2]', sortedVotes[2]);
+	//console.log('sortedVotes[0]', sortedVotes[0]);
+	//console.log('sortedVotes[1]', sortedVotes[1]);
+	//console.log('sortedVotes[2]', sortedVotes[2]);
 	if (voteCount > 0) {
 	    const gap = 2;
 	    const maxWeight = Math.max(yesWeight, noWeight);
@@ -280,7 +286,7 @@ async function UpdateTrial(cu) {
 		    break;
 		}
 		context.fillStyle = vote.color;
-		context.fillRect(left, 0, rectangleWidth, canvas.height);
+		context.fillRect(left, 16, rectangleWidth, 32);
 	    }
 	    const noPixels = canvas.width - yesPixels + gap;
 	    const noVotes = sortedVotes[2];
@@ -297,7 +303,15 @@ async function UpdateTrial(cu) {
 		    break;
 		}
 		context.fillStyle = vote.color;
-		context.fillRect(canvas.width - left - rectangleWidth, 0, rectangleWidth, canvas.height);
+		context.fillRect(canvas.width - left - rectangleWidth, 16, rectangleWidth, 32);
+	    }
+	    if (yesWeight > 0 && noWeight > 0) {
+		context.fillStyle = '#FFFFFF';
+		context.beginPath();
+		context.moveTo(yesPixels - 1, 14);
+		context.lineTo(yesPixels + 5, 8);
+		context.lineTo(yesPixels - 7, 8);
+		context.fill();
 	    }
 	}
 	const buffer = canvas.toBuffer();
