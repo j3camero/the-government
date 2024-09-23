@@ -8,20 +8,25 @@ CREATE TABLE users
     commissar_id INT NOT NULL AUTO_INCREMENT,  -- Our clan's own set of IDs so we don't have to rely on Discord IDs.
     discord_id VARCHAR(32),  -- Discord ID.
     steam_id VARCHAR(32),  -- Steam ID.
+    steam_name VARCHAR(128),  -- Steam display name.
+    steam_name_update_time TIMESTAMP,
     battlemetrics_id VARCHAR(32),  -- User ID on Battlemetrics.com.
     nickname VARCHAR(32),  -- Last known nickname.
     nick VARCHAR(32),  -- A user-supplied preferred nickname.
-    rank INT NOT NULL DEFAULT 12,  -- Rank. 0 = President, 1 = VP, 2 = 4-star General, etc.
+    rank INT NOT NULL DEFAULT 24,  -- Rank. 0 = President, 1 = VP, 2 = 4-star General, etc.
+    rank_score FLOAT NOT NULL DEFAULT 0,
+    rank_index INT NOT NULL DEFAULT 9999999,
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Last time active in voice chat.
     office VARCHAR(32),  -- Which office (executive title) the user occupies, if any.
     harmonic_centrality FLOAT DEFAULT 0,  -- A measure of this user's social influence.
-    peak_rank INT DEFAULT 12,  -- The most senior rank (lowest rank number) ever achieved by this user.
+    peak_rank INT DEFAULT 24,  -- The most senior rank (lowest rank number) ever achieved by this user.
     gender VARCHAR(1),  -- M, F, NULL, or any other single alphabetic letter.
                         -- L, G, B, T, Q... whatever letter people want to identify as!
 			-- Must be a single alphabetic character from the ASCII range.
 			-- It says so in the Bible. Everyone knows God created exactly 26 genders!
     citizen BOOLEAN DEFAULT TRUE,  -- Is this user currently a member of the main Discord guild?
     good_standing BOOLEAN DEFAULT TRUE,  -- The preliminary outcome of a pending ban vote trial.
+    friend_role_id VARCHAR(32),  -- ID of the Discord Role for a user's friends.
     friend_category_id VARCHAR(32),  -- ID of the Discord category/section for a user's friends.
     friend_text_chat_id VARCHAR(32),  -- ID of the private Discord text chatroom for a user's friends.
     friend_voice_room_id VARCHAR(32),  -- ID of the private Discord voice room for a user's friends.
@@ -34,6 +39,12 @@ CREATE TABLE users
     ban_pardon_time TIMESTAMP,  -- When this user was convicted & banned in ban court.
     presidential_election_vote INT,  -- The commissar_id that this user is voting for in the presidential election. NULL if has not voted.
     presidential_election_message_id VARCHAR(32),  -- ID of the discord message used to display this user on the presidential election ballot.
+    trump_cards INT NOT NULL DEFAULT 0,  -- How many Trump Cards owned by this member. Can be negative.
+    cost_basis INT NOT NULL DEFAULT 0,  -- How many yen spend on Trump Cards. Used to calculate profit/loss.
+    calendar_day_count INT NOT NULL DEFAULT 0,
+    last_calendar_day VARCHAR(16) NOT NULL DEFAULT '2000-01-01',
+    calendar_month_count INT NOT NULL DEFAULT 0,
+    last_calendar_month VARCHAR(16) NOT NULL DEFAULT '2000-01',
     PRIMARY KEY (commissar_id),
     INDEX discord_index (discord_id)
 );
@@ -50,6 +61,14 @@ CREATE TABLE time_together
     FOREIGN KEY (lo_user_id) REFERENCES users(commissar_id),
     FOREIGN KEY (hi_user_id) REFERENCES users(commissar_id),
     INDEX user_index (lo_user_id, hi_user_id)
+);
+
+CREATE TABLE exiles
+(
+    exiler INT NOT NULL,
+    exilee INT NOT NULL,
+    is_friend BOOL NOT NULL DEFAULT FALSE,
+    PRIMARY KEY(exiler, exilee)
 );
 
 CREATE TABLE ban_votes

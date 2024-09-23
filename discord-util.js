@@ -19,6 +19,10 @@ const client = new Discord.Client({
 	Discord.GatewayIntentBits.GuildVoiceStates,
 	Discord.GatewayIntentBits.MessageContent,
     ],
+    partials: [
+	Discord.Partials.Channel,
+	Discord.Partials.Message,
+    ]
 });
 
 // Set to true once the guild roles have been cached once.
@@ -275,6 +279,41 @@ async function moveMemberToAfk(member) {
     return;
 }
 
+const lastTimeNameChangedByChannelId = {};
+
+async function TryToSetChannelNameWithRateLimit(channel, newName) {
+    if (channel.name === newName) {
+	return;
+    }
+    const t = Date.now();
+    const s = lastTimeNameChangedByChannelId[channel.id] || 0;
+    const elapsed = t - s;
+    const tenMinutes = 6 * 60 * 1000;
+    if (elapsed < tenMinutes) {
+	return;
+    }
+    lastTimeNameChangedByChannelId[channel.id] = t;
+    // Do not await. This call is known to hang for a long time when rate limited.
+    // Best thing in such cases is to move on.
+    channel.setName(newName);
+}
+
+const lastTimePermsChangedByChannelId = {};
+
+async function TryToSetChannelPermsWithRateLimit(channel, newPerms) {
+    const t = Date.now();
+    const s = lastTimePermsChangedByChannelId[channel.id] || 0;
+    const elapsed = t - s;
+    const tenMinutes = 6 * 60 * 1000;
+    if (elapsed < tenMinutes) {
+	return;
+    }
+    lastTimePermsChangedByChannelId[channel.id] = t;
+    // Do not await. This call is known to hang for a long time when rate limited.
+    // Best thing in such cases is to move on.
+    channel.permissionOverwrites.set(newPerms);
+}
+
 module.exports = {
     AddRole,
     Connect,
@@ -290,6 +329,8 @@ module.exports = {
     ParseExactlyOneMentionedDiscordMember,
     RemoveRole,
     SendLongList,
+    TryToSetChannelNameWithRateLimit,
+    TryToSetChannelPermsWithRateLimit,
     UpdateHarmonicCentralityChatChannel,
     moveMemberToAfk
 };

@@ -3,14 +3,16 @@ const Ban = require('./ban');
 const BanVoteCache = require('./ban-vote-cache');
 const BotCommands = require('./bot-commands');
 const Clock = require('./clock');
+const com = require('./chain-of-command');
 const DB = require('./database');
 const deepEqual = require('deep-equal');
 const { ContextMenuCommandBuilder, Events, ApplicationCommandType } = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const exile = require('./exile-cache');
+const fetch = require('./fetch');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
-const Rank = require('./rank');
 const RankMetadata = require('./rank-definitions');
 const recruiting = require('./recruiting');
 const RoleID = require('./role-id');
@@ -70,7 +72,7 @@ async function UpdateMemberAppearance(member) {
     const displayName = cu.getNicknameOrTitleWithInsignia();
     if (member.nickname !== displayName && member.user.id !== member.guild.ownerId) {
 	console.log(`Updating nickname ${displayName}.`);
-	member.setNickname(displayName);
+	await member.setNickname(displayName);
     }
     // Update role (including rank color).
     UpdateMemberRankRoles(member, rankData, cu.good_standing);
@@ -81,8 +83,8 @@ async function UpdateMemberAppearance(member) {
     }
     // Retired Generals.
     const hasRankData = (cu.rank || cu.rank === 0) && (cu.peak_rank || cu.peak_rank === 0);
-    const hasBeenAGeneralEver = cu.peak_rank <= 5;
-    const isCurrentlyAGeneral = cu.rank <= 5;
+    const hasBeenAGeneralEver = cu.peak_rank <= 15;
+    const isCurrentlyAGeneral = cu.rank <= 15;
     if (hasRankData && hasBeenAGeneralEver && !isCurrentlyAGeneral) {
 	await DiscordUtil.AddRole(member, RoleID.RetiredGeneral);
     } else {
@@ -115,6 +117,7 @@ async function UpdateVoiceActiveMembersForMainDiscordGuild() {
 		continue;
 	    }
 	    channelActive.push(cu.commissar_id);
+	    await cu.updateCalendarDayCount();
 	}
 	if (channelActive.length >= 2) {
 	    listOfLists.push(channelActive);
@@ -151,8 +154,6 @@ async function UpdateHarmonicCentrality() {
     }
     const centralityScoresById = await HarmonicCentrality(candidates);
     await UserCache.BulkCentralityUpdate(centralityScoresById);
-    const mostCentral = await UserCache.GetMostCentralUsers(400);
-    await DiscordUtil.UpdateHarmonicCentralityChatChannel(mostCentral);
 }
 
 async function UpdateUser(cu, guild) {
@@ -203,14 +204,27 @@ async function UpdateAllCitizens() {
 	}
     });
     console.log(`${activeUsers.length} active users ${inactiveUsers.length} inactive users`);
-    //const activeSample = RandomSample(activeUsers, 100);
-    //const inactiveSample = RandomSample(inactiveUsers, 100);
-    //const selectedUsers = activeSample.concat(inactiveSample);
-    const selectedUsers = activeUsers.concat(inactiveUsers);
+    const activeSample = RandomSample(activeUsers, 1000);
+    const inactiveSample = RandomSample(inactiveUsers, 1000);
+    const selectedUsers = activeSample.concat(inactiveSample);
+    //const selectedUsers = activeUsers.concat(inactiveUsers);
     console.log(`Updating ${selectedUsers.length} users`);
     const guild = await DiscordUtil.GetMainDiscordGuild();
+    const maxLoopDuration = 3 * 60 * 1000;
+    const startTime = Date.now();
+    let howManyUsersGotUpdatedCounter = 0;
     for (const cu of selectedUsers) {
 	await UpdateUser(cu, guild);
+	howManyUsersGotUpdatedCounter++;
+	const elapsedTime = Date.now() - startTime;
+	if (elapsedTime > maxLoopDuration) {
+	    break;
+	}
+    }
+    if (howManyUsersGotUpdatedCounter < selectedUsers.length) {
+	console.log(`Update cycle timed out after updating ${howManyUsersGotUpdatedCounter} users`);
+    } else {
+	console.log(`Updated all discord members successfully`);
     }
 }
 
@@ -240,24 +254,26 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
 // Routine update event. Take care of book-keeping that need attention once every few minutes.
 async function RoutineUpdate() {
     console.log('Routine update');
-    startTime = new Date().getTime();
-    await yen.DoLottery();
-    await Rank.UpdateUserRanks();
-    await UpdateVoiceActiveMembersForMainDiscordGuild();
+    const startTime = new Date().getTime();
     await huddles.ScheduleUpdate();
+    await UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
     const timeCappedRecords = await FilterTimeTogetherRecordsToEnforceTimeCap(recordsToSync);
     await DB.WriteTimeTogetherRecords(timeCappedRecords);
     await DB.ConsolidateTimeMatrix();
     await UpdateHarmonicCentrality();
+    await com.CalculateChainOfCommand();
     await UpdateAllCitizens();
+    await yen.DoLottery();
     await recruiting.ScanInvitesForChanges();
     await BanVoteCache.ExpungeVotesWithNoOngoingTrial();
+    await Ban.UnbanEligibleUsers();
     await AutoUpdate();
-    endTime = new Date().getTime();
-    elapsed = endTime - startTime;
+    const endTime = new Date().getTime();
+    const elapsed = endTime - startTime;
     console.log(`Update Time: ${elapsed} ms`);
-    setTimeout(RoutineUpdate, 60 * 1000);
+    const sleepTime = 60000;
+    setTimeout(RoutineUpdate, sleepTime);
 }
 
 // Waits for the database and bot to both be connected, then finishes booting the bot.
@@ -272,6 +288,8 @@ async function Start() {
     console.log('Loading ban votes from database.');
     await BanVoteCache.LoadVotesFromDatabase();
     console.log('Ban votes loaded into cache.');
+    await exile.LoadExilesFromDatabase();
+    console.log('Exiles loaded into cache');
 
     // This Discord event fires when someone joins a Discord guild that the bot is a member of.
     discordClient.on('guildMemberAdd', async (member) => {
@@ -330,7 +348,9 @@ async function Start() {
 	    return;
 	}
 	await cu.setCitizen(true);
+	await cu.seenNow();
 	await BotCommands.Dispatch(message);
+	await Ban.RateLimitBanCourtMessage(message);
     });
 
     // This Discord event fires when someone joins or leaves a voice chat channel, or mutes,
@@ -345,6 +365,7 @@ async function Start() {
 	}
 	await cu.setCitizen(true);
 	await cu.seenNow();
+	await cu.updateCalendarDayCount();
 	if (cu.good_standing === false) {
 	    await newVoiceState.member.voice.kick();
 	}
@@ -355,7 +376,7 @@ async function Start() {
     discordClient.on('userUpdate', async (oldUser, newUser) => {
 	console.log('userUpdate', newUser.username);
 	const cu = await UserCache.GetCachedUserByDiscordId(newUser.id);
-	await cu.setNickname(newUser.username);
+	//await cu.setNickname(newUser.username);
     });
 
     // When a guild member changes their nickname or other details.
@@ -365,7 +386,7 @@ async function Start() {
 	if (!cu) {
 	    return;
 	}
-	await cu.setNickname(newMember.user.username);
+	//await cu.setNickname(newMember.user.username);
 	await cu.setCitizen(true);
     });
 
@@ -375,12 +396,17 @@ async function Start() {
 	    return;
 	}
 	await cu.setCitizen(true);
+	await cu.seenNow();
 	await Ban.HandlePossibleReaction(messageReaction, user, true);
     });
 
     discordClient.on('messageReactionRemove', async (messageReaction, user) => {
 	// Do nothing.
     });
+
+    //discordClient.on('rateLimit', (rateLimitData) => {
+	//console.log('RATELIMIT ###', rateLimitData);
+    //});
 
     const upvoteMenuBuilder = new ContextMenuCommandBuilder()
 	  .setName('Upvote')

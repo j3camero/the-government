@@ -11,6 +11,8 @@ class CommissarUser {
 	nickname,
 	nick,
 	rank,
+	rank_score,
+	rank_index,
 	last_seen,
 	office,
 	harmonic_centrality,
@@ -18,6 +20,7 @@ class CommissarUser {
 	gender,
 	citizen,
 	good_standing,
+        friend_role_id,
         friend_category_id,
         friend_text_chat_id,
         friend_voice_room_id,
@@ -29,12 +32,23 @@ class CommissarUser {
         ban_conviction_time,
         ban_pardon_time,
         presidential_election_vote,
-        presidential_election_message_id) {
+        presidential_election_message_id,
+        steam_id,
+        steam_name,
+	steam_name_update_time,
+        trump_cards,
+        cost_basis,
+	calendar_day_count,
+	last_calendar_day,
+	calendar_month_count,
+	last_calendar_month) {
 	this.commissar_id = commissar_id;
 	this.discord_id = discord_id;
 	this.nickname = nickname;
 	this.nick = nick;
 	this.rank = rank;
+	this.rank_score = rank_score;
+	this.rank_index = rank_index;
 	this.last_seen = last_seen;
 	this.office = office;
 	this.harmonic_centrality = harmonic_centrality;
@@ -42,6 +56,7 @@ class CommissarUser {
 	this.gender = gender;
 	this.citizen = citizen;
 	this.good_standing = good_standing;
+	this.friend_role_id = friend_role_id;
 	this.friend_category_id = friend_category_id;
 	this.friend_text_chat_id = friend_text_chat_id;
 	this.friend_voice_room_id = friend_voice_room_id;
@@ -54,6 +69,15 @@ class CommissarUser {
 	this.ban_pardon_time = ban_pardon_time;
 	this.presidential_election_vote = presidential_election_vote;
 	this.presidential_election_message_id = presidential_election_message_id;
+	this.steam_id = steam_id;
+	this.steam_name = steam_name;
+	this.steam_name_update_time = steam_name_update_time;
+	this.trump_cards = trump_cards;
+	this.cost_basis = cost_basis;
+        this.calendar_day_count = calendar_day_count;
+        this.last_calendar_day = last_calendar_day;
+        this.calendar_month_count = calendar_month_count;
+        this.last_calendar_month = last_calendar_month;
     }
 
     async setDiscordId(discord_id) {
@@ -89,6 +113,22 @@ class CommissarUser {
 	this.rank = rank;
 	await this.updateFieldInDatabase('rank', this.rank);
 	await this.setPeakRank(this.rank);
+    }
+
+    async setRankScore(rank_score) {
+	if (rank_score === this.rank_score) {
+	    return;
+	}
+	this.rank_score = rank_score;
+	await this.updateFieldInDatabase('rank_score', this.rank_score);
+    }
+
+    async setRankIndex(rank_index) {
+	if (rank_index === this.rank_index) {
+	    return;
+	}
+	this.rank_index = rank_index;
+	await this.updateFieldInDatabase('rank_index', this.rank_index);
     }
 
     async seenNow() {
@@ -156,6 +196,14 @@ class CommissarUser {
 	}
 	this.good_standing = good_standing;
 	await this.updateFieldInDatabase('good_standing', this.good_standing);
+    }
+
+    async setFriendRoleId(friend_role_id) {
+	if (friend_role_id === this.friend_role_id) {
+	    return;
+	}
+	this.friend_role_id = friend_role_id;
+	await this.updateFieldInDatabase('friend_role_id', this.friend_role_id);
     }
 
     async setFriendCategorityId(friend_category_id) {
@@ -253,7 +301,81 @@ class CommissarUser {
 	this.presidential_election_message_id = presidential_election_message_id;
 	await this.updateFieldInDatabase('presidential_election_message_id', this.presidential_election_message_id);
     }
-    
+
+    async setSteamId(steam_id) {
+	if (steam_id === this.steam_id) {
+	    return;
+	}
+	this.steam_id = steam_id;
+	await this.updateFieldInDatabase('steam_id', this.steam_id);
+    }
+
+    async setSteamName(steam_name) {
+	steam_name = FilterUsername(steam_name);
+	if (steam_name === this.steam_name) {
+	    return;
+	}
+	this.steam_name = steam_name;
+	await this.updateFieldInDatabase('steam_name', this.steam_name);
+	await this.setSteamNameUpdatedNow();
+    }
+
+    async setSteamNameUpdatedNow() {
+	const t = moment().format();
+	this.steam_name_update_time = t;
+	await this.updateFieldInDatabase('steam_name_update_time', t);
+    }
+
+    async setTrumpCards(trump_cards) {
+	if (trump_cards === this.trump_cards) {
+	    return;
+	}
+	this.trump_cards = trump_cards;
+	await this.updateFieldInDatabase('trump_cards', this.trump_cards);
+    }
+
+    async setCostBasis(cost_basis) {
+	if (cost_basis === this.cost_basis) {
+	    return;
+	}
+	this.cost_basis = cost_basis;
+	await this.updateFieldInDatabase('cost_basis', this.cost_basis);
+    }
+
+    async setCalendarDayCount(c) {
+	if (c === this.calendar_day_count) {
+	    return;
+	}
+	this.calendar_day_count = c;
+	await this.updateFieldInDatabase('calendar_day_count', this.calendar_day_count);
+    }
+
+    async setCalendarMonthCount(c) {
+	if (c === this.calendar_month_count) {
+	    return;
+	}
+	this.calendar_month_count = c;
+	await this.updateFieldInDatabase('calendar_month_count', this.calendar_month_count);
+    }
+
+    async updateCalendarDayCount() {
+	const t = moment();
+	const calendarDay = t.format('YYYY-MM-DD');
+	const calendarMonth = t.format('YYYY-MM');
+	if (calendarDay !== this.last_calendar_day) {
+	    this.calendar_day_count = (this.calendar_day_count || 0) + 1;
+	    this.last_calendar_day = calendarDay;
+	    await this.updateFieldInDatabase('calendar_day_count', this.calendar_day_count);
+	    await this.updateFieldInDatabase('last_calendar_day', this.last_calendar_day);
+	}
+	if (calendarMonth !== this.last_calendar_month) {
+	    this.calendar_month_count = (this.calendar_month_count || 0) + 1;
+	    this.last_calendar_month = calendarMonth;
+	    await this.updateFieldInDatabase('calendar_month_count', this.calendar_month_count);
+	    await this.updateFieldInDatabase('last_calendar_month', this.last_calendar_month);
+	}
+    }
+
     async updateFieldInDatabase(fieldName, fieldValue) {
 	//console.log(`DB update ${fieldName} = ${fieldValue} for ${this.nickname} (ID:${this.commissar_id}).`);
 	const sql = `UPDATE users SET ${fieldName} = ? WHERE commissar_id = ?`;
@@ -273,7 +395,7 @@ class CommissarUser {
 	}
 	return this.rank;
     }
-    
+
     getGenderPrefix() {
 	if (this.gender === 'F') {
 	    return 'Madam';
@@ -286,6 +408,9 @@ class CommissarUser {
 
     getNicknameOrTitle() {
 	const rank = this.getRank();
+	if (!rank && rank !== 0) {
+	    return this.nick || this.nickname;
+	}
 	const job = RankMetadata[rank];
 	if (job.titleOverride) {
 	    const prefix = this.getGenderPrefix();
@@ -296,25 +421,47 @@ class CommissarUser {
 	}
     }
 
-    getInsignia() {
+    getRankColor() {
 	if (!this.citizen) {
-	    return '●';
+	    return '#4285F4';
 	}
+	const rank = this.getRank();
+	const rankData = RankMetadata[rank];
+	return rankData.color;
+    }
+
+    getInsignia() {
 	const rank = this.getRank();
 	const rankData = RankMetadata[rank];
 	return rankData.insignia;
     }
 
-    getNicknameWithInsignia() {
-	const name = this.nick || this.nickname || 'John Doe';
-	const insignia = this.getInsignia();
-	return `${name} ${insignia}`;
+    getFormattedRankIndex() {
+	const i = this.rank_index;
+	if (i === 0) {
+	    return '000';
+	}
+	if (!i) {
+	    return '999';
+	}
+	if (i > 999 || i < 1) {
+	    return '999';
+	}
+	let s = Math.round(i).toString();
+	while (s.length < 3) {
+	    s = '0' + s;
+	}
+	return s;
     }
 
     getNicknameOrTitleWithInsignia() {
 	const name = this.getNicknameOrTitle();
 	const insignia = this.getInsignia();
-	return `${name} ${insignia}`;
+	if (!insignia) {
+	    return '999 Recruit';
+	}
+	const formattedRankIndex = this.getFormattedRankIndex();
+	return `${formattedRankIndex} ${name} ${insignia}`;
     }
 
     getRankNameAndInsignia() {

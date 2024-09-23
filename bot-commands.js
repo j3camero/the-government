@@ -4,9 +4,12 @@ const Ban = require('./ban');
 const diff = require('diff');
 const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
+const exile = require('./exile-cache');
 const FilterUsername = require('./filter-username');
+const fs = require('fs');
 const huddles = require('./huddles');
 const RandomPin = require('./random-pin');
+const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
@@ -18,14 +21,6 @@ const yen = require('./yen');
 // practice command that does nothing.
 async function HandlePingCommand(discordMessage) {
     await discordMessage.channel.send('Pong!');
-}
-
-// A cheap live test harness to test the code that finds the main chat channel.
-// This lets me test it anytime I'm worried it's broken.
-async function HandlePingPublicChatCommand(discordMessage) {
-    // TODO: add permissions so only high ranking people can use
-    // this command.
-    await DiscordUtil.MessagePublicChatChannel('Pong!');
 }
 
 // A message that starts with !code.
@@ -64,7 +59,7 @@ async function HandleGenderCommand(discordMessage) {
 
 async function MakeOneServerVoteOption(channel, serverName, battlemetricsLink, peakRank) {
     //const text = `__**${serverName}**__\n${battlemetricsLink}\n_Peak rank #${peakRank} ★ ${playerDensity} players / sq km ★ ${bpWipe}_`;
-    const text = `__**${serverName}**__\n${battlemetricsLink}\n_Peak rank #${peakRank}`;
+    const text = `__**${serverName}**__\n${battlemetricsLink}\n_Peak rank #${peakRank}_`;
     const message = await channel.send(text);
     await message.react('✅');
 }
@@ -77,21 +72,20 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send(
-	'The Government will play on whichever server gets the most votes. This will be our main home Rust server for December 2023.\n\n' +
-	'Every top 100 US monthly vanilla server is included.'
-    );
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for September 2024.');
     await message.react('❤️');
-    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 45);
-    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 110);
-    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 98);
-    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 41);
-    await MakeOneServerVoteOption(channel, 'Rustopia.gg - US Small', 'https://www.battlemetrics.com/servers/rust/14876730', 128);
-    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 125);
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5);
-    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 35);
-    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 28);
-    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 3);
+    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
+    await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 15);
+    await MakeOneServerVoteOption(channel, 'Reddit.com/r/PlayRust - US Monthly', 'https://www.battlemetrics.com/servers/rust/3345988', 26);
+    await MakeOneServerVoteOption(channel, 'Rusty Moose |US Small|', 'https://www.battlemetrics.com/servers/rust/2933470', 34);
+    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 88);
+    await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 91);
+    await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 144);
+    await MakeOneServerVoteOption(channel, 'Rustopia.gg - US Small', 'https://www.battlemetrics.com/servers/rust/14876730', 108);
+    await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 2);
+    await MakeOneServerVoteOption(channel, 'US Rustinity 2x Monthly Large Vanilla+', 'https://www.battlemetrics.com/servers/rust/10477772', 16);
+    await MakeOneServerVoteOption(channel, 'PICKLE QUAD MONTHLY US', 'https://www.battlemetrics.com/servers/rust/3477804', 203);
 }
 
 async function MakeOnePresidentVoteOption(channel, playerName) {
@@ -111,9 +105,9 @@ async function HandlePresidentVoteCommand(discordMessage) {
 	name: 'presidential-election',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in December 2023. Mr. or Madam President has the power to choose where The Government builds on wipe day. If they fail to make a clear choice 20 minutes into the wipe, then it falls to the runner-up, Mr. or Madam Vice President. The community base will be there and most players will build nearby. Nobody is forced - if you want to build elsewhere then you can.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in August 2024.');
     await message.react('❤️');
-    const generalRankUsers = await UserCache.GetMostCentralUsers(15);
+    const generalRankUsers = await UserCache.GetTopRankedUsers(19);
     const candidateNames = [];
     for (const user of generalRankUsers) {
 	if (user.commissar_id === 7) {
@@ -124,22 +118,6 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     for (const name of candidateNames) {
 	await MakeOnePresidentVoteOption(channel, name);
-    }
-}
-
-async function HandlePresidentVoteFixCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.resolve('1100498416162844772');
-    const candidates = [
-	'EviL',
-    ];
-    for (const candidate of candidates) {
-	await MakeOnePresidentVoteOption(channel, candidate);
     }
 }
 
@@ -174,58 +152,88 @@ async function HandlePrivateRoomVoteCommand(discordMessage) {
 	return;
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create('private-comms-for-generals');
+    const channel = await guild.channels.create({ name: 'vote-on-gov-future' });
     const message = await channel.send(
-	`__**Should Generals Have Private Comms?**__\n` +
-	`Recently we have tried an experiment where all 15 Generals have their own private comms. Access is controlled by the Badge system.\n\n` +
-	`Vote YES to continue the experiment.\n\n` +
-        `Vote NO to delete all private comms except the Raid channel.\n\n` +
-	`The Generals decide. A simple majority is needed for this motion to pass. The vote ends March 2, 2023.`);
+	`__**Vote on the Future of the Government Community**__\n` +
+	`Should we keep the microcommunities, the 3 digit barcodes, and the New Guy Demotion that slows down new recruits from ranking up too quickly?\n\n` +
+	`The hierarchical ranks are obsolete, but they were not in vain. We needed to explore that direction to discover the concept of microcommunities that we are voting on now.\n\n` +
+	`The ranks we have now are almost identical to the original ones that reigned from March 2021 to March 2024. This vote is not primarily about the ranks after all. This vote is about whether to keep the microcommunities, the 3 digit barcodes, and the New Guy Demotion that slows down new recruits from ranking up too quickly.\n\n` +
+	`Vote YES to keep things how they are now\n\n` +
+        `Vote NO to go back to how everything was in March\n\n` +
+	`The vote ends May 30, 2024. All Generals past & present can vote.`);
     await message.react('✅');
     await message.react('❌');
     const voteSectionId = '1043778293612163133';
     await channel.setParent(voteSectionId);
 }
 
-async function HandleAmnestyVoteCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
+function GenerateAkaStringForUser(cu) {
+    const peakRank = cu.peak_rank || 24;
+    const peakRankInsignia = RankMetadata[peakRank].insignia;
+    const names = [
+	cu.steam_name,
+	cu.nick,
+	cu.nickname,
+	cu.steam_id,
+	cu.discord_id,
+	peakRankInsignia,
+    ];
+    const filteredNames = [];
+    for (const name of names) {
+	if (name && name.length > 0) {
+	    filteredNames.push(name);
+	}
     }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create({ name: 'amnesty-vote' });
-    const message = await channel.send(
-	`__**Amnesty for weighedsea**__\n\n` +
-	`Should we unban weighedsea?\n\n` +
-        `Vote Yes to unban weighedsea. Vote No to keep weighedsea banned, or if you disagree with this vote being held in the first place.\n\n` +
-        `This guy was banned about a year ago. What we can determine is that he was banned during the Broken Dairy Queen Shooting Saga, early on, for calling it out as a lie. I guess in that moment it seemed insensitive. In light of the situation later blowing up in Broken's face as an obvious fabrication, it now looks like we banned weighed for nothing.\n\n` +
-	`A 2/3 majority is needed for this motion to pass. These matters will always be decided by the Generals. If we choose to grant this amnesty, then we can always ban him again later.`);
-    await message.react('✅');
-    await message.react('❌');
-    const voteSectionId = '1043778293612163133';
-    await channel.setParent(voteSectionId);
+    const joined = filteredNames.join(' / ');
+    return joined;
 }
 
-async function HandleTermLengthVoteCommand(discordMessage) {
+async function HandleAmnestyCommand(discordMessage) {
     const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
     if (!author || author.commissar_id !== 7) {
 	// Auth: this command for developer use only.
 	return;
     }
+    await discordMessage.channel.send(`The Generals have voted to unban the following individuals from The Government:`);
+    let unbanCountForGov = 0;
+    await UserCache.ForEach(async (cu) => {
+	if (!cu.good_standing && !cu.ban_vote_start_time && !cu.ban_pardon_time) {
+	    await cu.setGoodStanding(true);
+	    await cu.setBanVoteStartTime(null);
+	    await cu.setBanVoteChatroom(null);
+	    await cu.setBanVoteMessage(null);
+	    await cu.setBanConvictionTime(null);
+	    await cu.setBanPardonTime(null);
+	    const aka = GenerateAkaStringForUser(cu);
+	    await discordMessage.channel.send(`Unbanned ${aka}`);
+	    await Sleep(1000);
+	    unbanCountForGov++;
+	}
+    });
     const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create('president-term');
-    const message = await channel.send(
-	'__**Presidential Term of Service**__\n' +
-	'Vote YES to turn Mr. President back into a General at the end of each wipe day. The main reason for Mr. President to exist is to pick the build spot in case the map is a surprise on wipe day. With their job done, the first rain (2 AM on wipe night) will cleanse Mr. President of their title.\n\n' +
-	'Vote NO to keep Mr. President for the full month, until the beginning of the next presidential election.\n\n' +
-	'The convention that the Generals choose now will be the one used going forward. It will apply to next month and the one after that, not only this month. We will not have this vote again next month.\n\n' +
-	'This vote will end with the first rain of the new wipe (2 AM Eastern after wipe day). It requires a simple majority to pass (50% + 1).'
-    );
-    await message.react('✅');
-    await message.react('❌');
-    const voteSectionId = '1043778293612163133';
-    await channel.setParent(voteSectionId);
+    const bans = await guild.bans.fetch();
+    let unbanCountForDiscord = 0;
+    for (const [banId, ban] of bans) {
+	const discordId = ban.user.id;
+	if (!discordId) {
+	    continue;
+	}
+	const cu = await UserCache.GetCachedUserByDiscordId(discordId);
+	if (!cu) {
+	    continue;
+	}
+	if (!cu.ban_pardon_time) {
+	    await guild.bans.remove(discordId);
+	    const aka = GenerateAkaStringForUser(cu);
+	    await discordMessage.channel.send(`Unbanned ${aka}`);
+	    await Sleep(1000);
+	    unbanCountForDiscord++;
+	}
+    }
+    await discordMessage.channel.send(`${unbanCountForGov} gov users unbanned`);
+    await discordMessage.channel.send(`${unbanCountForDiscord} discord users unbanned`);
+    const total = unbanCountForGov + unbanCountForDiscord;
+    await discordMessage.channel.send(`These ${total} bans have been pardoned by order of the Generals`);
 }
 
 async function HandleVoiceActiveUsersCommand(discordMessage) {
@@ -244,25 +252,48 @@ async function HandleVoiceActiveUsersCommand(discordMessage) {
     await discordMessage.channel.send(`${voiceActiveUsers} users active in voice chat in the last ${daysToLookback} days.`);
 }
 
-async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
+async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     const name = user.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`Sending special mission orders to ${name}`);
+    await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of December 2023. Report to Rustafied.com - US Long III\n`;
+    content += `September 2024 is shaping up to be a huge month for The Government. Lots of big groups with great leaders are committed to building nearby each other with common walls. If you miss the big old gov wipes, you need to check this out!\n\n`;
+    if (user.rank <= 21) {
+	content += `The build spot is P25. Use the wipe code to get into community base.\n\n`;
+    }
+    content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
+    if (user.rank <= 15) {
+	content += `Generals Code 3677\n`;
+    }
+    if (user.rank <= 19) {
+	content += `Wipe Code 0425\n`;
+    }
+    console.log('Content length', content.length, 'characters.');
+    try {
+	await discordMember.send({
+	    content,
+	    files: [{
+		attachment: 'nov-2023-village-heatmap.png',
+		name: 'nov-2023-village-heatmap.png'
+	    }]
+	});
+    } catch (error) {
+	console.log('Failed to send orders to', name);
+    }
+}
+
+async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
+    const name = user.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`Sending orders to ${name}`);
+    const rankNameAndInsignia = user.getRankNameAndInsignia();
+    let content = `${rankNameAndInsignia},\n\n`;
+    content += `Here are your secret orders for the month of April 2024. Report to Rustafied.com - US Long III\n`;
     content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
-    if (user.rank <= 5) {
-	content += `Generals Code 1111\n`;
-    }
-    if (user.rank <= 9) {
-	content += `Officer Code 1111\n`;
-	content += `Grunt Code 1111\n`;
-    }
-    if (user.rank <= 13) {
-	content += `Gate Code 1111\n\n`;
-    }
-    content += `Run straight to A1. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/servers to automatically protect your base from getting raided by the gov. New advancements are coming soon that will revolutionize Rust.\n\n`;
+    content += `Grunt Code 1111\n`;
+    content += `Gate Code 1111\n\n`;
+    content += `Run straight to V7. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
+    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around your bases even if you never have the app open.\n\n`;
+    content += `Check out the new https://discord.com/channels/305840605328703500/711850971072036946. We are addressing the most longstanding problem in gov: having to put up with people you don't like to hang out with the ones you do like. Pair with rustcult.com for the best possible experience.\n\n`;
     content += `Yours truly,\n`;
     content += `The Government  <3`;
     console.log('Content length', content.length, 'characters.');
@@ -282,13 +313,24 @@ async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
 async function SendOrdersToOneCommissarUser(user, discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const discordMember = await guild.members.fetch(user.discord_id);
-    await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
+    if (discordMember.user.bot) {
+	return;
+    }
+    //const hasWipeBadge = await DiscordUtil.GuildMemberHasRole(discordMember, RoleID.WipeBadge);
+    //if (hasWipeBadge) {
+	await SendWipeBadgeOrders(user, discordMessage, discordMember);
+    //} else {
+	//await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
+    //}
 }
 
 async function SendOrdersToTheseCommissarUsers(users, discordMessage) {
     await discordMessage.channel.send(`Sending orders to ${users.length} members. Restart the bot now if this is not right.`);
-    await Sleep(10 * 1000);
+    await Sleep(1 * 1000);
     for (const user of users) {
+	if (!user) {
+	    continue;
+	}
 	await SendOrdersToOneCommissarUser(user, discordMessage);
 	await Sleep(5 * 1000);
     }
@@ -533,6 +575,7 @@ async function HandleBoopCommand(discordMessage) {
     }
     const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
     if (cu) {
+	await cu.setCitizen(true);
 	await discordMessage.channel.send(`Member already exists.`);
     } else {
 	// We have no record of this Discord user. Create a new record in the cache.
@@ -624,7 +667,7 @@ const sentToAFkTimes = {};
 async function HandleAfkCommand(discordMessage) {
 	const authorId = discordMessage.author.id;
     const author = await UserCache.GetCachedUserByDiscordId(authorId);
-	if (!author || author.rank > 5) {
+	if (!author || author.rank > 15) {
 		await discordMessage.channel.send(
 			`Error: Only generals can do that.`
 		)
@@ -666,21 +709,246 @@ async function HandleAfkCommand(discordMessage) {
 	}
 }
 
-async function HandleOverflowCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const tokens = discordMessage.content.split(' ');
-    if (tokens.length !== 2) {
-	await discordMessage.channel.send('USAGE: !overflow 20');
-	return;
-    }
-    const newLimit = tokens[1];
-    const finalLimit = huddles.SetOverflowLimit(newLimit);
-    await discordMessage.channel.send(`Overflow limit set to ${finalLimit}`);
+function ChooseRandomTrumpCard() {
+    const n = 32;
+    const r = Math.floor(n * Math.random());
+    return `trump-cards/${r}.png`;
 }
+
+let trumpNftPrice = null;
+const buyQueue = [];
+const sellQueue = [];
+
+function LoadPrice() {
+    if (trumpNftPrice === null) {
+	const trumpPriceAsString = fs.readFileSync('trump-price.csv');
+	trumpNftPrice = parseInt(trumpPriceAsString);
+    }
+}
+
+function SavePrice() {
+    LoadPrice();
+    fs.writeFileSync('trump-price.csv', trumpNftPrice.toString());
+}
+
+function IncreasePrice() {
+    LoadPrice();
+    if (trumpNftPrice < 99) {
+	trumpNftPrice++;
+    }
+    SavePrice();
+}
+
+function DecreasePrice() {
+    LoadPrice();
+    if (trumpNftPrice > 1) {
+	trumpNftPrice--;
+    }
+    SavePrice();
+}
+
+async function HandleBuyCommand(discordMessage) {
+    buyQueue.push(discordMessage);
+}
+
+async function FulfillBuyOrder(discordMessage) {
+    LoadPrice();
+    if (trumpNftPrice > 99) {
+	await discordMessage.channel.send('Cannot buy when the price is maxed out to 100. Wait for someone to sell then try again.');
+	return;
+    }
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+    const oldYen = author.yen || 0;
+    const oldCards = author.trump_cards || 0;
+    console.log('oldCards', oldCards);
+    const tradePrice = trumpNftPrice;
+    const name = author.getNicknameOrTitleWithInsignia();
+    let actionMessage = `${name} purchased this one-of-a-kind Donald Trump NFT for ${tradePrice} yen`;
+    let newYen = oldYen - tradePrice;
+    if (oldCards < 0) {
+	newYen += 100;
+	actionMessage += ' and got back their 100 yen deposit';
+    }
+    const newCards = oldCards + 1;
+    if (newYen >= 0) {
+	IncreasePrice();
+	await author.setYen(newYen);
+	await author.setTrumpCards(newCards);
+    } else {
+	await discordMessage.channel.send('Not enough yen. Use !yen to check how much money you have.');
+	return;
+    }
+    const prefixes = [
+	'The probability that Donald Trump will win the 2024 US presidential election is',
+	'The odds that Trump will win are',
+	'The probability of a Trump win is',
+    ];
+    const r = Math.floor(prefixes.length * Math.random());
+    const randomPrefix = prefixes[r];
+    const probabilityAnnouncement = `${randomPrefix} ${trumpNftPrice}%`;
+    let positionStatement;
+    const plural = Math.abs(newCards) !== 1 ? 's' : '';
+    if (newCards > 0) {
+	const positivePayout = newCards * 100;
+	positionStatement = `They have ${newCards} NFT${plural} that will pay out ${positivePayout} yen if Trump wins`;
+    } else if (newCards < 0) {
+	const negativePayout = -newCards * 100;
+	positionStatement = `They are short ${-newCards} more NFT${plural} that will pay out ${negativePayout} yen if Trump does not win`;
+    } else {
+	positionStatement = 'They have no NFTs left';
+    }
+    let content = '```' + `${actionMessage}. ${positionStatement}. ${probabilityAnnouncement}` + '```';
+    const trumpCard = ChooseRandomTrumpCard();
+    try {
+	await discordMessage.channel.send({
+	    content,
+	    files: [{
+		attachment: trumpCard,
+		name: trumpCard,
+	    }]
+	});
+    } catch (error) {
+	console.log(error);
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch('1267202328243732480');
+    let message = '```' + probabilityAnnouncement + '\n\n';
+    if (trumpNftPrice < 100) {
+	message += `!buy a Donald Trump NFT for ${trumpNftPrice} yen\n`;
+    }
+    if (trumpNftPrice > 1) {
+	const sellPrice = trumpNftPrice - 1;
+	message += `!sell a Donald Trump NFT for ${sellPrice} yen\n`;
+    }
+    message += '\n';
+    message += 'Every Donald Trump NFT pays out 100 yen if Donald Trump is declared the winner of the 2024 US presidential election by the Associated Press. Short-selling is allowed. If you believe that Trump will win then !buy. If you believe that he will not win then !sell.\n\n';
+    message += '!buy low !sell high. It\'s just business. Personal politics aside, if the price does not reflect the true probability, then consider a !buy or !sell. See a news event that is not priced in yet? Quickly !buy or !sell to profit from being the first to bring new information to market.\n\n';
+    message += 'Do you believe that one or both sides suffer from bias? Here is your chance to fine a random idiot from the internet for disagreeing with you. Make them pay!';
+    message += '```';
+    console.log('message:', message);
+    await channel.bulkDelete(99);
+    await channel.send({
+	content: message,
+	files: [{
+	    attachment: trumpCard,
+	    name: trumpCard,
+	}]
+    });
+    await yen.UpdateYenChannel();
+}
+
+async function HandleSellCommand(discordMessage) {
+    sellQueue.push(discordMessage);
+}
+
+async function FulfillSellOrder(discordMessage) {
+    LoadPrice();
+    if (trumpNftPrice < 2) {
+	await discordMessage.channel.send('Cannot sell when the price is bottomed out to 1. Wait for someone to buy then try again.');
+	return;
+    }
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author) {
+	return;
+    }
+    const oldYen = author.yen || 0;
+    const oldCards = author.trump_cards || 0;
+    const tradePrice = trumpNftPrice - 1;
+    const name = author.getNicknameOrTitleWithInsignia();
+    let actionMessage = `${name} sold this Donald Trump NFT for ${tradePrice} yen`;
+    let newYen = oldYen + tradePrice;
+    const newCards = oldCards - 1;
+    if (newCards < 0) {
+	newYen -= 100;
+	actionMessage = `${name} deposited 100 yen to mint a new Donald Trump NFT then sold it for ${tradePrice} yen`;
+    }
+    if (newYen >= 0) {
+	DecreasePrice();
+	await author.setYen(newYen);
+	await author.setTrumpCards(newCards);
+    } else {
+	await discordMessage.channel.send('Not enough yen to short-sell. Use !yen to check how much money you have.');
+	return;
+    }
+    const prefixes = [
+	'The probability that Donald Trump will win the 2024 US presidential election is',
+	'The odds that Trump will win are',
+	'The probability of a Trump win is',
+    ];
+    const r = Math.floor(prefixes.length * Math.random());
+    const randomPrefix = prefixes[r];
+    const probabilityAnnouncement = `${randomPrefix} ${trumpNftPrice}%`;
+    let positionStatement;
+    const plural = Math.abs(newCards) !== 1 ? 's' : '';
+    if (newCards > 0) {
+	const positivePayout = newCards * 100;
+	positionStatement = `They have ${newCards} NFT${plural} left that will pay out ${positivePayout} yen if Trump wins`;
+    } else if (newCards < 0) {
+	const negativePayout = -newCards * 100;
+	positionStatement = `They are short ${-newCards} NFT${plural} that will pay out ${negativePayout} yen if Trump does not win`;
+    } else {
+	positionStatement = 'They have no NFTs left';
+    }
+    let content = '```' + `${actionMessage}. ${positionStatement}. ${probabilityAnnouncement}` + '```';
+    const trumpCard = ChooseRandomTrumpCard();
+    try {
+	await discordMessage.channel.send({
+	    content,
+	    files: [{
+		attachment: trumpCard,
+		name: trumpCard,
+	    }]
+	});
+    } catch (error) {
+	console.log(error);
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch('1267202328243732480');
+    let message = '```' + probabilityAnnouncement + '\n\n';
+    if (trumpNftPrice < 100) {
+	message += `!buy a Donald Trump NFT for ${trumpNftPrice} yen\n`;
+    }
+    if (trumpNftPrice > 1) {
+	const sellPrice = trumpNftPrice - 1;
+	message += `!sell a Donald Trump NFT for ${sellPrice} yen\n`;
+    }
+    message += '\n';
+    message += 'Every Donald Trump NFT pays out 100 yen if Donald Trump is declared the winner of the 2024 US presidential election by the Associated Press. Short-selling is allowed. If you believe that Trump will win then !buy. If you believe that he will not win then !sell.\n\n';
+    message += '!buy low !sell high. It\'s just business. Personal politics aside, if the price does not reflect the true probability, then consider a !buy or !sell. See a news event that is not priced in yet? Quickly !buy or !sell to profit from being the first to bring new information to market.\n\n';
+    message += 'Do you believe that one or both sides suffer from bias? Here is your chance to fine a random idiot from the internet for disagreeing with you. Make them pay!';
+    message += '```';
+    console.log('message:', message);
+    await channel.bulkDelete(99);
+    await channel.send({
+	content: message,
+	files: [{
+	    attachment: trumpCard,
+	    name: trumpCard,
+	}]
+    });
+    await yen.UpdateYenChannel();
+}
+
+async function ProcessOneBuyAndOneSellOrder() {
+    if (buyQueue.length === 0 && sellQueue.length === 0) {
+	setTimeout(ProcessOneBuyAndOneSellOrder, 1000);
+	return;
+    }
+    if (buyQueue.length > 0) {
+	const buyOrder = buyQueue.shift();
+	await FulfillBuyOrder(buyOrder);
+	await Sleep(100);
+    }
+    if (sellQueue.length > 0) {
+	const sellOrder = sellQueue.shift();
+	await FulfillSellOrder(sellOrder);
+    }
+    setTimeout(ProcessOneBuyAndOneSellOrder, 100);
+}
+setTimeout(ProcessOneBuyAndOneSellOrder, 1000);
 
 // Handle any unrecognized commands, possibly replying with an error message.
 async function HandleUnknownCommand(discordMessage) {
@@ -695,56 +963,46 @@ async function HandleUnknownCommand(discordMessage) {
 async function Dispatch(discordMessage) {
     const handlers = {
 	'!afk': HandleAfkCommand,
-	'!amnestyvote': HandleAmnestyVoteCommand,
-	'!apprehend': Ban.HandleBanCommand,
-	'!arrest': Ban.HandleBanCommand,
-	'!art': Artillery,
+	'!amnesty': HandleAmnestyCommand,
 	'!artillery': Artillery,
 	'!badge': HandleBadgeCommand,
 	'!bal': yen.HandleYenCommand,
 	'!balance': yen.HandleYenCommand,
 	'!ban': Ban.HandleBanCommand,
 	'!boop': HandleBoopCommand,
+	'!buy': HandleBuyCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
-	'!convert': yen.HandleConvertCommand,
 	'!convict': Ban.HandleConvictCommand,
-	'!detain': Ban.HandleBanCommand,
-	'!fuck': Ban.HandleBanCommand,
 	'!gender': HandleGenderCommand,
-	'!goodbye': Ban.HandleBanCommand,
-	'!howhigh': Artillery,
 	'!hype': HandleHypeCommand,
 	'!impeach': HandleImpeachCommand,
 	'!prez': HandlePrezCommand,
 	'!veep': HandleVeepCommand,
-	'!indict': Ban.HandleBanCommand,
 	'!lottery': yen.DoLottery,
 	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
-	'!overflow': HandleOverflowCommand,
 	'!orders': HandleOrdersCommand,
 	'!orderstest': HandleOrdersTestCommand,
 	'!pardon': Ban.HandlePardonCommand,
 	'!pay': yen.HandlePayCommand,
 	'!ping': HandlePingCommand,
-	'!pingpublic': HandlePingPublicChatCommand,
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
-	'!presidentvotefix': HandlePresidentVoteFixCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
+	'!sell': HandleSellCommand,
 	'!tax': yen.HandleTaxCommand,
-	'!termlengthvote': HandleTermLengthVoteCommand,
 	'!tip': yen.HandleTipCommand,
-	'!trial': Ban.HandleBanCommand,
 	'!transcript': HandleTranscriptCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
-	'!welp': Ban.HandleBanCommand,
 	'!yen': yen.HandleYenCommand,
 	'!yencreate': yen.HandleYenCreateCommand,
 	'!yendestroy': yen.HandleYenDestroyCommand,
 	'!yenfaq': yen.HandleYenFaqCommand,
     };
+    if (discordMessage.author.bot) {
+	return;
+    }
     if (!discordMessage.content || discordMessage.content.length === 0) {
 	return;
     }
@@ -756,6 +1014,7 @@ async function Dispatch(discordMessage) {
 	return;
     }
     const command = tokens[0].toLowerCase();
+    console.log('Dispatching command:', command);
     if (command in handlers) {
 	const handler = handlers[command];
 	await handler(discordMessage);

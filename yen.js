@@ -370,7 +370,7 @@ async function DoLottery() {
     for (const i in taxBase) {
 	totalTaxBase += taxBase[i];
     }
-    const minimumTaxBaseForLottery = 1010;
+    const minimumTaxBaseForLottery = 100;
     if (totalTaxBase < minimumTaxBaseForLottery) {
 	return;
     }
@@ -460,13 +460,13 @@ async function UpdateYenChannel() {
     const channel = await guild.channels.resolve(yenChannelId);
     await channel.bulkDelete(99);
     await DiscordUtil.SendLongList(lines, channel);
-    const jeffSteamInventoryValue = 121462;
+    const jeffSteamInventoryValue = 254406;
     const reserveRatio = jeffSteamInventoryValue / totalYen;
     const formattedReserveRatio = parseInt(reserveRatio * 100);
     const formattedActiveYenPercent = parseInt(100 * activeYen / totalYen);
     let message = '';
     message += `Total yen in circulation: ¥ ${totalYen}\n`;
-    message += `Liquidation value of Jeff's Rust skins (Nov 2023): ¥ ${jeffSteamInventoryValue}\n`;
+    message += `Liquidation value of Jeff's Rust skins (April 2024): ¥ ${jeffSteamInventoryValue}\n`;
     message += `Reserve ratio: ${formattedReserveRatio}%\n`;
     message += `All recently active members (90d): ¥ ${activeYen} (${formattedActiveYenPercent}%)\n`;
     message += `Inactive members: ¥ ${inactiveYen}\n`;
@@ -529,7 +529,7 @@ async function HandlePayCommandWithAmount(discordMessage, amount) {
 }
 
 async function HandlePayCommand(discordMessage) {
-    const tokens = discordMessage.content.split(' ');
+    const tokens = discordMessage.content.split(' ').filter(n => n);
     if (tokens.length !== 3) {
 	await discordMessage.channel.send('Error. Wrong number of parameters. Example: `!pay @Jeff 42`');
 	return;
@@ -766,4 +766,5 @@ module.exports = {
     HandleYenCreateCommand,
     HandleYenDestroyCommand,
     HandleYenFaqCommand,
+    UpdateYenChannel,
 };

@@ -19,6 +19,8 @@ async function LoadAllUsersFromDatabase() {
 	    row.nickname,
 	    row.nick,
 	    row.rank,
+	    row.rank_score,
+	    row.rank_index,
 	    row.last_seen,
 	    row.office,
 	    row.harmonic_centrality,
@@ -26,6 +28,7 @@ async function LoadAllUsersFromDatabase() {
 	    row.gender,
 	    row.citizen,
 	    row.good_standing,
+	    row.friend_role_id,
 	    row.friend_category_id,
 	    row.friend_text_chat_id,
 	    row.friend_voice_room_id,
@@ -38,6 +41,15 @@ async function LoadAllUsersFromDatabase() {
 	    row.ban_pardon_time,
 	    row.presidential_election_vote,
 	    row.presidential_election_message_id,
+	    row.steam_id,
+	    row.steam_name,
+	    row.steam_name_update_time,
+	    row.trump_cards,
+	    row.cost_basis,
+	    row.calendar_day_count,
+	    row.last_calendar_day,
+	    row.calendar_month_count,
+	    row.last_calendar_month,
 	);
 	newCache[row.commissar_id] = newUser;
     });
@@ -82,6 +94,42 @@ function GetCachedUserByDiscordId(discord_id) {
     return null;
 }
 
+// Get a cached user record by Steam ID.
+function GetCachedUserBySteamId(steam_id) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.steam_id === steam_id) {
+	    return user;
+	}
+    }
+    return null;
+}
+
+// Try to find a user given any known ID.
+function TryToFindUserGivenAnyKnownId(i) {
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.steam_id === i) {
+	    return user;
+	}
+	if (user.discord_id === i) {
+	    return user;
+	}
+	if (user.commissar_id === i) {
+	    return user;
+	}
+    }
+    return null;
+}
+
+// Try to find a display name for a user given any known ID.
+function TryToFindDisplayNameForUserGivenAnyKnownId(i) {
+    const u = TryToFindUserGivenAnyKnownId(i);
+    if (u) {
+	return u.getNicknameOrTitle();
+    } else {
+	return null;
+    }
+}
+
 async function GetOrCreateUserByDiscordId(discordMember) {
     const cu = await GetCachedUserByDiscordId(discordMember.user.id);
     if (cu) {
@@ -96,7 +144,9 @@ async function CreateNewDatabaseUser(discordMember) {
     const nickname = FilterUsername(discordMember.user.username);
     console.log(`Create a new DB user for ${nickname}`);
     const rank = RankMetadata.length - 1;
-    const last_seen = moment().format();
+    const rank_score = 0;
+    const rank_index = 9999999;
+    const last_seen = null;
     const office = null;
     const fields = {discord_id, nickname, rank, last_seen};
     const result = await DB.Query('INSERT INTO users SET ?', fields);
@@ -106,15 +156,17 @@ async function CreateNewDatabaseUser(discordMember) {
 	discord_id,
 	nickname,
 	null,
-	rank,
+	rank, rank_score, rank_index,
 	last_seen,
 	office,
-	0, 12, null,
+	0, rank, null,
 	true, true,
-	null, null, null,
+	null, null, null, null,
 	null, null, null,
 	0,
 	null, null, null, null, null,
+	null, null, null,
+	0, 0,
     );
     commissarUserCache[commissar_id] = newUser;
     return newUser;
@@ -133,9 +185,6 @@ async function GetAllNicknames() {
 //
 // topN - the number of top most central users to return. Omit this
 //        to return all citizens sorted by centrality.
-//
-// Returns a list of pairs:
-//   [(commissar_id, centrality), ...]
 function GetMostCentralUsers(topN) {
     const flat = [];
     for (const [commissarId, user] of Object.entries(commissarUserCache)) {
@@ -147,6 +196,31 @@ function GetMostCentralUsers(topN) {
 	return b.harmonic_centrality - a.harmonic_centrality;
     });
     return flat.slice(0, topN);
+}
+
+// Get the N top users by rank score.
+//
+// topN - the number of top users to return.
+function GetTopRankedUsers(topN) {
+    const flat = [];
+    for (const [commissarId, user] of Object.entries(commissarUserCache)) {
+	if (user.citizen) {
+	    flat.push(user);
+	}
+    }
+    flat.sort((a, b) => {
+	return b.rank_score - a.rank_score;
+    });
+    return flat.slice(0, topN);
+}
+
+function GetAllUsersAsFlatList() {
+    const flat = [];
+    for (const i in commissarUserCache) {
+	const u = commissarUserCache[i];
+	flat.push(u);
+    }
+    return flat;
 }
 
 async function BulkCentralityUpdate(centralityScores) {
@@ -260,20 +334,61 @@ function CountPresidentialElectionVotes() {
     return votes;
 }
 
+function GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName() {
+    let chosenUser = null;
+    let oldestUpdateTime;
+    const keys = Object.keys(commissarUserCache);
+    // Crawl users in reverse order to update most recent joiners by default.
+    keys.reverse();
+    for (const i of keys) {
+	const u = commissarUserCache[i];
+	if (!u.steam_id) {
+	    continue;
+	}
+	if (!u.steam_name_update_time) {
+	    return u;
+	}
+	const t = moment(u.steam_name_update_time);
+	if (!oldestUpdateTime || t.isBefore(oldestUpdateTime)) {
+	    oldestUpdateTime = t;
+	    chosenUser = u;
+	}
+    }
+    return chosenUser;
+}
+
+function GetAllBannedUsers() {
+    const flat = [];
+    for (const i in commissarUserCache) {
+	const u = commissarUserCache[i];
+	if (u.ban_conviction_time && u.ban_pardon_time) {
+	    flat.push(u);
+	}
+    }
+    return flat;
+}
+
 module.exports = {
     BulkCentralityUpdate,
     CountVoiceActiveUsers,
     CreateNewDatabaseUser,
     ForEach,
+    GetAllBannedUsers,
     GetAllCitizenCommissarIds,
     GetAllNicknames,
+    GetAllUsersAsFlatList,
     GetCachedUserByBanVoteChannelId,
     GetCachedUserByBanVoteMessageId,
     GetCachedUserByCommissarId,
     GetCachedUserByDiscordId,
+    GetCachedUserBySteamId,
+    GetOneSteamConnectedUserWithLeastRecentlyUpdatedSteamName,
     GetMostCentralUsers,
     GetOrCreateUserByDiscordId,
+    GetTopRankedUsers,
     GetUsersSortedByLastSeen,
     GetUsersWithRankAndScoreHigherThan,
     LoadAllUsersFromDatabase,
+    TryToFindDisplayNameForUserGivenAnyKnownId,
+    TryToFindUserGivenAnyKnownId,
 };

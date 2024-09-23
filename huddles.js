@@ -6,8 +6,10 @@
 // introduce auto-scaling to Discord voice chat rooms so there are always
 // the right amount of rooms no matter how busy.
 
+const config = require('./config');
 const { PermissionFlagsBits } = require('discord.js');
 const DiscordUtil = require('./discord-util');
+const fetch = require('./fetch');
 const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
@@ -16,14 +18,13 @@ const huddles = [
     { name: 'Main', userLimit: 99, position: 1000 },
     { name: 'Duo', userLimit: 2, position: 2000 },
     { name: 'Trio', userLimit: 3, position: 3000 },
-    //{ name: 'Quad', userLimit: 4, position: 4000 },
-    //{ name: 'Squad', userLimit: 8, position: 7000 },
+    { name: 'Quad', userLimit: 4, position: 4000 },
+    //{ name: 'Six Pack', userLimit: 6, position: 6000 },
+    { name: 'Squad', userLimit: 8, position: 7000 },
 ];
 
 function GetAllMatchingVoiceChannels(guild, huddle) {
     const matchingChannels = [];
-    // Necessary in case a string key is passed in. Object keys are
-    // sometimes showing up as strings.
     for (const [id, channel] of guild.channels.cache) {
 	if (channel.type === 2 &&
 	    channel.name === huddle.name &&
@@ -40,10 +41,11 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	bitrate,
 	permissionOverwrites: [
 	    { id: guild.roles.everyone, deny: perms },
-	    { id: RoleID.Admin, allow: perms },
+	    { id: RoleID.Commander, allow: perms },
 	    { id: RoleID.General, allow: perms },
 	    { id: RoleID.Officer, allow: perms },
 	    { id: RoleID.Grunt, allow: perms },
+	    { id: RoleID.Recruit, allow: perms },
 	    { id: RoleID.Bots, allow: perms },
 	],
 	name: huddle.name,
@@ -51,24 +53,20 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	userLimit: huddle.userLimit,
     };
     console.log('Creating channel.');
-    await guild.channels.create(options);
-    console.log('Done');
+    return await guild.channels.create(options);
 }
 
 async function CreateNewVoiceChannel(guild, huddle) {
-    const level3Bitrate = 384000;
-    const level2Bitrate = 128000;
-    try {
-	await CreateNewVoiceChannelWithBitrate(guild, huddle, level3Bitrate);
-    } catch (err) {
+    const bitratesToTry = [384000, 256000, 128000];
+    for (const bitrate of bitratesToTry) {
 	try {
-	    await CreateNewVoiceChannelWithBitrate(guild, huddle, level2Bitrate);
+	    return await CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate);
 	} catch (err) {
-	    // If channel creation fails, assume that it's because of the bitrate and try again.
-	    // This will save us if the server loses Discord Nitro levels.
-	    await CreateNewVoiceChannelWithBitrate(guild, huddle);
+	    console.log('Failed to create channel with bitrate', bitrate);
 	}
     }
+    console.log('Failed to create channel with any bitrate');
+    return null;
 }
 
 function GetMostRecentlyCreatedVoiceChannel(channels) {
@@ -99,9 +97,6 @@ async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {
 	return;
     }
     console.log('Found', matchingChannels.length, 'matching channels.');
-    //for (const channel of matchingChannels) {
-    //	await channel.setPosition(huddle.position);
-    //}
     const emptyChannels = matchingChannels.filter(ch => ch.members.size === 0);
     console.log(emptyChannels.length, 'empty channels of this type.');
     if (emptyChannels.length === 0) {
@@ -164,7 +159,6 @@ function CompareRooms(a, b) {
 	return -1;
     }
     // This is the scoring rule for rooms that are neither empty nor full.
-    // The room with the most senior member wins.
     const ah = ScoreRoom(a);
     const bh = ScoreRoom(b);
     if (ah < bh) {
@@ -175,32 +169,21 @@ function CompareRooms(a, b) {
     }
     // Rules from here on down are mainly intended for sorting the empty
     // VC rooms at the bottom amongst themselves.
-    // Rooms named Main sort up.
-    if (a.name !== 'Main' && b.name === 'Main') {
-	return 1;
-    }
-    if (a.name === 'Main' && b.name !== 'Main') {
-	return -1;
+    const roomOrder = ['Main', 'Duo', 'Trio', 'Quad', 'Squad'];
+    //roomOrder.reverse();  // Makes Main sort to bottom.
+    for (const roomName of roomOrder) {
+	if (a.name.startsWith(roomName) && !b.name.startsWith(roomName)) {
+	    return -1;
+	}
+	if (!a.name.startsWith(roomName) && b.name.startsWith(roomName)) {
+	    return 1;
+	}
     }
     // Rooms with lower capacity sort up.
     if (a.userLimit > b.userLimit) {
 	return 1;
     }
     if (a.userLimit < b.userLimit) {
-	return -1;
-    }
-    // Rooms named Officers Only go next.
-    if (a.name !== 'Officers Only' && b.name === 'Officers Only') {
-	return 1;
-    }
-    if (a.name === 'Officers Only' && b.name !== 'Officers Only') {
-	return -1;
-    }
-    // Rooms named Generals Only go next.
-    if (a.name !== 'Generals Only' && b.name === 'Generals Only') {
-	return 1;
-    }
-    if (a.name === 'Generals Only' && b.name !== 'Generals Only') {
 	return -1;
     }
     // Should all other criteria fail to break the tie, then alphabetic ordering is the last resort.
@@ -241,263 +224,23 @@ async function MoveOneRoomIfNeeded(guild) {
     return true;
 }
 
-function CompareMembersByHarmonicCentrality(a, b) {
-    const au = UserCache.GetCachedUserByDiscordId(a.id);
-    const bu = UserCache.GetCachedUserByDiscordId(b.id);
-    const aScore = au ? (au.harmonic_centrality || 0) : 0;
-    const bScore = bu ? (bu.harmonic_centrality || 0) : 0;
-    if (aScore < bScore) {
-	return 1;
-    }
-    if (bScore < aScore) {
-	return -1;
-    }
-    return 0;
-}
-
-function GetLowestRankingMembersFromVoiceChannel(channel, n) {
-    const sortableMembers = [];
-    for (const [id, member] of channel.members) {
-	sortableMembers.push(member);
-    }
-    sortableMembers.sort(CompareMembersByHarmonicCentrality);
-    if (sortableMembers.length <= n) {
-	return sortableMembers;
-    }
-    return sortableMembers.slice(-n);
-}
-
-let overflowLimit = 25;
-
-function SetOverflowLimit(newLimit) {
-    const maxLimit = 90;
-    if (!newLimit) {
-	newLimit = maxLimit;
-    }
-    try {
-	newLimit = parseInt(newLimit);
-    } catch (error) {
-	newLimit = maxLimit;
-    }
-    if (newLimit > maxLimit) {
-	newLimit = maxLimit;
-    }
-    if (newLimit < 2) {
-	newLimit = maxLimit;
-    }
-    overflowLimit = newLimit;
-    return newLimit;
-}
-
-// Sets a channel to be accessible to everyone.
-async function SetOpenPerms(channel) {
-    const connect = PermissionFlagsBits.Connect;
-    const view = PermissionFlagsBits.ViewChannel;
-    const perms = [
-	{ id: channel.guild.roles.everyone.id, deny: [connect, view] },
-	{ id: RoleID.Grunt, allow: [connect, view] },
-	{ id: RoleID.Officer, allow: [connect, view] },
-	{ id: RoleID.General, allow: [connect, view] },
-	{ id: RoleID.Marshal, allow: [connect, view] },
-	{ id: RoleID.Bots, allow: [view, connect] },
-    ];
-    await channel.permissionOverwrites.set(perms);
-}
-
-// Calculates the rank-level perms to use for rank-limiting a voice channel.
-function CalculatePermsByRank(channel, rankLimit) {
-    const connect = PermissionFlagsBits.Connect;
-    const view = PermissionFlagsBits.ViewChannel;
-    const perms = [
-	{ id: channel.guild.roles.everyone.id, allow: [view], deny: [connect] },
-	{ id: RoleID.Bots, allow: [view, connect] },
-	{ id: RoleID.Marshal, allow: [view, connect] },
-    ];
-    let rankIndex = 0;
-    for (const rank of RankMetadata) {
-	if (rank.count) {
-	    const mainRole = rank.roles[0];
-	    // Watch out for which way this is ordered. Lower ranks have higher indices.
-	    if (rankIndex < rankLimit) {
-		perms.push({ id: mainRole, allow: [view, connect] });
-	    } else {
-		perms.push({ id: mainRole, allow: [view], deny: [connect] });
-	    }
-	}
-	++rankIndex;
-    }
-    return perms;
-}
-
-// Calculates the individual member perms to use for rank-limiting a voice channel.
-async function CalculateIndividualPerms(rankLimit, scoreThreshold) { 
-    const eligibleUsers = UserCache.GetUsersWithRankAndScoreHigherThan(rankLimit, scoreThreshold);
-    eligibleUsers.sort((a, b) => {
-	if (a.last_seen < b.last_seen) {
-	    return 1;
-	}
-	if (a.last_seen > b.last_seen) {
-	    return -1;
-	}
-	return 0;
-    });
-    const howManyTop = 20;
-    const mostRecentUsers = eligibleUsers.length < howManyTop ? eligibleUsers : eligibleUsers.slice(0, howManyTop);
-    const connect = PermissionFlagsBits.Connect;
-    const view = PermissionFlagsBits.ViewChannel;
-    const perms = [];
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    for (const user of mostRecentUsers) {
-	const member = await guild.members.fetch(user.discord_id);
-	if (member) {
-	    perms.push({ id: member.id, allow: [connect, view] });
-	}
-    }
-    return perms;
-}
-
-// Sets perms to rank-limit a voice chat room.
-// Uses a combination of rank-level perms and individual perms to efficiently
-// impose a rank limit on a channel with a resolution down to the individual.
-async function SetRankLimit(channel, rankLimit, scoreThreshold) {
-    const rankPerms = CalculatePermsByRank(channel, rankLimit);
-    const individualPerms = await CalculateIndividualPerms(rankLimit, scoreThreshold);
-    const perms = rankPerms.concat(individualPerms);
-    await channel.permissionOverwrites.set(perms);
-}
-
-// Enforces a population cap on the Main voice chat rooms by moving low-ranking members around.
-// Returns true if it had to move anyone, and false if no moves are needed.
-async function Overflow(guild) {
-    console.log(`Overflow`);
-    const mainChannels = [];
-    for (const [id, channel] of guild.channels.cache) {
-	if (channel.type === 2 && !channel.parent && channel.name === 'Main') {
-	    mainChannels.push(channel);
-	}
-    }
-    console.log(`${mainChannels.length} Main voice channels detected.`);
-    console.log(`overflowLimit ${overflowLimit}`);
-    const overflowMembers = [];
-    let totalPopOfAllMainRooms = 0;
-    for (const channel of mainChannels) {
-	const pop = channel.members.size;
-	console.log('Main room with pop', pop);
-	totalPopOfAllMainRooms += pop;
-	if (pop < overflowLimit) {
-	    await SetOpenPerms(channel);
-	} else {
-	    const howManyExtra = pop - overflowLimit;
-	    const lowest = GetLowestRankingMembersFromVoiceChannel(channel, howManyExtra + 1);
-	    const extra = lowest.slice(1);
-	    for (const member of extra) {
-		overflowMembers.push(member);
-	    }
-	    const pivotMember = lowest[0];
-	    const pivotUser = UserCache.GetCachedUserByDiscordId(pivotMember.id);
-	    if (pivotUser) {
-		await SetRankLimit(channel, pivotUser.rank, pivotUser.harmonic_centrality);
-	    } else {
-		await SetOpenPerms(channel);
-	    }
-	}
-    }
-    console.log(`${overflowMembers.length} overflow members detected.`);
-    if (overflowMembers.length === 0) {
-	console.log(`No overflow. Bailing.`);
-	return false;
-    }
-    // If we get here then there are overflow members. Get only the
-    // highest ranking one and try to move them.
-    overflowMembers.sort(CompareMembersByHarmonicCentrality);
-    const memberToMove = overflowMembers[0];
-    const cu = UserCache.GetCachedUserByDiscordId(memberToMove.id);
-    const name = cu.getNicknameOrTitleWithInsignia();
-    // Now identify which is the best other Main room to move them to.
-    // For now choose the fullest other Main room the member is
-    // allowed to join. In the future personalize this so it uses the
-    // coplay time to choose the most familiar group to place the member with.
-    console.log(`Looking for destination for ${name}`);
-    let bestDestination;
-    let bestDestinationPop = 0;
-    for (const channel of mainChannels) {
-	let superiorCount = 0;
-	for (const [id, member] of channel.members) {
-	    const voiceUser = UserCache.GetCachedUserByDiscordId(member.id);
-	    if (voiceUser.harmonic_centrality > cu.harmonic_centrality) {
-		superiorCount++;
-	    }
-	}
-	console.log(`superiorCount ${superiorCount}`);
-	if (superiorCount >= overflowLimit) {
-	    continue;
-	}
-	const pop = channel.members.size;
-	if (pop > bestDestinationPop) {
-	    bestDestination = channel;
-	    bestDestinationPop = pop;
-	}
-    }
-    // If a good destination was found then move the member.
-    if (bestDestination) {
-	console.log(`Best destination found. Moving member.`);
-	await memberToMove.voice.setChannel(bestDestination);
-	return true;
-    }
-    console.log('No suitable destination found for member.');
-    // Buddy rule. Never move a member into a room where they are alone.
-    if (overflowMembers.length < 2) {
-	console.log('Bailing due to buddy rule.');
-	return false;
-    }
-    // If we end up with at least 2 overflow members and nowhere to put them,
-    // then move them to an empty Main room together.
-    console.log('Trying to find an empty main channel to populate.');
-    let emptyMainChannel;
-    for (const channel of mainChannels) {
-	if (channel.members.size === 0) {
-	    emptyMainChannel = channel;
-	    break;
-	}
-    }
-    if (!emptyMainChannel) {
-	// No empty Main channel. This is usually temporary.
-	// Return true to try again in a short time and hopefully
-	// there will be an empty Main channel by then.
-	console.log(`Failed to find an empty Main channel. Bailing.`);
-	return true;
-    }
-    console.log(`Overflow moving 2 members into an empty Main channel together.`);
-    const [dumb, dumber] = overflowMembers.slice(-2);
-    if (dumb) {
-	console.log('Moving 1st member to empty Main channel.');
-	await dumb.voice.setChannel(emptyMainChannel);
-    }
-    if (dumber) {
-	console.log('Moving 2nd member to empty Main channel.');
-	await dumber.voice.setChannel(emptyMainChannel);
-    }
-    return true;
-}
-
 // To avoid race conditions on the cheap, use a system of routine updates.
 // To schedule an update, a boolean flag is flipped. That way, the next time
 // the cycle goes around, it knows that an update is needed. Redundant or
 // overlapping updates are avoided this way.
 let isUpdateNeeded = false;
-setInterval(Update, 5 * 1000);
+setTimeout(HuddlesUpdate, 9000);
 
-async function Update() {
-    if (!isUpdateNeeded) {
-	return;
+async function HuddlesUpdate() {
+    if (isUpdateNeeded) {
+	const guild = await DiscordUtil.GetMainDiscordGuild();
+	for (const huddle of huddles) {
+	    await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
+	}
+	const roomsInOrder = await MoveOneRoomIfNeeded(guild);
+	isUpdateNeeded = !roomsInOrder;
     }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    for (const huddle of huddles) {
-	await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
-    }
-    const overflowMovedAnyone = await Overflow(guild);
-    const roomsInOrder = await MoveOneRoomIfNeeded(guild);
-    isUpdateNeeded = overflowMovedAnyone || !roomsInOrder;
+    setTimeout(HuddlesUpdate, 1000);
 }
 
 function ScheduleUpdate() {
@@ -506,5 +249,4 @@ function ScheduleUpdate() {
 
 module.exports = {
     ScheduleUpdate,
-    SetOverflowLimit,
 };

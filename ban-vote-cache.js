@@ -1,4 +1,5 @@
 const db = require('./database');
+const RankMetadata = require('./rank-definitions');
 const UserCache = require('./user-cache');
 
 const voteCache = {};
@@ -10,8 +11,35 @@ async function DeleteVotesForDefendant(defendantId) {
     await db.Query('DELETE FROM ban_votes WHERE defendant_id = ?', [defendantId]);
 }
 
-function CountVotesForDefendant(defendantId) {
-    const totals = {
+function CountTotalVotesForDefendant(defendantId) {
+    const votes = voteCache[defendantId] || {};
+    return Object.keys(votes).length;
+}
+
+function GetSortedVotesForDefendant(defendantId) {
+    const w = {
+	0: [],
+	1: [],
+	2: [],
+    };
+    const votes = voteCache[defendantId] || {};
+    for (const voterId in votes) {
+	const vote = votes[voterId];
+	const voter = UserCache.GetCachedUserByCommissarId(voterId);
+	const rankData = RankMetadata[voter.rank];
+	const weight = rankData.collectiveVoteWeight / rankData.count;
+	const color = (vote === 1) ? rankData.color : rankData.secondaryColor;
+	w[vote].push({ color, weight });
+    }
+    const compareWeight = (a, b) => (b.weight - a.weight);
+    w[0].sort(compareWeight);
+    w[1].sort(compareWeight);
+    w[2].sort(compareWeight);
+    return w;
+}
+
+function CountWeightedVotesForDefendant(defendantId) {
+    const w = {
 	0: 0,
 	1: 0,
 	2: 0,
@@ -19,9 +47,12 @@ function CountVotesForDefendant(defendantId) {
     const votes = voteCache[defendantId] || {};
     for (const voterId in votes) {
 	const vote = votes[voterId];
-	totals[vote]++;
+	const voter = UserCache.GetCachedUserByCommissarId(voterId);
+	const rankData = RankMetadata[voter.rank];
+	const individualVoteWeight = rankData.collectiveVoteWeight / rankData.count;
+	w[vote] += individualVoteWeight;
     }
-    return totals;
+    return w;
 }
 
 async function ExpungeVotesWithNoOngoingTrial() {
@@ -71,9 +102,11 @@ async function RecordVoteIfChanged(defendantId, voterId, vote) {
 }
 
 module.exports = {
-    CountVotesForDefendant,
+    CountTotalVotesForDefendant,
+    CountWeightedVotesForDefendant,
     DeleteVotesForDefendant,
     ExpungeVotesWithNoOngoingTrial,
+    GetSortedVotesForDefendant,
     LoadVotesFromDatabase,
     RecordVoteIfChanged,
 };

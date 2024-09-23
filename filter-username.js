@@ -1,6 +1,6 @@
 // Filters Discord usernames to replace or remove problematic characters.
 function FilterUsername(username) {
-    const allowedChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_` ()!?\'*+/\\:=~èáéíóúüñà';
+    const allowedChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_` ()[]!?\'*+/\\:=~#èáéíóúüñà';
     const substitutions = {
 	'ғ': 'f',
 	'ｕ': 'U',
@@ -33,6 +33,8 @@ function FilterUsername(username) {
 	'î': 'i',
 	'ł': 'l',
 	'ø': 'o',
+	'Ł': 'L',
+	'$': 's',
     };
     for (const [before, after] of Object.entries(substitutions)) {
 	username = username.split(before).join(after);
