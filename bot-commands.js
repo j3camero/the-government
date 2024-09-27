@@ -120,10 +120,10 @@ async function HandlePresidentVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({
-	name: 'presidential-election',
+	name: 'presidential-erection',
 	type: 0,
     });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in August 2024.');
+    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in October 2024.');
     await message.react('❤️');
     const generalRankUsers = await UserCache.GetTopRankedUsers(19);
     const candidateNames = [];
