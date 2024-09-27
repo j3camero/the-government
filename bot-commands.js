@@ -23,6 +23,24 @@ async function HandlePingCommand(discordMessage) {
     await discordMessage.channel.send('Pong!');
 }
 
+// Handles any command that ends with ing. It is a joke command for fun.
+async function HandleIngCommand(discordMessage) {
+    const tokens = discordMessage.content.split(' ');
+    if (tokens.length !== 1) {
+	return;
+    }
+    const command = tokens[0].toLowerCase();
+    if (command.length > 9) {
+	// Don't work for long commands to avoid the worst abuses.
+	return;
+    }
+    if (command.endsWith('ing')) {
+	const prefix = command.substring(1, command.length - 3);
+	const ong = prefix + 'ong!';
+	await discordMessage.channel.send(ong);
+    }
+}
+
 // A message that starts with !code.
 async function HandleCodeCommand(discordMessage) {
     const discordId = discordMessage.author.id;
@@ -72,7 +90,7 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for September 2024.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for October 2024.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
@@ -1019,6 +1037,9 @@ async function Dispatch(discordMessage) {
 	const handler = handlers[command];
 	await handler(discordMessage);
     } else {
+	if (command.endsWith('ing') && tokens.length === 1) {
+	    await HandleIngCommand(discordMessage);
+	}
 	await HandleUnknownCommand(discordMessage);
     }
 }
