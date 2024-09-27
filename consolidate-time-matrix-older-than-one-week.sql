@@ -14,11 +14,11 @@ SELECT
   tt.lo_user_id AS lo_user_id,
   tt.hi_user_id AS hi_user_id,
   SUM(tt.duration_seconds) AS duration_seconds,
-  SUM(EXP(0.00000006685447343 * TIMESTAMPDIFF(SECOND, @one_week_ago, tt.t)) * tt.diluted_seconds) AS diluted_seconds
+  SUM(EXP(0.000000267417893734547 * TIMESTAMPDIFF(SECOND, @one_week_ago, tt.t)) * tt.diluted_seconds) AS diluted_seconds
 FROM time_together AS tt
 WHERE t < @one_week_ago
 GROUP BY tt.lo_user_id, tt.hi_user_id
-ORDER BY SUM(EXP(0.00000006685447343 * TIMESTAMPDIFF(SECOND, @one_week_ago, tt.t)) * tt.diluted_seconds)
+ORDER BY SUM(EXP(0.000000267417893734547 * TIMESTAMPDIFF(SECOND, @one_week_ago, tt.t)) * tt.diluted_seconds)
 ;
 
 -- Delete the old records.
