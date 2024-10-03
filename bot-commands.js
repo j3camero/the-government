@@ -125,7 +125,7 @@ async function HandlePresidentVoteCommand(discordMessage) {
     });
     const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in October 2024.');
     await message.react('❤️');
-    const generalRankUsers = await UserCache.GetTopRankedUsers(19);
+    const generalRankUsers = await UserCache.GetTopRankedUsers(20);
     const candidateNames = [];
     for (const user of generalRankUsers) {
 	if (user.commissar_id === 7) {

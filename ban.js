@@ -179,6 +179,69 @@ async function UpdateTrial(cu) {
 	}
 	await cu.setGoodStanding(true);
     }
+    const canvas = new Canvas.Canvas(360, 16 + 32 + 16);
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#313338';  // Discord grey.
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = '#FFFFFF';
+    context.beginPath();
+    const halfX = Math.floor(canvas.width / 2) + 0.5;
+    context.moveTo(halfX, 8);
+    context.lineTo(halfX, 56);
+    context.stroke();
+    const sortedVotes = BanVoteCache.GetSortedVotesForDefendant(cu.commissar_id);
+    if (voteCount > 0) {
+	const gap = 2;
+	const maxWeight = Math.max(yesWeight, noWeight);
+	const yesPixels = Math.round(yesPercentage * canvas.width) + (gap / 2);
+	const yesVotes = sortedVotes[1];
+	let cumulativeYesWeight = 0;
+	for (const vote of yesVotes) {
+	    const left = Math.floor(yesPixels * cumulativeYesWeight / yesWeight);
+	    cumulativeYesWeight += vote.weight;
+	    const right = Math.floor(yesPixels * cumulativeYesWeight / yesWeight);
+	    let rectangleWidth = right - left - gap;
+	    if (rectangleWidth <= 0) {
+		rectangleWidth = yesPixels - left - gap;
+	    }
+	    if (rectangleWidth <= 0) {
+		    break;
+	    }
+	    context.fillStyle = vote.color;
+	    context.fillRect(left, 16, rectangleWidth, 32);
+	}
+	const noPixels = canvas.width - yesPixels + gap;
+	const noVotes = sortedVotes[2];
+	let cumulativeNoWeight = 0;
+	for (const vote of noVotes) {
+	    const left = Math.floor(noPixels * cumulativeNoWeight / noWeight);
+	    cumulativeNoWeight += vote.weight;
+	    const right = Math.floor(noPixels * cumulativeNoWeight / noWeight);
+	    let rectangleWidth = right - left - gap;
+	    if (rectangleWidth <= 0) {
+		rectangleWidth = noPixels - left - gap;
+	    }
+	    if (rectangleWidth <= 0) {
+		break;
+	    }
+	    context.fillStyle = vote.color;
+	    context.fillRect(canvas.width - left - rectangleWidth, 16, rectangleWidth, 32);
+	}
+	if (yesWeight > 0 && noWeight > 0) {
+	    context.fillStyle = '#FFFFFF';
+	    context.beginPath();
+	    context.moveTo(yesPixels - 1, 14);
+	    context.lineTo(yesPixels + 5, 8);
+	    context.lineTo(yesPixels - 7, 8);
+	    context.fill();
+	}
+    }
+    const buffer = canvas.toBuffer();
+    const imageFilename = `case-${cu.commissar_id}.png`;
+    const voteTallyAttachment = {
+	attachment: buffer,
+	name: imageFilename,
+    };
     await cu.setBanVoteStartTime(startTime.format());
     const turnout = combinedWeight / availableWeight;
     const durationDays = baselineVoteDurationDays * (1 - turnout);
@@ -220,7 +283,7 @@ async function UpdateTrial(cu) {
 	await message.edit(trialSummary);
 	await channel.send({ content: trialSummary });
 	const dateString = new Date().toISOString().substring(0, 10).replace(/-/g, '');
-	const attachment = await discordTranscripts.createTranscript(channel, {
+	const transcriptAttachment = await discordTranscripts.createTranscript(channel, {
 	    filename: `ban-court-${dateString}-${cu.commissar_id}-${roomName}.html`,
 	    poweredBy: false,
 	    saveImages: false,
@@ -228,7 +291,7 @@ async function UpdateTrial(cu) {
 	const transcriptChannel = await guild.channels.resolve('1110429964580433920');
 	await transcriptChannel.send({
 	    content: trialSummary,
-	    files: [attachment],
+	    files: [transcriptAttachment, voteTallyAttachment],
 	});
 	try {
 	    await channel.delete();
@@ -254,74 +317,9 @@ async function UpdateTrial(cu) {
 	    `${voteCount} voters` +
 	    `${threeTicks}`
 	);
-	const canvas = new Canvas.Canvas(360, 16 + 32 + 16);
-	const context = canvas.getContext('2d');
-	context.fillStyle = '#313338';  // Discord grey.
-	context.fillRect(0, 0, canvas.width, canvas.height);
-	context.strokeStyle = '#FFFFFF';
-	context.beginPath();
-	const halfX = Math.floor(canvas.width / 2) + 0.5;
-	context.moveTo(halfX, 8);
-	context.lineTo(halfX, 56);
-	context.stroke();
-	const sortedVotes = BanVoteCache.GetSortedVotesForDefendant(cu.commissar_id);
-	//console.log('sortedVotes[0]', sortedVotes[0]);
-	//console.log('sortedVotes[1]', sortedVotes[1]);
-	//console.log('sortedVotes[2]', sortedVotes[2]);
-	if (voteCount > 0) {
-	    const gap = 2;
-	    const maxWeight = Math.max(yesWeight, noWeight);
-	    const yesPixels = Math.round(yesPercentage * canvas.width) + (gap / 2);
-	    const yesVotes = sortedVotes[1];
-	    let cumulativeYesWeight = 0;
-	    for (const vote of yesVotes) {
-		const left = Math.floor(yesPixels * cumulativeYesWeight / yesWeight);
-		cumulativeYesWeight += vote.weight;
-		const right = Math.floor(yesPixels * cumulativeYesWeight / yesWeight);
-		let rectangleWidth = right - left - gap;
-		if (rectangleWidth <= 0) {
-		    rectangleWidth = yesPixels - left - gap;
-		}
-		if (rectangleWidth <= 0) {
-		    break;
-		}
-		context.fillStyle = vote.color;
-		context.fillRect(left, 16, rectangleWidth, 32);
-	    }
-	    const noPixels = canvas.width - yesPixels + gap;
-	    const noVotes = sortedVotes[2];
-	    let cumulativeNoWeight = 0;
-	    for (const vote of noVotes) {
-		const left = Math.floor(noPixels * cumulativeNoWeight / noWeight);
-		cumulativeNoWeight += vote.weight;
-		const right = Math.floor(noPixels * cumulativeNoWeight / noWeight);
-		let rectangleWidth = right - left - gap;
-		if (rectangleWidth <= 0) {
-		    rectangleWidth = noPixels - left - gap;
-		}
-		if (rectangleWidth <= 0) {
-		    break;
-		}
-		context.fillStyle = vote.color;
-		context.fillRect(canvas.width - left - rectangleWidth, 16, rectangleWidth, 32);
-	    }
-	    if (yesWeight > 0 && noWeight > 0) {
-		context.fillStyle = '#FFFFFF';
-		context.beginPath();
-		context.moveTo(yesPixels - 1, 14);
-		context.lineTo(yesPixels + 5, 8);
-		context.lineTo(yesPixels - 7, 8);
-		context.fill();
-	    }
-	}
-	const buffer = canvas.toBuffer();
-	const imageFilename = `case-${cu.commissar_id}.png`;
 	await message.edit({
 	    content: trialMessage,
-	    files: [{
-		attachment: buffer,
-		name: imageFilename,
-	    }],
+	    files: [voteTallyAttachment],
 	});
     }
 }
