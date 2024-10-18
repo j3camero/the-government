@@ -1,7 +1,7 @@
 // Huddles are infinite voice chat rooms. The bot will automatically create
-// more rooms of each type so that there are always enough for everyone.
+// more rooms so that there are always enough for everyone.
 // In practical terms, this solves a common problem in Discord administration
-// where you have way too many rooms to accomodate peak traffic, with the
+// where you have enough rooms to accomodate peak traffic, with the
 // side-effect that it looks extra dead during off-peak times. Huddles
 // introduce auto-scaling to Discord voice chat rooms so there are always
 // the right amount of rooms no matter how busy.
@@ -14,28 +14,53 @@ const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
 const UserCache = require('./user-cache');
 
-const huddles = [
-    { name: 'Main', userLimit: 99, position: 1000 },
-    { name: 'Duo', userLimit: 2, position: 2000 },
-    { name: 'Trio', userLimit: 3, position: 3000 },
-    { name: 'Quad', userLimit: 4, position: 4000 },
-    //{ name: 'Six Pack', userLimit: 6, position: 6000 },
-    { name: 'Squad', userLimit: 8, position: 7000 },
+const natoAlphabet = [
+    'Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf',
+    'Hotel', 'India', 'Juliet', 'Kilo', 'Lima', 'Mike', 'November',
+    'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra', 'Tango', 'Uniform',
+    'Victor', 'Whiskey', 'Xray', 'Yankee', 'Zulu',
 ];
 
-function GetAllMatchingVoiceChannels(guild, huddle) {
-    const matchingChannels = [];
-    for (const [id, channel] of guild.channels.cache) {
-	if (channel.type === 2 &&
-	    channel.name === huddle.name &&
-	    channel.userLimit === parseInt(huddle.userLimit)) {
-	    matchingChannels.push(channel);
+async function UpdateHuddles() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const allChannels = await guild.channels.fetch();
+    const channelsByName = {};
+    const emptyChannels = [];
+    for (const [id, channel] of allChannels) {
+	if (channel.type === 2 && !channel.parent) {
+	    channelsByName[channel.name] = channel;
+	    const population = channel.members.size;
+	    console.log(channel.name, population);
+	    if (population === 0) {
+		emptyChannels.push(channel);
+	    }
 	}
     }
-    return matchingChannels;
+    console.log('emptyChannels.length', emptyChannels.length);
+    if (emptyChannels.length > 1) {
+	// Too many empty channels. Must delete one.
+	emptyChannels.sort((a, b) => b.name.localeCompare(a.name));
+	const channelToDelete = emptyChannels[0];
+	console.log('Deleting channel', channelToDelete.name);
+	await channelToDelete.delete();
+    } else if (emptyChannels.length === 0) {
+	// No empty channels. Must create a new one.
+	let lowestUnusedLetter;
+	for (const letter of natoAlphabet) {
+	    if (!(letter in channelsByName)) {
+		lowestUnusedLetter = letter;
+		break;
+	    }
+	}
+	console.log('lowestUnusedLetter', lowestUnusedLetter);
+	if (lowestUnusedLetter) {
+	    await CreateNewVoiceChannel(lowestUnusedLetter);
+	}
+    }
 }
 
-async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
+async function CreateNewVoiceChannelWithBitrate(channelName, bitrate) {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
     const perms = [PermissionFlagsBits.Connect, PermissionFlagsBits.ViewChannel];
     const options = {
 	bitrate,
@@ -48,94 +73,25 @@ async function CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate) {
 	    { id: RoleID.Recruit, allow: perms },
 	    { id: RoleID.Bots, allow: perms },
 	],
-	name: huddle.name,
+	name: channelName,
 	type: 2,
-	userLimit: huddle.userLimit,
+	userLimit: 99,
     };
     console.log('Creating channel.');
     return await guild.channels.create(options);
 }
 
-async function CreateNewVoiceChannel(guild, huddle) {
+async function CreateNewVoiceChannel(channelName) {
     const bitratesToTry = [384000, 256000, 128000];
     for (const bitrate of bitratesToTry) {
 	try {
-	    return await CreateNewVoiceChannelWithBitrate(guild, huddle, bitrate);
+	    return await CreateNewVoiceChannelWithBitrate(channelName, bitrate);
 	} catch (err) {
 	    console.log('Failed to create channel with bitrate', bitrate);
 	}
     }
     console.log('Failed to create channel with any bitrate');
     return null;
-}
-
-function GetMostRecentlyCreatedVoiceChannel(channels) {
-    let mostRecentChannel;
-    for (const channel of channels) {
-	if (!mostRecentChannel || channel.createdTimestamp > mostRecentChannel.createdTimestamp) {
-	    mostRecentChannel = channel;
-	}
-    }
-    return mostRecentChannel;
-}
-
-async function DeleteMostRecentlyCreatedVoiceChannel(channels) {
-    const channel = GetMostRecentlyCreatedVoiceChannel(channels);
-    console.log('Deleting channel');
-    try {
-	await channel.delete();
-    } catch (error) {
-	console.log('Failed to delete channel. Probably a harmless race condition. Ignoring.');
-    }
-}
-
-async function UpdateVoiceChannelsForOneHuddleType(guild, huddle) {
-    const matchingChannels = GetAllMatchingVoiceChannels(guild, huddle);
-    if (matchingChannels.length === 0) {
-	console.log('Found no rooms matching', JSON.stringify(huddle));
-	await CreateNewVoiceChannel(guild, huddle);
-	return;
-    }
-    console.log('Found', matchingChannels.length, 'matching channels.');
-    const emptyChannels = matchingChannels.filter(ch => ch.members.size === 0);
-    console.log(emptyChannels.length, 'empty channels of this type.');
-    if (emptyChannels.length === 0) {
-	await CreateNewVoiceChannel(guild, huddle);
-    } else if (emptyChannels.length >= 2) {
-	await DeleteMostRecentlyCreatedVoiceChannel(emptyChannels);
-    } else {
-	// There is exactly 1 empty channel. Do nothing.
-    }
-}
-
-// Calculates the median of an array of numbers.
-function Median(arr) {
-    const mid = Math.floor(arr.length / 2);
-    const nums = [...arr].sort((a, b) => a - b);
-    return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
-}
-
-// Returns the maximum Harmonic Centrality score of any members in a VC room.
-function ScoreRoom(discordChannel) {
-    const scores = [];
-    for (const [memberId, member] of discordChannel.members) {
-	if (member.user.bot) {
-	    continue;
-	}
-	const cu = UserCache.GetCachedUserByDiscordId(memberId);
-	if (!cu) {
-	    continue;
-	}
-	let s = cu.harmonic_centrality || 0;
-	if (member.voice.mute) {
-	    s *= 0.5;
-	}
-	if (member.voice.deaf) {
-	    s = 0;
-	}
-	scores.push(s);
-    }
-    return Median(scores);
 }
 
 // A comparator for Discord rooms. Controls the sort order of the rooms.
@@ -151,41 +107,6 @@ function CompareRooms(a, b) {
     if (a.members.size > 0 && b.members.size === 0) {
 	return -1;
     }
-    // Full rooms sort down.
-    if (a.full && !b.full) {
-	return 1;
-    }
-    if (!a.full && b.full) {
-	return -1;
-    }
-    // This is the scoring rule for rooms that are neither empty nor full.
-    const ah = ScoreRoom(a);
-    const bh = ScoreRoom(b);
-    if (ah < bh) {
-	return 1;
-    }
-    if (ah > bh) {
-	return -1;
-    }
-    // Rules from here on down are mainly intended for sorting the empty
-    // VC rooms at the bottom amongst themselves.
-    const roomOrder = ['Main', 'Duo', 'Trio', 'Quad', 'Squad'];
-    //roomOrder.reverse();  // Makes Main sort to bottom.
-    for (const roomName of roomOrder) {
-	if (a.name.startsWith(roomName) && !b.name.startsWith(roomName)) {
-	    return -1;
-	}
-	if (!a.name.startsWith(roomName) && b.name.startsWith(roomName)) {
-	    return 1;
-	}
-    }
-    // Rooms with lower capacity sort up.
-    if (a.userLimit > b.userLimit) {
-	return 1;
-    }
-    if (a.userLimit < b.userLimit) {
-	return -1;
-    }
     // Should all other criteria fail to break the tie, then alphabetic ordering is the last resort.
     return a.name.localeCompare(b.name);
 }
@@ -193,7 +114,8 @@ function CompareRooms(a, b) {
 // Checks the see if any rooms need to be moved in the ordering, and does so.
 // Only moves one room at a time. To achieve a full sort, call this periodically.
 // Returns true if no rooms needed moving. Returns false if a room was moved.
-async function MoveOneRoomIfNeeded(guild) {
+async function MoveOneRoomIfNeeded() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
     const rooms = [];
     for (const [id, channel] of guild.channels.cache) {
 	if (channel.type === 2 && !channel.parent) {
@@ -233,11 +155,8 @@ setTimeout(HuddlesUpdate, 9000);
 
 async function HuddlesUpdate() {
     if (isUpdateNeeded) {
-	const guild = await DiscordUtil.GetMainDiscordGuild();
-	for (const huddle of huddles) {
-	    await UpdateVoiceChannelsForOneHuddleType(guild, huddle);
-	}
-	const roomsInOrder = await MoveOneRoomIfNeeded(guild);
+	await UpdateHuddles();
+	const roomsInOrder = await MoveOneRoomIfNeeded();
 	isUpdateNeeded = !roomsInOrder;
     }
     setTimeout(HuddlesUpdate, 1000);
