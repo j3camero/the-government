@@ -14,6 +14,7 @@ const RoleID = require('./role-id');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
 const yen = require('./yen');
+const zerg = require('./zerg');
 
 // The given Discord message is already verified to start with the !ping prefix.
 // This is an example bot command that has been left in for fun. Maybe it's
@@ -275,16 +276,19 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `September 2024 is shaping up to be a huge month for The Government. Lots of big groups with great leaders are committed to building nearby each other with common walls. If you miss the big old gov wipes, you need to check this out!\n\n`;
+    content += `Last month we did big raids almost every night. In October we will do the same and a lot of people are pumped. It is going to be a massive month.\n\n`;
     if (user.rank <= 21) {
-	content += `The build spot is P25. Use the wipe code to get into community base.\n\n`;
+	content += `The build spot is AA6. Run straight there and slap down your own base.\n\n`;
     }
     content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
     if (user.rank <= 15) {
-	content += `Generals Code 3677\n`;
+	content += `Generals Code 0155\n`;
     }
     if (user.rank <= 19) {
-	content += `Wipe Code 0425\n`;
+	content += `Wipe Code 6463\n`;
+    }
+    if (user.rank <= 19) {
+	content += `All officers are invited to the opt-in zerg base. Anyone who joins the zerg base can't have any other base. You don't have to opt-in and can build your own base if you want.\n`;
     }
     console.log('Content length', content.length, 'characters.');
     try {
@@ -995,6 +999,7 @@ async function Dispatch(discordMessage) {
 	'!gender': HandleGenderCommand,
 	'!hype': HandleHypeCommand,
 	'!impeach': HandleImpeachCommand,
+	'!initzerg': zerg.InitZergCommand,
 	'!prez': HandlePrezCommand,
 	'!veep': HandleVeepCommand,
 	'!lottery': yen.DoLottery,
