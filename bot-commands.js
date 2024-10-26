@@ -91,7 +91,7 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for October 2024.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for November 2024.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rusty Moose |US Monthly|', 'https://www.battlemetrics.com/servers/rust/9611162', 5);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
@@ -968,7 +968,7 @@ async function ProcessOneBuyAndOneSellOrder() {
 	const sellOrder = sellQueue.shift();
 	await FulfillSellOrder(sellOrder);
     }
-    setTimeout(ProcessOneBuyAndOneSellOrder, 100);
+    setTimeout(ProcessOneBuyAndOneSellOrder, 1);
 }
 setTimeout(ProcessOneBuyAndOneSellOrder, 1000);
 
