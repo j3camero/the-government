@@ -835,30 +835,7 @@ async function FulfillBuyOrder(discordMessage) {
     } catch (error) {
 	console.log(error);
     }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.fetch('1267202328243732480');
-    let message = '```' + probabilityAnnouncement + '\n\n';
-    if (trumpNftPrice < 100) {
-	message += `!buy a Donald Trump NFT for ${trumpNftPrice} yen\n`;
-    }
-    if (trumpNftPrice > 1) {
-	const sellPrice = trumpNftPrice - 1;
-	message += `!sell a Donald Trump NFT for ${sellPrice} yen\n`;
-    }
-    message += '\n';
-    message += 'Every Donald Trump NFT pays out 100 yen if Donald Trump is declared the winner of the 2024 US presidential election by the Associated Press. Short-selling is allowed. If you believe that Trump will win then !buy. If you believe that he will not win then !sell.\n\n';
-    message += '!buy low !sell high. It\'s just business. Personal politics aside, if the price does not reflect the true probability, then consider a !buy or !sell. See a news event that is not priced in yet? Quickly !buy or !sell to profit from being the first to bring new information to market.\n\n';
-    message += 'Do you believe that one or both sides suffer from bias? Here is your chance to fine a random idiot from the internet for disagreeing with you. Make them pay!';
-    message += '```';
-    console.log('message:', message);
-    await channel.bulkDelete(99);
-    await channel.send({
-	content: message,
-	files: [{
-	    attachment: trumpCard,
-	    name: trumpCard,
-	}]
-    });
+    await UpdateTrumpChannel(trumpCard, probabilityAnnouncement);
     await yen.UpdateYenChannel();
 }
 
@@ -927,6 +904,11 @@ async function FulfillSellOrder(discordMessage) {
     } catch (error) {
 	console.log(error);
     }
+    await UpdateTrumpChannel(trumpCard, probabilityAnnouncement);
+    await yen.UpdateYenChannel();
+}
+
+async function UpdateTrumpChannel(trumpCard, probabilityAnnouncement) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.fetch('1267202328243732480');
     let message = '```' + probabilityAnnouncement + '\n\n';
@@ -942,7 +924,6 @@ async function FulfillSellOrder(discordMessage) {
     message += '!buy low !sell high. It\'s just business. Personal politics aside, if the price does not reflect the true probability, then consider a !buy or !sell. See a news event that is not priced in yet? Quickly !buy or !sell to profit from being the first to bring new information to market.\n\n';
     message += 'Do you believe that one or both sides suffer from bias? Here is your chance to fine a random idiot from the internet for disagreeing with you. Make them pay!';
     message += '```';
-    console.log('message:', message);
     await channel.bulkDelete(99);
     await channel.send({
 	content: message,
@@ -951,7 +932,42 @@ async function FulfillSellOrder(discordMessage) {
 	    name: trumpCard,
 	}]
     });
-    await yen.UpdateYenChannel();
+    const users = UserCache.GetAllUsersAsFlatList();
+    const long = [];
+    const short = [];
+    for (const user of users) {
+	if (!user.trump_cards) {
+	    continue;
+	}
+	if (user.trump_cards > 0) {
+	    long.push(user);
+	}
+	if (user.trump_cards < 0) {
+	    short.push(user);
+	}
+    }
+    long.sort((a, b) => (b.trump_cards - a.trump_cards));
+    const longLines = [
+	'If Trump wins',
+	'-------------',
+    ];
+    for (const user of long) {
+	const name = user.getNicknameOrTitleWithInsignia();
+	const payout = user.trump_cards * 100;
+	longLines.push(`${name} collects ${payout} yen`);
+    }
+    await DiscordUtil.SendLongList(longLines, channel);
+    short.sort((a, b) => (a.trump_cards - b.trump_cards));
+    const shortLines = [
+	'If Trump does not win',
+	'---------------------',
+    ];
+    for (const user of short) {
+	const name = user.getNicknameOrTitleWithInsignia();
+	const payout = -user.trump_cards * 100;
+	shortLines.push(`${name} collects ${payout} yen`);
+    }
+    await DiscordUtil.SendLongList(shortLines, channel);
 }
 
 async function ProcessOneBuyAndOneSellOrder() {
