@@ -13,6 +13,7 @@ const fetch = require('./fetch');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
+const PresidentialElection = require('./presidential-election');
 const RankMetadata = require('./rank-definitions');
 const recruiting = require('./recruiting');
 const RoleID = require('./role-id');
@@ -256,6 +257,7 @@ async function FilterTimeTogetherRecordsToEnforceTimeCap(timeTogetherRecords) {
 async function RoutineUpdate() {
     console.log('Routine update');
     const startTime = new Date().getTime();
+    await PresidentialElection.UpdatePresidentialElection();
     await huddles.ScheduleUpdate();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
@@ -400,6 +402,7 @@ async function Start() {
 	await cu.seenNow();
 	await Ban.HandlePossibleReaction(messageReaction, user, true);
 	await zerg.HandleReactionAdd(messageReaction, user);
+	await PresidentialElection.CheckReactionForPresidentialVote(messageReaction, user);
     });
 
     discordClient.on('messageReactionRemove', async (messageReaction, user) => {

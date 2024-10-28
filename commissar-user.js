@@ -406,6 +406,10 @@ class CommissarUser {
 	}
     }
 
+    getNickname() {
+	return this.nick || this.nickname;
+    }
+
     getNicknameOrTitle() {
 	const rank = this.getRank();
 	if (!rank && rank !== 0) {
@@ -454,14 +458,18 @@ class CommissarUser {
 	return s;
     }
 
-    getNicknameOrTitleWithInsignia() {
+    getNicknameOrTitleWithInsignia(omitRankIndex) {
 	const name = this.getNicknameOrTitle();
 	const insignia = this.getInsignia();
 	if (!insignia) {
 	    return '999 Recruit';
 	}
-	const formattedRankIndex = this.getFormattedRankIndex();
-	return `${formattedRankIndex} ${name} ${insignia}`;
+	if (omitRankIndex) {
+	    return `${name} ${insignia}`;
+	} else {
+	    const formattedRankIndex = this.getFormattedRankIndex();
+	    return `${formattedRankIndex} ${name} ${insignia}`;
+	}
     }
 
     getRankNameAndInsignia() {
