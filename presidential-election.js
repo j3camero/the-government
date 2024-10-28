@@ -114,6 +114,16 @@ async function InitElection() {
     }
 }
 
+function GetCandidateByMessageId(messageId) {
+    const users = UserCache.GetAllUsersAsFlatList();
+    for (const user of users) {
+	if (user.presidential_election_message_id === messageId) {
+	    return user;
+	}
+    }
+    return null;
+}
+
 async function CheckReactionForPresidentialVote(reaction, discordUser) {
     if (discordUser.bot) {
 	return;
@@ -122,6 +132,28 @@ async function CheckReactionForPresidentialVote(reaction, discordUser) {
 	return;
     }
     console.log('President vote detected');
+    const candidate = GetCandidateByMessageId(reaction.message.id);
+    if (!candidate) {
+	console.log('Vote detected but could not determine for which candidate.');
+	return;
+    }
+    const voter = await UserCache.GetCachedUserByDiscordId(discordUser.id);
+    if (!voter) {
+	console.log('Vote detected but could not identify the voter who cast it.');
+	return;
+    }
+    await reaction.users.remove(discordUser);
+    const firstVote = voter.presidential_election_vote ? false : true;
+    await voter.setPresidentialElectionVote(candidate.commissar_id);
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const voterMember = await guild.members.fetch(voter.discord_id);
+    if (voterMember) {
+	if (firstVote) {
+	    await voterMember.send('Your vote has been counted');
+	} else {
+	    await voterMember.send('Your vote has been updated');
+	}
+    }
 }
 
 async function CountVotesAndAwardPresidency() {
