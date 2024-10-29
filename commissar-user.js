@@ -434,6 +434,19 @@ class CommissarUser {
 	return rankData.color;
     }
 
+    getVoteWeight() {
+	if (!this.citizen) {
+	    return 0;
+	}
+	const rank = this.getRank();
+	const rankData = RankMetadata[rank];
+	if (!rankData.count || !rankData.collectiveVoteWeight) {
+	    return 0;
+	}
+	const individualVoteWeight = rankData.collectiveVoteWeight / rankData.count;
+	return individualVoteWeight;
+    }
+
     getInsignia() {
 	const rank = this.getRank();
 	const rankData = RankMetadata[rank];

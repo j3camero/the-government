@@ -209,6 +209,7 @@ async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVot
     await reaction.users.remove(discordUser);
     const firstVote = voter.presidential_election_vote ? false : true;
     await voter.setPresidentialElectionVote(candidate.commissar_id);
+    await CountVotesAndAwardPresidency();
     if (!notifyVoter) {
 	return;
     }
@@ -227,6 +228,54 @@ async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVot
 // titles, and update the vote tally visualization.
 async function CountVotesAndAwardPresidency() {
     console.log('CountVotesAndAwardPresidency');
+    const voteList = {};
+    const voteSum = {};
+    let voteCount = 0;
+    let maxSum = 0;
+    const users = UserCache.GetAllUsersAsFlatList();
+    for (const user of users) {
+	const v = user.presidential_election_vote;
+	if (v) {
+	    const r = user.rank;
+	    const color = user.getRankColor();
+	    const weight = user.getVoteWeight();
+	    if (!(v in voteSum)) {
+		voteSum[v] = 0;
+		voteList[v] = [];
+	    }
+	    voteSum[v] += weight;
+	    voteList[v].push({ color, weight });
+	    voteCount++;
+	    maxSum = Math.max(voteSum[v], maxSum);
+	}
+    }
+    if (!voteCount) {
+	return;
+    }
+    const sortableCandidates = [];
+    for (const candidate in voteList) {
+	voteList[candidate].sort((a, b) => (a.weight - b.weight));
+	const s = voteSum[candidate] || 0;
+	if (!s) {
+	    continue;
+	}
+	const cu = UserCache.GetCachedUserByCommissarId(candidate);
+	sortableCandidates.push({
+	    label: cu.getNickname(),
+	    tiebreaker: cu.rank_index,
+	    totalVoteWeight: s,
+	    votes: voteList[candidate],
+	});
+    }
+    sortableCandidates.sort((a, b) => {
+	const dw = a.totalVoteWeight - b.totalVoteWeight;
+	if (Math.abs(dw) > 0.000001) {
+	    return dw;
+	}
+	return b.tiebreaker - a.tiebreaker;  // rank index is the tiebreaker.
+    });
+    console.log(sortableCandidates);
+    console.log(sortableCandidates[0].votes);
 }
 
 module.exports = {
