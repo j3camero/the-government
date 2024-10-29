@@ -287,21 +287,50 @@ async function CountVotesAndAwardPresidency() {
 	}
 	return b.tiebreaker - a.tiebreaker;  // rank index is the tiebreaker.
     });
-    console.log(sortableCandidates);
-    console.log(sortableCandidates[0].votes);
-    const canvas = new Canvas.Canvas(360, 64);
-    const context = canvas.getContext('2d');
-    context.fillStyle = '#313338';  // Discord grey.
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    const voteTallyAttachment = {
-	attachment: canvas.toBuffer(),
-	name: 'president-vote.png',
-    };
     const headerMessage = await FetchHeaderMessage();
     if (!headerMessage) {
 	console.log('Warning: missing header message for presidential election.');
 	return;
     }
+    const verticalMargin = 16;
+    const horizontalMargin = 4;
+    const barHeight = 32;
+    const barGap = 16;
+    const n = sortableCandidates.length;
+    const width = 360;
+    const height = n * (barHeight) + (n - 1) * barGap + 2 * verticalMargin;
+    const canvas = new Canvas.Canvas(width, height);
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#313338';  // Discord grey.
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'white';
+    context.font = '18px gg sans';
+    let maxLabelWidth = 0;
+    for (const candidate of sortableCandidates) {
+	const labelWidth = context.measureText(candidate.label).width;
+	maxLabelWidth = Math.max(labelWidth, maxLabelWidth);
+    }
+    maxLabelWidth = Math.ceil(maxLabelWidth);
+    console.log('maxLabelWidth', maxLabelWidth);
+    let rowNumber = 0;
+    for (const candidate of sortableCandidates) {
+	const barX = 2 * horizontalMargin + maxLabelWidth;
+	const barY = verticalMargin + rowNumber * (barHeight + barGap);
+	const barWidth = width - (3 * horizontalMargin) - maxLabelWidth;
+	context.fillRect(barX, barY, barWidth, barHeight);
+	const labelDimensions = context.measureText(candidate.label);
+	console.log('labelDimensions', labelDimensions);
+	const labelWidth = labelDimensions.width;
+	const labelX = horizontalMargin + maxLabelWidth - labelWidth;
+	const labelY = barY + barHeight - 10;
+	
+	context.fillText(candidate.label, labelX, labelY);
+	rowNumber++;
+    }
+    const voteTallyAttachment = {
+	attachment: canvas.toBuffer(),
+	name: 'president-vote.png',
+    };
     const electionEndTimestamp = CalculateUnixTimestampOfElectionEndForThisMonth();
     await headerMessage.edit({
 	content: `**Presidential Election**\nThe vote ends <t:${electionEndTimestamp}:R>`,
