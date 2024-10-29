@@ -84,6 +84,35 @@ function IsElectionStarted(users) {
 
 async function ProcessLostVotes() {
     console.log('ProcessLostVotes');
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch(channelId);
+    if (!channel) {
+	console.log('Failed to find the president-vote channel.');
+	return;
+    }
+    const lostVotes = [];
+    const messages = await channel.messages.fetch();
+    for (const [messageId, message] of messages) {
+	await message.fetch();
+	for (const [reactionId, reaction] of message.reactions.cache) {
+	    let reactions;
+	    try {
+		reactions = await reaction.users.fetch();
+	    } catch (error) {
+		console.log('Warning: problem fetching votes!');
+		reactions = [];
+	    }
+	    for (const [voterId, voter] of reactions) {
+		if (!voter.bot) {
+		    lostVotes.push({ reaction, voter });
+		}
+	    }
+	}
+    }
+    for (const vote of lostVotes) {
+	await CheckReactionForPresidentialVote(vote.reaction, vote.voter, false);
+	break;  // Stop after processing 1 vote for now in case there's a lot of lost votes.
+    }
 }
 
 function CalculateUnixTimestampOfElectionEndForThisMonth() {
@@ -124,7 +153,7 @@ function GetCandidateByMessageId(messageId) {
     return null;
 }
 
-async function CheckReactionForPresidentialVote(reaction, discordUser) {
+async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVoter) {
     if (discordUser.bot) {
 	return;
     }
@@ -145,6 +174,9 @@ async function CheckReactionForPresidentialVote(reaction, discordUser) {
     await reaction.users.remove(discordUser);
     const firstVote = voter.presidential_election_vote ? false : true;
     await voter.setPresidentialElectionVote(candidate.commissar_id);
+    if (!notifyVoter) {
+	return;
+    }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const voterMember = await guild.members.fetch(voter.discord_id);
     if (voterMember) {

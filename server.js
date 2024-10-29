@@ -402,7 +402,7 @@ async function Start() {
 	await cu.seenNow();
 	await Ban.HandlePossibleReaction(messageReaction, user, true);
 	await zerg.HandleReactionAdd(messageReaction, user);
-	await PresidentialElection.CheckReactionForPresidentialVote(messageReaction, user);
+	await PresidentialElection.CheckReactionForPresidentialVote(messageReaction, user, true);
     });
 
     discordClient.on('messageReactionRemove', async (messageReaction, user) => {
