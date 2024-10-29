@@ -1,3 +1,4 @@
+const Canvas = require('canvas');
 const DiscordUtil = require('./discord-util');
 const RustCalendar = require('./rust-calendar');
 const UserCache = require('./user-cache');
@@ -118,7 +119,6 @@ async function ProcessLostVotes() {
     const lostVotes = [];
     const messages = await channel.messages.fetch();
     for (const [messageId, message] of messages) {
-	await message.fetch();
 	for (const [reactionId, reaction] of message.reactions.cache) {
 	    let reactions;
 	    try {
@@ -224,6 +224,19 @@ async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVot
     }
 }
 
+// Get the header message from the chat channel. Contains the title and vote tally.
+async function FetchHeaderMessage() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch(channelId);
+    const messages = await channel.messages.fetch();
+    for (const [messageId, message] of messages) {
+	if (message.content.startsWith('**Presidential Election**')) {
+	    return message;
+	}
+    }
+    return null;
+}
+
 // Count the votes that are recorded in the database, award the top
 // titles, and update the vote tally visualization.
 async function CountVotesAndAwardPresidency() {
@@ -276,6 +289,24 @@ async function CountVotesAndAwardPresidency() {
     });
     console.log(sortableCandidates);
     console.log(sortableCandidates[0].votes);
+    const canvas = new Canvas.Canvas(360, 64);
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#313338';  // Discord grey.
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const voteTallyAttachment = {
+	attachment: canvas.toBuffer(),
+	name: 'president-vote.png',
+    };
+    const headerMessage = await FetchHeaderMessage();
+    if (!headerMessage) {
+	console.log('Warning: missing header message for presidential election.');
+	return;
+    }
+    const electionEndTimestamp = CalculateUnixTimestampOfElectionEndForThisMonth();
+    await headerMessage.edit({
+	content: `**Presidential Election**\nThe vote ends <t:${electionEndTimestamp}:R>`,
+	files: [voteTallyAttachment],
+    });
 }
 
 module.exports = {
