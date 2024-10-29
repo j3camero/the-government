@@ -2,8 +2,13 @@ const DiscordUtil = require('./discord-util');
 const RustCalendar = require('./rust-calendar');
 const UserCache = require('./user-cache');
 
+// The ID of the #president-vote chat channel.
 const channelId = '1299963218265116753';
 
+// The most important feature of the Presidential Election is that it is a cycle.
+// The cycle has 3 phases: presidency, vacant, and election. Rinse repeat.
+// The cycle and the phases are tied to the Thursdays at 18:00 UTC because
+// that is the moment of the "wipe" in Rust.
 function CalculateCurrentPhaseOfElectionCycle() {
     const weekOfMonth = RustCalendar.CalculateCurrentWeekOfTheMonth();
     const weeksThisMonth = RustCalendar.CalculateHowManyThursdaysThisMonth();
@@ -25,9 +30,10 @@ function CalculateCurrentPhaseOfElectionCycle() {
     throw 'Something went wrong with a Rust calendar calculation';
 }
 
+// This function is polled as often as once per minute.
 async function UpdatePresidentialElection() {
     const phase = CalculateCurrentPhaseOfElectionCycle();
-    console.log('election phase:', phase);
+    console.log('Presidential election phase:', phase);
     if (phase === 'presidency') {
 	return UpdatePresidencyPhase();
     }
@@ -40,8 +46,19 @@ async function UpdatePresidentialElection() {
     throw `Invalid election phase`;
 }
 
+// During the presidency phase of the cycle, no vote state changes.
+// We still have to count the votes and award the presidency once just
+// in case the bot was down during the final moments of the election phase
+// and some last-minute votes arrived. After covering that edge case, there
+// is no further reason to count the votes a second or third time because
+// the result will not change. We use this flag to keep track. NB: the flag
+// has to be set to true once the presidency phase has been updated once,
+// but also don't forget that it has to be flipped back to false during
+// another phase. Otherwise the bot may run for months at a time but this
+// flag needs to get reset at some point during the election cycle.
 let presidencyPhaseUpdated = false;
 
+// Handle routine updates during the presidency phase of the cycle.
 async function UpdatePresidencyPhase() {
     if (presidencyPhaseUpdated) {
 	return;
@@ -50,7 +67,10 @@ async function UpdatePresidencyPhase() {
     return CountVotesAndAwardPresidency();
 }
 
+// Handle routine updates during the vacant phase of the cycle.
+// TODO: only do this update once, like the presidency phase does.
 async function UpdateVacantPhase() {
+    presidencyPhaseUpdated = false;
     const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
 	// Fire Mr. President and Mr. Vice President.
@@ -62,18 +82,22 @@ async function UpdateVacantPhase() {
     }
 }
 
+// Handle routine updates during the election phase of the cycle.
 async function UpdateElectionPhase() {
     console.log('UpdateElectionPhase');
-    const users = UserCache.GetAllUsersAsFlatList();
-    const started = IsElectionStarted(users);
-    if (started) {
+    presidencyPhaseUpdated = false;
+    if (IsElectionStarted()) {
 	return ProcessLostVotes();
     } else {
 	return InitElection();
     }
 }
 
-function IsElectionStarted(users) {
+// Determines whether an election is already underway by peeking into the database
+// to look for votes, candidates, or a winner. If none are found then no election is
+// underway.
+function IsElectionStarted() {
+    const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
 	if (user.office || user.presidential_election_vote || user.presidential_election_message_id) {
 	    return true;
@@ -82,6 +106,7 @@ function IsElectionStarted(users) {
     return false;
 }
 
+// Collect and process lost votes (reactions) that were cast while the bot was down.
 async function ProcessLostVotes() {
     console.log('ProcessLostVotes');
     const guild = await DiscordUtil.GetMainDiscordGuild();
@@ -115,12 +140,14 @@ async function ProcessLostVotes() {
     }
 }
 
+// Returns the unix timestamp of the end of the election phase.
 function CalculateUnixTimestampOfElectionEndForThisMonth() {
     const thursdays = RustCalendar.CalculateArrayOfAllThursdayEpochsThisMonth();
     const n = thursdays.length;
     return thursdays[n - 1];
 }
 
+// Start the election phase of the cycle. Print the ballot and wire up all the buttons for voting.
 async function InitElection() {
     console.log('InitElection');
     const guild = await DiscordUtil.GetMainDiscordGuild();
@@ -143,6 +170,10 @@ async function InitElection() {
     }
 }
 
+// Returns a commissar user for an election candidate by message ID.
+// Context: voting buttons in discord are reactions that hang off of
+// a discord message. When a reaction comes in, we look up the candidate
+// using the message ID. Returns null of the message is not a voting button.
 function GetCandidateByMessageId(messageId) {
     const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
@@ -153,6 +184,10 @@ function GetCandidateByMessageId(messageId) {
     return null;
 }
 
+// Checks to see if a reaction is an incoming vote in the presidential election.
+// Not all reactions are votes. They can be any reaction to any message. If it
+// is a vote, then record it in the database so that it can be counted and the
+// standings updated.
 async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVoter) {
     if (discordUser.bot) {
 	return;
@@ -188,6 +223,8 @@ async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVot
     }
 }
 
+// Count the votes that are recorded in the database, award the top
+// titles, and update the vote tally visualization.
 async function CountVotesAndAwardPresidency() {
     console.log('CountVotesAndAwardPresidency');
 }
