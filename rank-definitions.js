@@ -3,6 +3,7 @@ const RoleID = require('./role-id');
 module.exports = [
     {
 	banPower: true,
+	collectiveVoteWeight: 2,
 	color: '#189b17',
 	count: 0,
 	insignia: '⚑',
@@ -12,6 +13,7 @@ module.exports = [
     },
     {
 	banPower: true,
+	collectiveVoteWeight: 2,
 	color: '#189b17',
 	count: 0,
 	insignia: '⚑',

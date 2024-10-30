@@ -440,10 +440,11 @@ class CommissarUser {
 	}
 	const rank = this.getRank();
 	const rankData = RankMetadata[rank];
-	if (!rankData.count || !rankData.collectiveVoteWeight) {
+	if (!rankData.collectiveVoteWeight) {
 	    return 0;
 	}
-	const individualVoteWeight = rankData.collectiveVoteWeight / rankData.count;
+	const divisor = rankData.count || 1;
+	const individualVoteWeight = rankData.collectiveVoteWeight / divisor;
 	return individualVoteWeight;
     }
 

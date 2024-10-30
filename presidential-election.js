@@ -1,5 +1,6 @@
 const Canvas = require('canvas');
 const DiscordUtil = require('./discord-util');
+const moment = require('moment');
 const RustCalendar = require('./rust-calendar');
 const UserCache = require('./user-cache');
 
@@ -11,6 +12,10 @@ const channelId = '1299963218265116753';
 // The cycle and the phases are tied to the Thursdays at 18:00 UTC because
 // that is the moment of the "wipe" in Rust.
 function CalculateCurrentPhaseOfElectionCycle() {
+    if (moment().isBefore(moment('2024-11-04 18:00:00'))) {
+	// TODO: remove this after the first election cycle.
+	return 'election';
+    }
     const weekOfMonth = RustCalendar.CalculateCurrentWeekOfTheMonth();
     const weeksThisMonth = RustCalendar.CalculateHowManyThursdaysThisMonth();
     if (weeksThisMonth === 4) {
@@ -144,7 +149,8 @@ async function ProcessLostVotes() {
 function CalculateUnixTimestampOfElectionEndForThisMonth() {
     const thursdays = RustCalendar.CalculateArrayOfAllThursdayEpochsThisMonth();
     const n = thursdays.length;
-    return thursdays[n - 1];
+    // TODO: remove the 4 extra days after the first election cycle.
+    return thursdays[n - 1] + (86400 * 4);
 }
 
 // Start the election phase of the cycle. Print the ballot and wire up all the buttons for voting.
@@ -249,7 +255,10 @@ async function CountVotesAndAwardPresidency() {
 	const v = user.presidential_election_vote;
 	if (v) {
 	    const r = user.rank;
-	    const color = user.getRankColor();
+	    let color = user.getRankColor();
+	    if (color === '#189b17') {
+		color = '#F4B400';
+	    }
 	    const weight = user.getVoteWeight();
 	    if (!(v in voteSum)) {
 		voteSum[v] = 0;
@@ -318,7 +327,9 @@ async function CountVotesAndAwardPresidency() {
 	const y = verticalMargin + rowNumber * (barHeight + barGap);
 	const candidateTotalPixels = Math.ceil(chartWidth * candidate.totalVoteWeight / maxSum);
 	const rightX = 2 * horizontalMargin + maxLabelWidth + candidateTotalPixels;
+	console.log('Votes for', candidate.label);
 	for (const vote of candidate.votes) {
+	    console.log(vote);
 	    context.fillStyle = vote.color;
 	    const voteWidth = chartWidth * vote.weight / maxSum;
 	    if (voteWidth - voteGap < 1) {
@@ -347,11 +358,26 @@ async function CountVotesAndAwardPresidency() {
 	content: `**Presidential Election**\nThe vote ends <t:${electionEndTimestamp}:R>`,
 	files: [voteTallyAttachment],
     });
+    let mrPresidentId;
     if (n > 0) {
-	console.log('Mr. President:', sortableCandidates[0]);
+	mrPresidentId = sortableCandidates[0].commissar_id;
+	const mrPresident = UserCache.GetCachedUserByCommissarId(mrPresidentId);
+	if (mrPresident) {
+	    await mrPresident.setOffice('PREZ');
+	}
     }
+    let mrVicePresidentId;
     if (n > 1) {
-	console.log('Mr. Vice President:', sortableCandidates[1]);
+	mrVicePresidentId = sortableCandidates[1].commissar_id;
+	const mrVicePresident = UserCache.GetCachedUserByCommissarId(mrVicePresidentId);
+	if (mrVicePresident) {
+	    await mrVicePresident.setOffice('VEEP');
+	}
+    }
+    for (const user of users) {
+	if (user.commissar_id !== mrPresidentId && user.commissar_id !== mrVicePresidentId) {
+	    await user.setOffice(null);
+	}
     }
 }
 
