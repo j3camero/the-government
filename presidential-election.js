@@ -195,7 +195,6 @@ async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVot
     if (reaction.message.channelId !== channelId) {
 	return;
     }
-    console.log('President vote detected');
     const candidate = GetCandidateByMessageId(reaction.message.id);
     if (!candidate) {
 	console.log('Vote detected but could not determine for which candidate.');
@@ -267,13 +266,14 @@ async function CountVotesAndAwardPresidency() {
     }
     const sortableCandidates = [];
     for (const candidate in voteList) {
-	voteList[candidate].sort((a, b) => (a.weight - b.weight));
+	voteList[candidate].sort((a, b) => (b.weight - a.weight));
 	const s = voteSum[candidate] || 0;
 	if (!s) {
 	    continue;
 	}
 	const cu = UserCache.GetCachedUserByCommissarId(candidate);
 	sortableCandidates.push({
+	    commissar_id: cu.commissar_id,
 	    label: cu.getNickname(),
 	    tiebreaker: cu.rank_index,
 	    totalVoteWeight: s,
@@ -281,11 +281,11 @@ async function CountVotesAndAwardPresidency() {
 	});
     }
     sortableCandidates.sort((a, b) => {
-	const dw = a.totalVoteWeight - b.totalVoteWeight;
+	const dw = b.totalVoteWeight - a.totalVoteWeight;
 	if (Math.abs(dw) > 0.000001) {
 	    return dw;
 	}
-	return b.tiebreaker - a.tiebreaker;  // rank index is the tiebreaker.
+	return a.tiebreaker - b.tiebreaker;  // rank index is the tiebreaker.
     });
     const headerMessage = await FetchHeaderMessage();
     if (!headerMessage) {
@@ -295,7 +295,8 @@ async function CountVotesAndAwardPresidency() {
     const verticalMargin = 16;
     const horizontalMargin = 4;
     const barHeight = 32;
-    const barGap = 16;
+    const barGap = 2;
+    const voteGap = 2;
     const n = sortableCandidates.length;
     const width = 360;
     const height = n * (barHeight) + (n - 1) * barGap + 2 * verticalMargin;
@@ -307,23 +308,33 @@ async function CountVotesAndAwardPresidency() {
     context.font = '18px gg sans';
     let maxLabelWidth = 0;
     for (const candidate of sortableCandidates) {
-	const labelWidth = context.measureText(candidate.label).width;
+	const labelWidth = Math.ceil(context.measureText(candidate.label).width);
 	maxLabelWidth = Math.max(labelWidth, maxLabelWidth);
     }
-    maxLabelWidth = Math.ceil(maxLabelWidth);
-    console.log('maxLabelWidth', maxLabelWidth);
+    const chartWidth = width - (3 * horizontalMargin) - maxLabelWidth;
     let rowNumber = 0;
     for (const candidate of sortableCandidates) {
-	const barX = 2 * horizontalMargin + maxLabelWidth;
-	const barY = verticalMargin + rowNumber * (barHeight + barGap);
-	const barWidth = width - (3 * horizontalMargin) - maxLabelWidth;
-	context.fillRect(barX, barY, barWidth, barHeight);
-	const labelDimensions = context.measureText(candidate.label);
-	console.log('labelDimensions', labelDimensions);
-	const labelWidth = labelDimensions.width;
+	let x = 2 * horizontalMargin + maxLabelWidth;
+	const y = verticalMargin + rowNumber * (barHeight + barGap);
+	const candidateTotalPixels = Math.ceil(chartWidth * candidate.totalVoteWeight / maxSum);
+	const rightX = 2 * horizontalMargin + maxLabelWidth + candidateTotalPixels;
+	for (const vote of candidate.votes) {
+	    context.fillStyle = vote.color;
+	    const voteWidth = chartWidth * vote.weight / maxSum;
+	    if (voteWidth - voteGap < 1) {
+		const votePixels = Math.max(rightX - x, 1);
+		context.fillRect(x, y, votePixels, barHeight);
+		break;
+	    } else {
+		const votePixels = Math.floor(voteWidth);
+		context.fillRect(x, y, votePixels - voteGap, barHeight);
+		x += votePixels;
+	    }
+	}
+	context.fillStyle = '#FFFFFF';
+	const labelWidth = Math.ceil(context.measureText(candidate.label).width);
 	const labelX = horizontalMargin + maxLabelWidth - labelWidth;
-	const labelY = barY + barHeight - 10;
-	
+	const labelY = y + barHeight - 10;
 	context.fillText(candidate.label, labelX, labelY);
 	rowNumber++;
     }
@@ -336,6 +347,12 @@ async function CountVotesAndAwardPresidency() {
 	content: `**Presidential Election**\nThe vote ends <t:${electionEndTimestamp}:R>`,
 	files: [voteTallyAttachment],
     });
+    if (n > 0) {
+	console.log('Mr. President:', sortableCandidates[0]);
+    }
+    if (n > 1) {
+	console.log('Mr. Vice President:', sortableCandidates[1]);
+    }
 }
 
 module.exports = {
