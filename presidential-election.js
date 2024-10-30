@@ -355,7 +355,7 @@ async function CountVotesAndAwardPresidency() {
     };
     const electionEndTimestamp = CalculateUnixTimestampOfElectionEndForThisMonth();
     await headerMessage.edit({
-	content: `**Presidential Election**\nThe vote ends <t:${electionEndTimestamp}:R>`,
+	content: `**Presidential Election**\n${voteCount} voters. The vote ends <t:${electionEndTimestamp}:R>`,
 	files: [voteTallyAttachment],
     });
     let mrPresidentId;

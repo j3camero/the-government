@@ -399,8 +399,6 @@ class CommissarUser {
     getGenderPrefix() {
 	if (this.gender === 'F') {
 	    return 'Madam';
-	} else if (this.gender === 'A') {
-	    return 'The';
 	} else {
 	    return 'Mr.';
 	}
