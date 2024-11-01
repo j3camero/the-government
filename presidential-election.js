@@ -150,7 +150,7 @@ function CalculateUnixTimestampOfElectionEndForThisMonth() {
     const thursdays = RustCalendar.CalculateArrayOfAllThursdayEpochsThisMonth();
     const n = thursdays.length;
     // TODO: remove the 4 extra days after the first election cycle.
-    return thursdays[n - 1] + (86400 * 4);
+    return thursdays[n - 1] - (86400 * 24);
 }
 
 // Start the election phase of the cycle. Print the ballot and wire up all the buttons for voting.

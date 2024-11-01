@@ -8,6 +8,7 @@ const exile = require('./exile-cache');
 const FilterUsername = require('./filter-username');
 const fs = require('fs');
 const huddles = require('./huddles');
+const moment = require('moment');
 const RandomPin = require('./random-pin');
 const RankMetadata = require('./rank-definitions');
 const RoleID = require('./role-id');
@@ -365,8 +366,7 @@ async function HandleOrdersTestCommand(discordMessage) {
 	return;
     }
     const jeff = await UserCache.GetCachedUserByDiscordId('268593188137074688');
-    const users = [jeff];
-    await SendOrdersToTheseCommissarUsers(users, discordMessage);
+    await SpamInactiveRetiredGeneral(jeff, discordMessage);
 }
 
 async function HandleOrdersCommand(discordMessage) {
@@ -388,6 +388,67 @@ async function HandleOrdersCommand(discordMessage) {
     const daysToLookback = parseFloat(daysToLookbackAsText);
     const recentActiveUsers = UserCache.GetUsersSortedByLastSeen(daysToLookback);
     await SendOrdersToTheseCommissarUsers(recentActiveUsers, discordMessage);
+}
+
+async function SpamInactiveRetiredGeneral(user, discordMessage) {
+    if (!user.citizen) {
+	return;
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const discordMember = await guild.members.fetch(user.discord_id);
+    if (!discordMember) {
+	return;
+    }
+    if (discordMember.user.bot) {
+	return;
+    }
+    const name = user.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`Sending spam to inactive retired General ${name}`);
+    let content = '**I need your help.**\n';
+    content += 'Please vote in the new https://discord.com/channels/305840605328703500/1299963218265116753 . You would be doing me a huge favor.\n\n';
+    content += 'Hello, old friend. I hope you are doing well wherever you are. I sent you this message because you were a General. I am reaching out to you with this one-time message to let you know about something truly special. Every statistic that I can see suggests that this Nov 7 wipe day may be the biggest in gov history. We are moving to a more relaxed Rust server (Pickle) after years playing exclusively on top-10 Vanilla servers. Pickle can fit 50 players on a green dot team, so there is always room for you. 20 Officers & Generals will be sharing one big base together to chain-raid 24/7 in shifts. The village will surround the big bases. All of these factors mean that if you were ever thinking of reactivating for a good ol gov wipe, this Nov 7 is the best opportunity in years.\n\n';
+    content += `Either way, please vote in the #president-vote. The whole cycle is now 100% automated. All ranks can vote. That's 1000 voters. The Government is the largest democracy on the internet. I want you to vote for one of the options to make the total vote count go up. Thank you, friend.\n\n`;
+    content += 'Jeff <3';
+    try {
+	await discordMember.send({
+	    content,
+	    files: [{
+		attachment: 'president-vote.png',
+		name: 'president-vote.png'
+	    }]
+	});
+    } catch (error) {
+	console.log('Failed to send orders to', name);
+    }
+}
+
+async function HandleSpamInactiveRetiredGeneralsCommand(discordMessage) {
+    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
+    if (!author || author.commissar_id !== 7) {
+	// Auth: this command for developer use only.
+	return;
+    }
+    const users = UserCache.GetAllUsersAsFlatList();
+    const inactiveRetiredGenerals = [];
+    for (const user of users) {
+	if (user.peak_rank > 15) {
+	    continue;
+	}
+	if (!user.last_seen) {
+	    continue;
+	}
+	const lastSeen = moment(user.last_seen);
+	const recent = moment().subtract(14, 'days');
+	if (lastSeen.isAfter(recent)) {
+	    continue;
+	}
+	inactiveRetiredGenerals.push(user);
+    }
+    console.log('Inactive retired generals:', inactiveRetiredGenerals.length);
+    for (const user of inactiveRetiredGenerals) {
+	await SpamInactiveRetiredGeneral(user, discordMessage);
+	await Sleep(5000);
+    }
 }
 
 async function HandleBadgeCommand(discordMessage) {
@@ -1030,6 +1091,7 @@ async function Dispatch(discordMessage) {
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
 	'!sell': HandleSellCommand,
+	'!spaminactiveretiredgenerals': HandleSpamInactiveRetiredGeneralsCommand,
 	'!tax': yen.HandleTaxCommand,
 	'!tip': yen.HandleTipCommand,
 	'!transcript': HandleTranscriptCommand,
