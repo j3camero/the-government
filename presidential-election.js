@@ -12,10 +12,6 @@ const channelId = '1299963218265116753';
 // The cycle and the phases are tied to the Thursdays at 18:00 UTC because
 // that is the moment of the "wipe" in Rust.
 function CalculateCurrentPhaseOfElectionCycle() {
-    if (moment().isBefore(moment('2024-11-04 18:00:00'))) {
-	// TODO: remove this after the first election cycle.
-	return 'election';
-    }
     const weekOfMonth = RustCalendar.CalculateCurrentWeekOfTheMonth();
     const weeksThisMonth = RustCalendar.CalculateHowManyThursdaysThisMonth();
     if (weeksThisMonth === 4) {
@@ -70,7 +66,7 @@ async function UpdatePresidencyPhase() {
 	return;
     }
     presidencyPhaseUpdated = true;
-    return CountVotesAndAwardPresidency();
+    //await CountVotesAndAwardPresidency();
 }
 
 // Handle routine updates during the vacant phase of the cycle.
@@ -150,7 +146,7 @@ function CalculateUnixTimestampOfElectionEndForThisMonth() {
     const thursdays = RustCalendar.CalculateArrayOfAllThursdayEpochsThisMonth();
     const n = thursdays.length;
     // TODO: remove the 4 extra days after the first election cycle.
-    return thursdays[n - 1] - (86400 * 24);
+    return thursdays[n - 1];
 }
 
 // Start the election phase of the cycle. Print the ballot and wire up all the buttons for voting.
@@ -199,6 +195,11 @@ async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVot
 	return;
     }
     if (reaction.message.channelId !== channelId) {
+	return;
+    }
+    const phase = CalculateCurrentPhaseOfElectionCycle();
+    if (phase !== 'election') {
+	// Ignore votes received outside the designated election phase.
 	return;
     }
     const candidate = GetCandidateByMessageId(reaction.message.id);
