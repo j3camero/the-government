@@ -277,27 +277,21 @@ async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `Last month we did big raids almost every night. In October we will do the same and a lot of people are pumped. It is going to be a massive month.\n\n`;
+    content += `This month we are invading Pickle Vanilla Monthly. The team size is 50 on Pickle so there will always be room for you on team. The plan is to make Pickle into a gov-only server.\n\n`;
+    content += `client.connect 104.238.229.42:28045\n\n`;
     if (user.rank <= 21) {
-	content += `The build spot is AA6. Run straight there and slap down your own base.\n\n`;
-    }
-    content += '```client.connect USLarge.Rustopia.gg```\n';  // Only one newline after triple backticks.
-    if (user.rank <= 15) {
-	content += `Generals Code 0155\n`;
+	content += `The build spot is P46. See you there!\n\n`;
     }
     if (user.rank <= 19) {
-	content += `Wipe Code 6463\n`;
-    }
-    if (user.rank <= 19) {
-	content += `All officers are invited to the opt-in zerg base. Anyone who joins the zerg base can't have any other base. You don't have to opt-in and can build your own base if you want.\n`;
+	content += `All officers are invited to the opt-in zerg base. Anyone who joins the zerg base can't have any other base. You don't have to opt-in and can build your own base if you want. Over 20 of us will be zerging together on Pickle.\n`;
     }
     console.log('Content length', content.length, 'characters.');
     try {
 	await discordMember.send({
 	    content,
 	    files: [{
-		attachment: 'nov-2023-village-heatmap.png',
-		name: 'nov-2023-village-heatmap.png'
+		attachment: 'president-vote.png',
+		name: 'president-vote.png'
 	    }]
 	});
     } catch (error) {
@@ -1069,7 +1063,7 @@ async function Dispatch(discordMessage) {
 	'!balance': yen.HandleYenCommand,
 	'!ban': Ban.HandleBanCommand,
 	'!boop': HandleBoopCommand,
-	'!buy': HandleBuyCommand,
+	//'!buy': HandleBuyCommand,
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
 	'!convict': Ban.HandleConvictCommand,
@@ -1090,7 +1084,7 @@ async function Dispatch(discordMessage) {
 	'!servervote': HandleServerVoteCommand,
 	'!presidentvote': HandlePresidentVoteCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
-	'!sell': HandleSellCommand,
+	//'!sell': HandleSellCommand,
 	'!spaminactiveretiredgenerals': HandleSpamInactiveRetiredGeneralsCommand,
 	'!tax': yen.HandleTaxCommand,
 	'!tip': yen.HandleTipCommand,

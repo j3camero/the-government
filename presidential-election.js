@@ -76,11 +76,11 @@ async function UpdateVacantPhase() {
     const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
 	// Fire Mr. President and Mr. Vice President.
-	cu.setOffice(null);
+	user.setOffice(null);
 	// Delete votes.
-	cu.setPresidentialElectionVote(null);
+	user.setPresidentialElectionVote(null);
 	// Delete candidates.
-	cu.setPresidentialElectionMessageId(null);
+	user.setPresidentialElectionMessageId(null);
     }
 }
 

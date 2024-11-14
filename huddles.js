@@ -70,13 +70,15 @@ async function CreateNewVoiceChannelWithBitrate(channelName, bitrate) {
 	    { id: RoleID.General, allow: perms },
 	    { id: RoleID.Officer, allow: perms },
 	    { id: RoleID.Grunt, allow: perms },
-	    { id: RoleID.Recruit, allow: perms },
 	    { id: RoleID.Bots, allow: perms },
 	],
 	name: channelName,
 	type: 2,
 	userLimit: 99,
     };
+    if (channelName === 'Alpha') {
+	options.permissionOverwrites.push({ id: RoleID.Recruit, allow: perms });
+    }
     console.log('Creating channel.');
     return await guild.channels.create(options);
 }
