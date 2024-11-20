@@ -76,7 +76,12 @@ async function AddRole(member, role) {
 	return;
     }
     console.log('Adding role', role.name || role, 'to', member.nickname);
-    await member.roles.add(role);
+    try {
+	await member.roles.add(role);
+    } catch (error) {
+	console.log('Error while adding a role to a member:');
+	console.log(error);
+    }
 }
 
 // Removes a role from a GuildMember.
@@ -88,7 +93,12 @@ async function RemoveRole(member, role) {
 	return;
     }
     console.log('Removing role', role.name || role, 'from', member.nickname);
-    await member.roles.remove(role);
+    try {
+	await member.roles.remove(role);
+    } catch (error) {
+	console.log('Error while removing a role from a member:');
+	console.log(error);
+    }
 }
 
 async function GetCategoryChannelByName(channelName) {
