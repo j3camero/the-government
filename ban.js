@@ -159,10 +159,6 @@ async function UpdateTrial(cu) {
     let baselineVoteDurationDays;
     if (guilty) {
 	baselineVoteDurationDays = 3;
-	if (cu.good_standing) {
-	    // Vote outcome flipped. Reset the clock.
-	    startTime = currentTime;
-	}
 	await cu.setGoodStanding(false);
 	if (member) {
 	    try {
@@ -173,10 +169,6 @@ async function UpdateTrial(cu) {
 	}
     } else {
 	baselineVoteDurationDays = 1;
-	if (!cu.good_standing) {
-	    // Vote outcome flipped. Reset the clock.
-	    startTime = currentTime;
-	}
 	await cu.setGoodStanding(true);
     }
     const canvas = new Canvas.Canvas(360, 16 + 32 + 16);
@@ -242,7 +234,6 @@ async function UpdateTrial(cu) {
 	attachment: buffer,
 	name: imageFilename,
     };
-    await cu.setBanVoteStartTime(startTime.format());
     const turnout = combinedWeight / availableWeight;
     const durationDays = baselineVoteDurationDays * (1 - turnout);
     const durationSeconds = durationDays * 86400;
