@@ -168,7 +168,7 @@ async function UpdateTrial(cu) {
 	    }
 	}
     } else {
-	baselineVoteDurationDays = 1;
+	baselineVoteDurationDays = 3;
 	await cu.setGoodStanding(true);
     }
     const canvas = new Canvas.Canvas(360, 16 + 32 + 16);
@@ -234,8 +234,7 @@ async function UpdateTrial(cu) {
 	attachment: buffer,
 	name: imageFilename,
     };
-    const turnout = combinedWeight / availableWeight;
-    const durationDays = baselineVoteDurationDays * (1 - turnout);
+    const durationDays = baselineVoteDurationDays;
     const durationSeconds = durationDays * 86400;
     const endTime = startTime.add(durationSeconds, 'seconds');
     if (currentTime.isAfter(endTime)) {
