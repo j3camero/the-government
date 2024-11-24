@@ -250,6 +250,7 @@ async function CountVotesAndAwardPresidency() {
     const voteList = {};
     const voteSum = {};
     let voteCount = 0;
+    let validVoteCount = 0;
     let maxSum = 0;
     const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
@@ -265,13 +266,16 @@ async function CountVotesAndAwardPresidency() {
 		voteSum[v] = 0;
 		voteList[v] = [];
 	    }
-	    voteSum[v] += weight;
-	    voteList[v].push({ color, weight });
 	    voteCount++;
-	    maxSum = Math.max(voteSum[v], maxSum);
+	    if (!user.ban_conviction_time) {
+		validVoteCount++;
+		voteSum[v] += weight;
+		voteList[v].push({ color, weight });
+		maxSum = Math.max(voteSum[v], maxSum);
+	    }
 	}
     }
-    if (!voteCount) {
+    if (!validVoteCount) {
 	return;
     }
     const sortableCandidates = [];
