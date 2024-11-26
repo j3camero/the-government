@@ -250,7 +250,6 @@ async function CountVotesAndAwardPresidency() {
     const voteList = {};
     const voteSum = {};
     let voteCount = 0;
-    let validVoteCount = 0;
     let maxSum = 0;
     const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
@@ -267,15 +266,12 @@ async function CountVotesAndAwardPresidency() {
 		voteList[v] = [];
 	    }
 	    voteCount++;
-	    if (!user.ban_conviction_time) {
-		validVoteCount++;
-		voteSum[v] += weight;
-		voteList[v].push({ color, weight });
-		maxSum = Math.max(voteSum[v], maxSum);
-	    }
+	    voteSum[v] += weight;
+	    voteList[v].push({ color, weight });
+	    maxSum = Math.max(voteSum[v], maxSum);
 	}
     }
-    if (!validVoteCount) {
+    if (!voteCount) {
 	return;
     }
     const sortableCandidates = [];
@@ -286,6 +282,9 @@ async function CountVotesAndAwardPresidency() {
 	    continue;
 	}
 	const cu = UserCache.GetCachedUserByCommissarId(candidate);
+	if (cu.ban_conviction_time) {
+	    continue;
+	}
 	sortableCandidates.push({
 	    commissar_id: cu.commissar_id,
 	    label: cu.getNickname(),
@@ -338,7 +337,7 @@ async function CountVotesAndAwardPresidency() {
 	    context.fillStyle = vote.color;
 	    const voteWidth = chartWidth * vote.weight / maxSum;
 	    if (voteWidth - voteGap < 1) {
-		const votePixels = Math.max(rightX - x, 1);
+		const votePixels = Math.max(rightX - voteGap - x, 1);
 		context.fillRect(x, y, votePixels, barHeight);
 		break;
 	    } else {
