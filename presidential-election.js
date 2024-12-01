@@ -67,6 +67,7 @@ async function UpdatePresidencyPhase() {
     }
     presidencyPhaseUpdated = true;
     //await CountVotesAndAwardPresidency();
+    await DeleteVoteButtons();
 }
 
 // Handle routine updates during the vacant phase of the cycle.
@@ -76,11 +77,11 @@ async function UpdateVacantPhase() {
     const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
 	// Fire Mr. President and Mr. Vice President.
-	user.setOffice(null);
+	await user.setOffice(null);
 	// Delete votes.
-	user.setPresidentialElectionVote(null);
+	await user.setPresidentialElectionVote(null);
 	// Delete candidates.
-	user.setPresidentialElectionMessageId(null);
+	await user.setPresidentialElectionMessageId(null);
     }
 }
 
@@ -226,6 +227,25 @@ async function CheckReactionForPresidentialVote(reaction, discordUser, notifyVot
 	    await voterMember.send('Your vote has been counted');
 	} else {
 	    await voterMember.send('Your vote has been updated');
+	}
+    }
+}
+
+async function DeleteVoteButtons() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch(channelId);
+    const users = UserCache.GetAllUsersAsFlatList();
+    for (const user of users) {
+	if (user.presidential_election_message_id) {
+	    try {
+		const message = await channel.messages.fetch(user.presidential_election_message_id);
+		if (message) {
+		    await message.delete();
+		    await user.setPresidentialElectionMessageId(null);
+		}
+	    } catch (error) {
+		console.log(error);
+	    }
 	}
     }
 }
