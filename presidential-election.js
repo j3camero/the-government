@@ -70,10 +70,14 @@ async function UpdatePresidencyPhase() {
     await DeleteVoteButtons();
 }
 
+let vacantPhaseUpdated = false;
+
 // Handle routine updates during the vacant phase of the cycle.
-// TODO: only do this update once, like the presidency phase does.
 async function UpdateVacantPhase() {
-    presidencyPhaseUpdated = false;
+    if (vacantPhaseUpdated) {
+	return;
+    }
+    vacantPhaseUpdated = true;
     const users = UserCache.GetAllUsersAsFlatList();
     for (const user of users) {
 	// Fire Mr. President and Mr. Vice President.
@@ -83,12 +87,14 @@ async function UpdateVacantPhase() {
 	// Delete candidates.
 	await user.setPresidentialElectionMessageId(null);
     }
+    await ClearVoteChannel();
 }
 
 // Handle routine updates during the election phase of the cycle.
 async function UpdateElectionPhase() {
     console.log('UpdateElectionPhase');
     presidencyPhaseUpdated = false;
+    vacantPhaseUpdated = false;
     if (IsElectionStarted()) {
 	return ProcessLostVotes();
     } else {
@@ -247,6 +253,15 @@ async function DeleteVoteButtons() {
 		console.log(error);
 	    }
 	}
+    }
+}
+
+async function ClearVoteChannel() {
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channel = await guild.channels.fetch(channelId);
+    const messages = await channel.messages.fetch({ limit: 10, cache: false });
+    for (const [messageId, message] of messages) {
+	await message.delete();
     }
 }
 
