@@ -6,6 +6,7 @@ const discordTranscripts = require('discord-html-transcripts');
 const DiscordUtil = require('./discord-util');
 const exile = require('./exile-cache');
 const FilterUsername = require('./filter-username');
+const friend = require('./friend');
 const fs = require('fs');
 const huddles = require('./huddles');
 const moment = require('moment');
@@ -92,7 +93,7 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for December 2024.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for January 2025.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 15);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
@@ -1065,6 +1066,7 @@ async function Dispatch(discordMessage) {
 	'!code': HandleCodeCommand,
 	'!committee': HandleCommitteeCommand,
 	'!convict': Ban.HandleConvictCommand,
+	'!friend': friend.HandleFriendCommand,
 	'!gender': HandleGenderCommand,
 	'!hype': HandleHypeCommand,
 	'!impeach': HandleImpeachCommand,
@@ -1087,6 +1089,7 @@ async function Dispatch(discordMessage) {
 	'!tax': yen.HandleTaxCommand,
 	'!tip': yen.HandleTipCommand,
 	'!transcript': HandleTranscriptCommand,
+	'!unfriend': friend.HandleUnfriendCommand,
 	'!voiceactiveusers': HandleVoiceActiveUsersCommand,
 	'!yen': yen.HandleYenCommand,
 	'!yencreate': yen.HandleYenCreateCommand,

@@ -1,6 +1,7 @@
 const RankMetadata = require('./rank-definitions');
 const DB = require('./database');
 const FilterUsername = require('./filter-username');
+const fc = require('./friend-cache');
 const moment = require('moment');
 
 // Represents a member of the guild.
@@ -202,6 +203,7 @@ class CommissarUser {
 	if (friend_role_id === this.friend_role_id) {
 	    return;
 	}
+	fc.friendRoleCache[this.friend_role_id] = this.commissar_id;
 	this.friend_role_id = friend_role_id;
 	await this.updateFieldInDatabase('friend_role_id', this.friend_role_id);
     }
@@ -226,6 +228,7 @@ class CommissarUser {
 	if (friend_voice_room_id === this.friend_voice_room_id) {
 	    return;
 	}
+	fc.friendRoomCache[this.friend_voice_room_id] = this.commissar_id;
 	this.friend_voice_room_id = friend_voice_room_id;
 	await this.updateFieldInDatabase('friend_voice_room_id', this.friend_voice_room_id);
     }
@@ -432,6 +435,15 @@ class CommissarUser {
 	return rankData.color;
     }
 
+    getRankColorDecimal() {
+	if (!this.citizen) {
+	    return 0x4285F4;
+	}
+	const rank = this.getRank();
+	const rankData = RankMetadata[rank];
+	return rankData.colorDecimal;
+    }
+
     getVoteWeight() {
 	if (!this.citizen) {
 	    return 0;
@@ -490,6 +502,22 @@ class CommissarUser {
 	const nameAndInsignia = this.getNicknameOrTitleWithInsignia();
 	return `${job.title} ${nameAndInsignia}`;
     }
+
+    // TODO finish this later.
+    /*getName(includeRankIndex, useTitleInsteadOfName, includeInsignia) {
+	let name = this.nick || this.nickname || this.commissar_id;
+	const rank = this.getRank();
+	if (!rank && rank !== 0) {
+	    return name;
+	}
+	if (useTitleInsteadOfName) {
+	    const job = RankMetadata[rank];
+	    if (job.titleOverride) {
+		const prefix = this.getGenderPrefix();
+		name = `${prefix} ${job.title}`;
+	    }
+	}
+    }*/
 
     getPossessivePronoun() {
 	if (this.gender === 'M') {

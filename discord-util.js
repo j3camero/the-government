@@ -3,6 +3,7 @@ const config = require('./config');
 const Discord = require('discord.js');
 const fs = require('fs');
 const moment = require('moment');
+const RoleID = require('./role-id');
 const Sleep = require('./sleep');
 
 // Create the Discord client. Does not connect yet.
@@ -301,7 +302,7 @@ async function TryToSetChannelNameWithRateLimit(channel, newName) {
     const t = Date.now();
     const s = lastTimeNameChangedByChannelId[channel.id] || 0;
     const elapsed = t - s;
-    const tenMinutes = 6 * 60 * 1000;
+    const tenMinutes = 10 * 60 * 1000;
     if (elapsed < tenMinutes) {
 	return;
     }
@@ -317,7 +318,7 @@ async function TryToSetChannelPermsWithRateLimit(channel, newPerms) {
     const t = Date.now();
     const s = lastTimePermsChangedByChannelId[channel.id] || 0;
     const elapsed = t - s;
-    const tenMinutes = 6 * 60 * 1000;
+    const tenMinutes = 10 * 60 * 1000;
     if (elapsed < tenMinutes) {
 	return;
     }
@@ -327,9 +328,54 @@ async function TryToSetChannelPermsWithRateLimit(channel, newPerms) {
     channel.permissionOverwrites.set(newPerms);
 }
 
+async function CreateNewVoiceChannelWithBitrate(channelName, permissionOverwrites, bitrate) {
+    const guild = await GetMainDiscordGuild();
+    const options = {
+	bitrate,
+	permissionOverwrites,
+	name: channelName,
+	type: 2,
+	userLimit: 99,
+    };
+    console.log('Creating channel.');
+    return await guild.channels.create(options);
+}
+
+async function CreateNewVoiceChannelWithPerms(channelName, permissionOverwrites) {
+    const bitratesToTry = [384000, 256000, 128000];
+    for (const bitrate of bitratesToTry) {
+	try {
+	    return await CreateNewVoiceChannelWithBitrate(channelName, permissionOverwrites, bitrate);
+	} catch (err) {
+	    console.log('Failed to create channel with bitrate', bitrate);
+	}
+    }
+    console.log('Failed to create channel with any bitrate');
+    return null;
+}
+
+async function CreateNewVoiceChannel(channelName) {
+    const guild = await GetMainDiscordGuild();
+    const perms = [Discord.PermissionFlagsBits.Connect, Discord.PermissionFlagsBits.ViewChannel];
+    const defaultPermissionOverwrites = [
+	{ id: guild.roles.everyone, deny: perms },
+	{ id: RoleID.Commander, allow: perms },
+	{ id: RoleID.General, allow: perms },
+	{ id: RoleID.Officer, allow: perms },
+	{ id: RoleID.Grunt, allow: perms },
+	{ id: RoleID.Bots, allow: perms },
+    ];
+    if (channelName === 'Alpha') {
+	defaultPermissionOverwrites.push({ id: RoleID.Recruit, allow: perms });
+    }
+    return CreateNewVoiceChannelWithPerms(channelName, defaultPermissionOverwrites);
+}
+
 module.exports = {
     AddRole,
     Connect,
+    CreateNewVoiceChannel,
+    CreateNewVoiceChannelWithPerms,
     DeleteMessagesByMember,
     GetAllMatchingTextChannels,
     GetBanCourtCategoryChannel,

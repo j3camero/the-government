@@ -10,6 +10,7 @@ const { ContextMenuCommandBuilder, Events, ApplicationCommandType } = require('d
 const DiscordUtil = require('./discord-util');
 const exile = require('./exile-cache');
 const fetch = require('./fetch');
+const friend = require('./friend');
 const HarmonicCentrality = require('./harmonic-centrality');
 const huddles = require('./huddles');
 const moment = require('moment');
@@ -258,6 +259,8 @@ async function RoutineUpdate() {
     console.log('Routine update');
     const startTime = new Date().getTime();
     await PresidentialElection.UpdatePresidentialElection();
+    await friend.CreateAndDestroyFriendBadgesByRank();
+    await friend.ScheduleUpdate();
     await huddles.ScheduleUpdate();
     await UpdateVoiceActiveMembersForMainDiscordGuild();
     const recordsToSync = timeTogetherStream.popTimeTogether(9000);
@@ -373,6 +376,7 @@ async function Start() {
 	    await newVoiceState.member.voice.kick();
 	}
 	await huddles.ScheduleUpdate();
+	await friend.ScheduleUpdate();
     });
 
     // When a user changes their username or other user details.

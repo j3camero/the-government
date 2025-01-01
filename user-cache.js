@@ -2,6 +2,7 @@ const RankMetadata = require('./rank-definitions');
 const CommissarUser = require('./commissar-user');
 const DB = require('./database');
 const FilterUsername = require('./filter-username');
+const fc = require('./friend-cache');
 const moment = require('moment');
 
 // Below is a cache of the users that is kept in-memory, keyed by commissar_id.
@@ -52,6 +53,12 @@ async function LoadAllUsersFromDatabase() {
 	    row.last_calendar_month,
 	);
 	newCache[row.commissar_id] = newUser;
+	if (row.friend_role_id) {
+	    fc.friendRoleCache[row.friend_role_id] = row.commissar_id;
+	}
+	if (row.friend_voice_room_id) {
+	    fc.friendRoomCache[row.friend_voice_room_id] = row.commissar_id;
+	}
     });
     commissarUserCache = newCache;
     const n = Object.keys(commissarUserCache).length;

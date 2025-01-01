@@ -15,6 +15,8 @@ module.exports = {
     Private: '825491806929027173',
     Recruit: '1240130799743930439',
     Sergeant: '825491803071184926',
-    WipeBadge: '1067177647857209436',
+    TheGovernment: '640726663314931712',
+    WipeBadge: '1280912415608930457',
+    WipeCommittee: '1280912267436621856',
     RetiredGeneral: '1055270328395378688',
 };

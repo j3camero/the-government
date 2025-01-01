@@ -5,6 +5,7 @@ module.exports = [
 	banPower: true,
 	collectiveVoteWeight: 2,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '⚑',
 	roles: [RoleID.Commander],
@@ -15,6 +16,7 @@ module.exports = [
 	banPower: true,
 	collectiveVoteWeight: 2,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '⚑',
 	roles: [RoleID.Commander],
@@ -24,6 +26,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander],
@@ -32,6 +35,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander],
@@ -40,6 +44,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander],
@@ -48,6 +53,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦♦♦♦♦',
 	roles: [RoleID.Commander],
@@ -56,6 +62,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦♦♦♦',
 	roles: [RoleID.Commander],
@@ -64,6 +71,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦♦♦',
 	roles: [RoleID.Commander],
@@ -72,6 +80,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦♦',
 	roles: [RoleID.Commander],
@@ -80,6 +89,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦♦',
 	roles: [RoleID.Commander],
@@ -88,6 +98,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦♦',
 	roles: [RoleID.Commander],
@@ -96,6 +107,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 0,
 	insignia: '♦',
 	roles: [RoleID.Commander],
@@ -104,6 +116,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#F4B400',
+	colorDecimal: 0xf4b400,
 	count: 0,
 	insignia: '★★★★',
 	roles: [RoleID.General],
@@ -112,6 +125,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#F4B400',
+	colorDecimal: 0xf4b400,
 	count: 0,
 	insignia: '★★★',
 	roles: [RoleID.General],
@@ -120,6 +134,7 @@ module.exports = [
     {
 	banPower: true,
 	color: '#F4B400',
+	colorDecimal: 0xf4b400,
 	count: 0,
 	insignia: '★★',
 	roles: [RoleID.General],
@@ -129,6 +144,7 @@ module.exports = [
 	banPower: true,
 	collectiveVoteWeight: 40,
 	color: '#F4B400',
+	colorDecimal: 0xf4b400,
 	count: 20,
 	insignia: '★',
 	roles: [RoleID.General],
@@ -138,6 +154,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#DB4437',
+	colorDecimal: 0xdb4437,
 	count: 10,
 	insignia: '❱❱❱❱',
 	roles: [RoleID.Colonel, RoleID.Officer],
@@ -147,6 +164,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#DB4437',
+	colorDecimal: 0xdb4437,
 	count: 10,
 	insignia: '❱❱❱',
 	roles: [RoleID.Major, RoleID.Officer],
@@ -156,6 +174,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#DB4437',
+	colorDecimal: 0xdb4437,
 	count: 10,
 	insignia: '❱❱',
 	roles: [RoleID.Captain, RoleID.Officer],
@@ -165,6 +184,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#DB4437',
+	colorDecimal: 0xdb4437,
 	count: 10,
 	insignia: '❱',
 	roles: [RoleID.Lieutenant, RoleID.Officer],
@@ -174,6 +194,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#4285F4',
+	colorDecimal: 0x4285F4,
 	count: 40,
 	insignia: '⦁⦁⦁⦁',
 	roles: [RoleID.Ensign, RoleID.Grunt],
@@ -183,6 +204,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#4285F4',
+	colorDecimal: 0x4285F4,
 	count: 100,
 	insignia: '⦁⦁⦁',
 	roles: [RoleID.Sergeant, RoleID.Grunt],
@@ -192,6 +214,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#4285F4',
+	colorDecimal: 0x4285F4,
 	count: 300,
 	insignia: '⦁⦁',
 	roles: [RoleID.Corporal, RoleID.Grunt],
@@ -201,6 +224,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 10,
 	color: '#4285F4',
+	colorDecimal: 0x4285F4,
 	count: 500,
 	insignia: '⦁',
 	roles: [RoleID.Private, RoleID.Grunt],
@@ -210,6 +234,7 @@ module.exports = [
     {
 	collectiveVoteWeight: 0,
 	color: '#189b17',
+	colorDecimal: 0x189b17,
 	count: 1000 * 1000,
 	roles: [RoleID.Recruit],
 	secondaryColor: '#0c4d0c',
