@@ -61,39 +61,23 @@ async function UpdateHuddles() {
 
 // A comparator for Discord rooms. Controls the sort order of the rooms.
 function CompareRooms(a, b) {
-    // Never sort rooms that have a parent.
-    if (a.parent || b.parent) {
-	return 0;
-    }
     // Empty rooms sort down.
-    if (a.members.size === 0 && b.members.size > 0) {
+    if (a.memberCount === 0 && b.memberCount > 0) {
 	return 1;
     }
-    if (a.members.size > 0 && b.members.size === 0) {
+    if (a.memberCount > 0 && b.memberCount === 0) {
 	return -1;
     }
     // Friend rooms sort down.
-    const aIsFriendRoom = a.id in fc.friendRoomCache;
-    const bIsFriendRoom = b.id in fc.friendRoomCache;
-    if (aIsFriendRoom && !bIsFriendRoom) {
+    if (a.ownerScore === 0 && b.ownerScore > 0) {
 	return 1;
     }
-    if (!aIsFriendRoom && bIsFriendRoom) {
+    if (a.ownerScore > 0 && b.ownerScore === 0) {
 	return -1;
     }
     // Tie-breaker between friend rooms is rank.
-    if (aIsFriendRoom && bIsFriendRoom) {
-	const aid = fc.friendRoomCache[a.id];
-	const bid = fc.friendRoomCache[b.id];
-	const au = UserCache.GetCachedUserByCommissarId(aid);
-	const bu = UserCache.GetCachedUserByCommissarId(bid);
-	if (au && !bu) {
-	    return -1;
-	}
-	if (!au && bu) {
-	    return 1;
-	}
-	return parseFloat(b.rank_score) - parseFloat(a.rank_score);
+    if (a.ownerScore > 0 && b.ownerScore) {
+	return b.ownerScore - a.ownerScore;
     }
     // Should all other criteria fail to break the tie, then alphabetic ordering is the last resort.
     return a.name.localeCompare(b.name);
@@ -105,7 +89,18 @@ async function SortVoiceRooms() {
     const sortableChannels = [];
     for (const [id, channel] of allChannels) {
 	if (channel.type === 2 && !channel.parent) {
-	    sortableChannels.push(channel);
+	    let ownerScore = 0;
+	    if (channel.id in fc.friendRoomCache) {
+		const ownerId = fc.friendRoomCache[channel.id];
+		const cu = UserCache.GetCachedUserByCommissarId(ownerId);
+		ownerScore = parseFloat(cu.rank_score);
+	    }
+	    sortableChannels.push({
+		channel,
+		memberCount: channel.members.size,
+		name: channel.name,
+		ownerScore,
+	    });
 	}
     }
     sortableChannels.sort(CompareRooms);
@@ -113,7 +108,7 @@ async function SortVoiceRooms() {
     let positionCount = 0;
     for (const channel of sortableChannels) {
 	channelPositions.push({
-	    channel: channel.id,
+	    channel: channel.channel.id,
  	    position: positionCount,
 	});
 	positionCount++;

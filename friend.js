@@ -160,7 +160,6 @@ async function SortRoles() {
 	    role: r.role.id,
  	    position: positionCount,
 	});
-	console.log(positionCount, r.role.name, r.score);
 	positionCount++;
     }
     await guild.roles.setPositions(rolePositions);
