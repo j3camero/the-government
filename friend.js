@@ -4,7 +4,7 @@ const fc = require('./friend-cache');
 const RoleID = require('./role-id.js');
 const UserCache = require('./user-cache');
 
-const friendBadgeRank = 15;
+const friendBadgeTarget = 200;
 const threeTicks = '```';
 
 async function CreateAndDestroyFriendBadgesByRank() {
@@ -14,7 +14,7 @@ async function CreateAndDestroyFriendBadgesByRank() {
 	const name = user.getNicknameOrTitleWithInsignia(true);
 	const color = user.getRankColorDecimal();
 	// CASE 1: user ranked up and needs a badge. Create one.
-	if (user.rank <= friendBadgeRank && !user.friend_role_id) {
+	if (user.rank_index <= friendBadgeTarget && !user.friend_role_id) {
 	    try {
 		console.log('Making friend role for', name);
 		const newFriendRole = await guild.roles.create({ color, name });
@@ -29,13 +29,13 @@ async function CreateAndDestroyFriendBadgesByRank() {
 	    }
 	}
 	// CASE 2: user ranked down. Destroy their badge.
-	else if (user.rank > friendBadgeRank + 1 && user.friend_role_id) {
+	else if (user.rank_index > friendBadgeTarget + 20 && user.friend_role_id) {
 	    const friendRole = await guild.roles.fetch(user.friend_role_id);
 	    await friendRole.delete();
 	    await user.setFriendRoleId(null);
 	}
 	// CASE 3: user has a badge. Update name and color if needed.
-	else if (user.rank <= friendBadgeRank && user.friend_role_id) {
+	else if (user.friend_role_id) {
 	    const friendRole = await guild.roles.fetch(user.friend_role_id);
 	    if (friendRole.name !== name) {
 		console.log('Updating role name', name);
@@ -67,7 +67,7 @@ async function CreateAndDestroyFriendRoomsByRank() {
     for (const user of users) {
 	const name = user.getNicknameOrTitleWithInsignia(true);
 	// CASE 1: user ranked up and needs a room. Create one.
-	if (user.rank <= friendBadgeRank && !user.friend_voice_room_id) {
+	if (user.rank_index <= friendBadgeTarget && !user.friend_voice_room_id) {
 	    try {
 		console.log('Making friend room for', name);
 		const perms = [Discord.PermissionFlagsBits.Connect, Discord.PermissionFlagsBits.ViewChannel];
@@ -84,13 +84,13 @@ async function CreateAndDestroyFriendRoomsByRank() {
 	    }
 	}
 	// CASE 2: user ranked down. Destroy their room.
-	else if (user.rank > friendBadgeRank + 1 && user.friend_voice_room_id) {
+	else if (user.rank_index > friendBadgeTarget + 20 && user.friend_voice_room_id) {
 	    const friendRoom = await guild.channels.fetch(user.friend_voice_room_id);
 	    await friendRoom.delete();
 	    await user.setFriendVoiceRoomId(null);
 	}
 	// CASE 3: user has a room. Update name if needed.
-	else if (user.rank <= friendBadgeRank && user.friend_voice_room_id) {
+	else if (user.friend_voice_room_id) {
 	    const friendRoom = await guild.channels.fetch(user.friend_voice_room_id);
 	    if (friendRoom.name !== name) {
 		console.log('Updating room name', name);

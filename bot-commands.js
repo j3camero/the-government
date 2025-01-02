@@ -16,7 +16,6 @@ const RoleID = require('./role-id');
 const Sleep = require('./sleep');
 const UserCache = require('./user-cache');
 const yen = require('./yen');
-const zerg = require('./zerg');
 
 // The given Discord message is already verified to start with the !ping prefix.
 // This is an example bot command that has been left in for fun. Maybe it's
@@ -1070,7 +1069,6 @@ async function Dispatch(discordMessage) {
 	'!gender': HandleGenderCommand,
 	'!hype': HandleHypeCommand,
 	'!impeach': HandleImpeachCommand,
-	'!initzerg': zerg.InitZergCommand,
 	'!prez': HandlePrezCommand,
 	'!veep': HandleVeepCommand,
 	'!lottery': yen.DoLottery,

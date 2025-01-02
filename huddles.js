@@ -70,10 +70,10 @@ function CompareRooms(a, b) {
     }
     // Friend rooms sort down.
     if (a.ownerScore === 0 && b.ownerScore > 0) {
-	return 1;
+	return -1;
     }
     if (a.ownerScore > 0 && b.ownerScore === 0) {
-	return -1;
+	return 1;
     }
     // Tie-breaker between friend rooms is rank.
     if (a.ownerScore > 0 && b.ownerScore) {

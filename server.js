@@ -22,7 +22,6 @@ const rules = require('./rules');
 const TimeTogetherStream = require('./time-together-stream');
 const UserCache = require('./user-cache');
 const yen = require('./yen');
-const zerg = require('./zerg');
 
 // Used for streaming time matrix data to the database.
 const timeTogetherStream = new TimeTogetherStream(new Clock());
@@ -405,12 +404,11 @@ async function Start() {
 	await cu.setCitizen(true);
 	await cu.seenNow();
 	await Ban.HandlePossibleReaction(messageReaction, user, true);
-	await zerg.HandleReactionAdd(messageReaction, user);
 	await PresidentialElection.CheckReactionForPresidentialVote(messageReaction, user, true);
     });
 
     discordClient.on('messageReactionRemove', async (messageReaction, user) => {
-	await zerg.HandleReactionRemove(messageReaction, user);
+	// Do nothing.
     });
 
     //discordClient.on('rateLimit', (rateLimitData) => {
