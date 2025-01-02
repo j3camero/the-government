@@ -203,8 +203,8 @@ class CommissarUser {
 	if (friend_role_id === this.friend_role_id) {
 	    return;
 	}
-	fc.friendRoleCache[this.friend_role_id] = this.commissar_id;
 	this.friend_role_id = friend_role_id;
+	fc.friendRoleCache[friend_role_id] = this.commissar_id;
 	await this.updateFieldInDatabase('friend_role_id', this.friend_role_id);
     }
 
@@ -228,8 +228,8 @@ class CommissarUser {
 	if (friend_voice_room_id === this.friend_voice_room_id) {
 	    return;
 	}
-	fc.friendRoomCache[this.friend_voice_room_id] = this.commissar_id;
 	this.friend_voice_room_id = friend_voice_room_id;
+	fc.friendRoomCache[friend_voice_room_id] = this.commissar_id;
 	await this.updateFieldInDatabase('friend_voice_room_id', this.friend_voice_room_id);
     }
 
