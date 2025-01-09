@@ -145,8 +145,7 @@ async function UpdateTrial(cu) {
     const guilty = yesWeight > noWeight;
     let banPardonTime;
     if (guilty) {
-	const clippedYesPercentage = Math.max(Math.min(yesPercentage, 0.7), 0.5);
-	const sentenceFraction = (clippedYesPercentage - 0.5) / (0.7 - 0.5);
+	const sentenceFraction = 2 * yesPercentage - 1;
 	const sentenceDays = Math.max(1, Math.round(365 * sentenceFraction));
 	const banLengthInSeconds = Math.round(sentenceDays * 24 * 60 * 60);
 	banPardonTime = moment().add(banLengthInSeconds, 'seconds').format();
