@@ -270,73 +270,48 @@ async function HandleVoiceActiveUsersCommand(discordMessage) {
     await discordMessage.channel.send(`${voiceActiveUsers} users active in voice chat in the last ${daysToLookback} days.`);
 }
 
-async function SendWipeBadgeOrders(user, discordMessage, discordMember) {
-    const name = user.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`Sending orders to ${name}`);
-    const rankNameAndInsignia = user.getRankNameAndInsignia();
-    let content = `${rankNameAndInsignia},\n\n`;
-    content += `This month we are invading Pickle Vanilla Monthly. The team size is 50 on Pickle so there will always be room for you on team. The plan is to make Pickle into a gov-only server.\n\n`;
-    content += `client.connect 104.238.229.42:28045\n\n`;
-    if (user.rank <= 21) {
-	content += `The build spot is P46. See you there!\n\n`;
-    }
-    if (user.rank <= 19) {
-	content += `All officers are invited to the opt-in zerg base. Anyone who joins the zerg base can't have any other base. You don't have to opt-in and can build your own base if you want. Over 20 of us will be zerging together on Pickle.\n`;
-    }
-    console.log('Content length', content.length, 'characters.');
-    try {
-	await discordMember.send({
-	    content,
-	    files: [{
-		attachment: 'president-vote.png',
-		name: 'president-vote.png'
-	    }]
-	});
-    } catch (error) {
-	console.log('Failed to send orders to', name);
-    }
-}
-
-async function SendNonWipeBadgeOrders(user, discordMessage, discordMember) {
-    const name = user.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`Sending orders to ${name}`);
-    const rankNameAndInsignia = user.getRankNameAndInsignia();
-    let content = `${rankNameAndInsignia},\n\n`;
-    content += `Here are your secret orders for the month of April 2024. Report to Rustafied.com - US Long III\n`;
-    content += '```client.connect uslong3.rustafied.com```\n';  // Only one newline after triple backticks.
-    content += `Grunt Code 1111\n`;
-    content += `Gate Code 1111\n\n`;
-    content += `Run straight to V7. Don't say the location in voice chat, please. Help build the community base and get a common Tier 3, then build your own small base.\n\n`;
-    content += `Pair with https://rustcult.com/ to get your base protected. The gov is too big to track everyone's base by word of mouth. We use a map app to avoid raiding ourselves by accident. It's easy. You don't have to input your base location. Once you are paired it somehow just knows. A force field goes up around your bases even if you never have the app open.\n\n`;
-    content += `Check out the new https://discord.com/channels/305840605328703500/711850971072036946. We are addressing the most longstanding problem in gov: having to put up with people you don't like to hang out with the ones you do like. Pair with rustcult.com for the best possible experience.\n\n`;
-    content += `Yours truly,\n`;
-    content += `The Government  <3`;
-    console.log('Content length', content.length, 'characters.');
-    try {
-	await discordMember.send({
-	    content,
-	    files: [{
-		attachment: 'nov-2023-village-heatmap.png',
-		name: 'nov-2023-village-heatmap.png'
-	    }]
-	});
-    } catch (error) {
-	console.log('Failed to send orders to', name);
-    }
-}
-
 async function SendOrdersToOneCommissarUser(user, discordMessage) {
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const discordMember = await guild.members.fetch(user.discord_id);
     if (discordMember.user.bot) {
 	return;
     }
-    //const hasWipeBadge = await DiscordUtil.GuildMemberHasRole(discordMember, RoleID.WipeBadge);
-    //if (hasWipeBadge) {
-	await SendWipeBadgeOrders(user, discordMessage, discordMember);
-    //} else {
-	//await SendNonWipeBadgeOrders(user, discordMessage, discordMember);
-    //}
+    const name = user.getNicknameOrTitleWithInsignia();
+    await discordMessage.channel.send(`Sending orders to ${name}`);
+    const rankNameAndInsignia = user.getRankNameAndInsignia();
+    let content = `${rankNameAndInsignia},\n\n`;
+    content += `We are playing on Rustopia.gg - US Large\n\n`;
+    content += `client.connect USLarge.Rustopia.gg\n\n`;
+    if (user.rank <= 21) {
+	content += `The build spot is F24 - F26.\n\n`;
+	content += `**New in 2025**\n`;
+	content += `You have your own voice channel in The Government. Add your homies with\n\n`;
+	content += '```!friend @name```\n\n';
+	content += `Kick out whoever you want instantly\n\n`;
+	content += '```!unfriend @name```\n\n';
+	content += `You control who can join your private channel. The rest of the gov can see who's in there but cannot join unless you !friend them.\n\n`;
+	content += `Ever wanted to start your own gov? Now it's easy. Play a Trio server while gaining rank points. Use it to play other games. Host a D&D night. Kick back with your quad when the public channel gets too busy. Get some privacy for your raid. The private channels will help the gov to absorb new groups and retain groups of old members by offering them some peace and quiet when they need.\n\n`;
+    }
+    if (user.rank <= 19) {
+	content += `There will be an officers-only base at the build spot. This message is the only way to get the code. Many will choose to live in the officers base for the whole wipe. If you do make your own base, you can still come in and use the T3 but please no longer access the loot boxes. The loot in the base is owned by everyone who lives there and has no other base. When you build your own base you can take anything that you brought into the officers base with you. If you get raided and are homeless then you automatically regain access to the officers base loot. Please help spread the word about this new system which replaces the old community base system of take-anything-you-want. That old rule was easy to enforce because there's nothing to enforce, but it was a big mistake since there was no respect for loot. This new system of respecting the officers' shared loot has proven successful over the last 3 months so ignore the naysayers. The officers base will be stacked to the rafters all wipe long. We have a bag for so come join us!\n\n`;
+	content += `Officers code 0444\n\n`;
+    }
+    if (user.rank <= 15) {
+	content += `Generals code 7800\n\n`;
+    }
+    console.log('content.length', content.length);
+    try {
+	await discordMember.send({
+	    content,
+	    //files: [{
+		//attachment: 'president-vote.png',
+		//name: 'president-vote.png'
+	    //}]
+	});
+    } catch (error) {
+	console.log('Failed to send orders to', name);
+	console.log(error);
+    }
 }
 
 async function SendOrdersToTheseCommissarUsers(users, discordMessage) {
