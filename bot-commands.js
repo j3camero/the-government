@@ -92,9 +92,10 @@ async function HandleServerVoteCommand(discordMessage) {
     }
     const guild = await DiscordUtil.GetMainDiscordGuild();
     const channel = await guild.channels.create({ name: 'server-vote' });
-    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for January 2025.');
+    const message = await channel.send('The Government will play on whichever server gets the most votes. This will be our home Rust server for March 2025.');
     await message.react('❤️');
     await MakeOneServerVoteOption(channel, 'Rustopia US Large', 'https://www.battlemetrics.com/servers/rust/14876729', 15);
+    await MakeOneServerVoteOption(channel, 'Rustopia EU Large', 'https://www.battlemetrics.com/servers/rust/15079350', 16);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long III', 'https://www.battlemetrics.com/servers/rust/433754', 11);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long II', 'https://www.battlemetrics.com/servers/rust/2036399', 144);
     await MakeOneServerVoteOption(channel, 'Rustafied.com - US Long', 'https://www.battlemetrics.com/servers/rust/1477148', 88);
@@ -104,6 +105,7 @@ async function HandleServerVoteCommand(discordMessage) {
     await MakeOneServerVoteOption(channel, 'PICKLE VANILLA MONTHLY', 'https://www.battlemetrics.com/servers/rust/4403307', 91);
     await MakeOneServerVoteOption(channel, 'Rustopia.gg - US Small', 'https://www.battlemetrics.com/servers/rust/14876730', 108);
     await MakeOneServerVoteOption(channel, 'Rustoria.co - US Long', 'https://www.battlemetrics.com/servers/rust/9594576', 2);
+    await MakeOneServerVoteOption(channel, 'RustGalaxy USA', 'https://www.battlemetrics.com/servers/rust/31117945', 2500);
 }
 
 async function MakeOnePresidentVoteOption(channel, playerName) {
@@ -280,10 +282,10 @@ async function SendOrdersToOneCommissarUser(user, discordMessage) {
     await discordMessage.channel.send(`Sending orders to ${name}`);
     const rankNameAndInsignia = user.getRankNameAndInsignia();
     let content = `${rankNameAndInsignia},\n\n`;
-    content += `We are playing on Rustopia.gg - US Large\n\n`;
-    content += `client.connect USLarge.Rustopia.gg\n\n`;
+    content += `We are playing on Rustafied.com - US Long III\n\n`;
+    content += `client.connect uslong3.rustafied.com:28015\n\n`;
     if (user.rank <= 21) {
-	content += `The build spot is F24 - F26.\n\n`;
+	content += `The build spot is Y6.\n\n`;
 	content += `**New in 2025**\n`;
 	content += `You have your own voice channel in The Government. Add your homies with\n\n`;
 	content += '```!friend @name```\n\n';
@@ -293,11 +295,11 @@ async function SendOrdersToOneCommissarUser(user, discordMessage) {
 	content += `Ever wanted to start your own gov? Now it's easy. Play a Trio server while gaining rank points. Use it to play other games. Host a D&D night. Kick back with your quad when the public channel gets too busy. Get some privacy for your raid. The private channels will help the gov to absorb new groups and retain groups of old members by offering them some peace and quiet when they need.\n\n`;
     }
     if (user.rank <= 19) {
-	content += `There will be an officers-only base at the build spot. This message is the only way to get the code. Many will choose to live in the officers base for the whole wipe. If you do make your own base, you can still come in and use the T3 but please no longer access the loot boxes. The loot in the base is owned by everyone who lives there and has no other base. When you build your own base you can take anything that you brought into the officers base with you. If you get raided and are homeless then you automatically regain access to the officers base loot. Please help spread the word about this new system which replaces the old community base system of take-anything-you-want. That old rule was easy to enforce because there's nothing to enforce, but it was a big mistake since there was no respect for loot. This new system of respecting the officers' shared loot has proven successful over the last 3 months so ignore the naysayers. The officers base will be stacked to the rafters all wipe long. We have a bag for so come join us!\n\n`;
-	content += `Officers code 0444\n\n`;
+	content += `There will be an officers-only 2x2 at the build spot with a T3. This message is the only way to get the code. We have a bag for so come join us!\n\n`;
+	content += `Officers code 0441\n\n`;
     }
     if (user.rank <= 15) {
-	content += `Generals code 7800\n\n`;
+	content += `Generals code 7801\n\n`;
     }
     console.log('content.length', content.length);
     try {

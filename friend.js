@@ -45,11 +45,15 @@ async function CreateAndDestroyFriendBadgesByRank() {
 		console.log('Updating role color', name, color);
 		await friendRole.setColor(color);
 	    }
-	    const member = await guild.members.fetch(user.discord_id);
-	    if (member) {
-		if (!member.roles.cache.has(friendRole.id)) {
-		    member.roles.add(friendRole);
+	    try {
+		const member = await guild.members.fetch(user.discord_id);
+		if (member) {
+		    if (!member.roles.cache.has(friendRole.id)) {
+			member.roles.add(friendRole);
+		    }
 		}
+	    } catch (error) {
+		// Do nothing.
 	    }
 	}
     }
@@ -129,8 +133,12 @@ async function CreateAndDestroyFriendRoomsByRank() {
 			    { id: user.discord_id, allow: [connect, view] },
 			];
 			console.log('Closing friend room', name);
-			await friendRoom.permissionOverwrites.set(emptyPerms);
-			lastTimeRoomClosed[user.friend_voice_room_id] = Date.now();
+			try {
+			    await friendRoom.permissionOverwrites.set(emptyPerms);
+			    lastTimeRoomClosed[user.friend_voice_room_id] = Date.now();
+			} catch (error) {
+			    console.log(error);
+			}
 			delete lastTimeRoomHadPeopleInIt[user.friend_voice_room_id];
 		    }
 		}
