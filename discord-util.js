@@ -173,7 +173,7 @@ async function UpdateHarmonicCentralityChatChannel(mostCentralUsers) {
 	const scoreString = Math.ceil(score).toString();  // To enable commas add .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 	maxLength = Math.max(scoreString.length, maxLength);
 	const paddedScore = scoreString.padStart(maxLength, ' ');
-	const name = user.getNicknameOrTitleWithInsignia();
+	const name = user.getNicknameOrTitleWithInsignia(true);
 	let plusOrMinus = '-';
 	if (user.last_seen) {
 	    const lastSeen = moment(user.last_seen);

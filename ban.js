@@ -341,17 +341,17 @@ async function HandleBanCommand(discordMessage) {
 	return;
     }
     if (mentionedUser.ban_vote_start_time) {
-	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is already on trial`);
+	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia(true)} is already on trial`);
 	return;
     }
     if (!mentionedUser.last_seen) {
-	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is immune until they send a text message or join voice chat for the first time`);
+	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia(true)} is immune until they send a text message or join voice chat for the first time`);
 	return;
     }
     const lastSeen = moment(mentionedUser.last_seen);
     if (moment().subtract(20, 'days').isAfter(lastSeen)) {
 	const daysOfInactivity = Math.round(moment().diff(lastSeen, 'days'));
-	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia()} is immune because their last message or voice acivity was ${daysOfInactivity} days ago.`);
+	await discordMessage.channel.send(`${mentionedUser.getNicknameOrTitleWithInsignia(true)} is immune because their last message or voice acivity was ${daysOfInactivity} days ago.`);
 	return;
     }
     await discordMessage.channel.send(`${mentionedUser.getRankNameAndInsignia()} has been sent to Ban Court!`);
@@ -441,7 +441,7 @@ async function HandlePardonCommand(discordMessage) {
     await mentionedUser.setGoodStanding(true);
     await BanVoteCache.DeleteVotesForDefendant(mentionedUser.commissar_id);
     try {
-	await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameOrTitleWithInsignia()}!`);
+	await discordMessage.channel.send(`Programmer pardon ${mentionedUser.getNicknameOrTitleWithInsignia(true)}!`);
     } catch (error) {
 	// In case the command was issued inside the courtroom, which no longer exists.
     }
@@ -485,7 +485,7 @@ async function HandleConvictCommand(discordMessage) {
     await defendantUser.setGoodStanding(false);
     await BanVoteCache.DeleteVotesForDefendant(defendantUser.commissar_id);
     try {
-	await discordMessage.channel.send(`Convicted ${defendantUser.getNicknameOrTitleWithInsignia()}!`);
+	await discordMessage.channel.send(`Convicted ${defendantUser.getNicknameOrTitleWithInsignia(true)}!`);
     } catch (error) {
 	// In case the command was issued inside the courtroom, which no longer exists.
     }

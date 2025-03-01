@@ -10,7 +10,7 @@ async function HandleYenCommand(discordMessage) {
     if (mentionedMember) {
 	const discordId = mentionedMember.id;
 	const cu = await UserCache.GetCachedUserByDiscordId(discordId);
-	const name = cu.getNicknameOrTitleWithInsignia();
+	const name = cu.getNicknameOrTitleWithInsignia(true);
 	await discordMessage.channel.send(threeTicks + `${name} has ${cu.yen} yen` + threeTicks);
     } else {
 	const discordId = discordMessage.author.id;
@@ -183,7 +183,7 @@ async function UpdateTaxChannel() {
 	const tax = taxBase[cid];
 	totalTax += tax;
 	const user = UserCache.GetCachedUserByCommissarId(cid);
-	const name = user.getNicknameOrTitleWithInsignia();
+	const name = user.getNickname();
 	sortedTaxBase.push({tax, name});
     }
     sortedTaxBase.sort((a, b) => {
@@ -267,7 +267,7 @@ async function ImplementTaxPlan(plan, recipient) {
 	const tax = plan[cid];
 	totalTax += tax;
 	const user = UserCache.GetCachedUserByCommissarId(cid);
-	const name = user.getNicknameOrTitleWithInsignia();
+	const name = user.getNicknameOrTitleWithInsignia(true);
 	const text = `- ¥ ${tax} ${name}\n`;
 	sortable.push({ tax, text });
     }
@@ -276,7 +276,7 @@ async function ImplementTaxPlan(plan, recipient) {
 	longMessage += line.text;
     }
     longMessage += '  -----\n';
-    const recipientName = recipient.getNicknameOrTitleWithInsignia();
+    const recipientName = recipient.getNicknameOrTitleWithInsignia(true);
     longMessage += `+ ¥ ${totalTax} ${recipientName}\n\n`;
     longMessage += 'See #tax for more info about tax. Active members are never taxed. You can easily dodge tax by connecting to VC every 3 months. The goal of tax is to give the Government a steady source of revenue by putting inactive yen back into circulation.';
     await YenLog(longMessage);
@@ -440,7 +440,7 @@ async function UpdateYenChannel() {
     let activeYen = 0;
     for (let i = 0; i < n; i++) {
 	const user = users[i];
-	const name = user.getNicknameOrTitleWithInsignia();
+	const name = user.getNicknameOrTitleWithInsignia(true);
 	const rank = i + 1;
 	const line = `${rank}. ¥ ${user.yen} ${name}`;
 	lines.push(line);
@@ -487,8 +487,8 @@ async function Pay(sender, recipient, amount, discordMessage) {
     const payeeYenAfter = payeeYenBefore + amount;
     await sender.setYen(senderYenAfter);
     await recipient.setYen(payeeYenAfter);
-    const senderName = sender.getNicknameOrTitleWithInsignia();
-    const payeeName = recipient.getNicknameOrTitleWithInsignia();
+    const senderName = sender.getNicknameOrTitleWithInsignia(true);
+    const payeeName = recipient.getNicknameOrTitleWithInsignia(true);
     const sweet = Math.random() < 0.1 ? 'of those sweet sweet ' : '';
     const message = `${senderName} sent ${amount} ${sweet}yen to ${payeeName}`;
     await YenLog(message);
@@ -611,7 +611,6 @@ async function HandleYenDestroyCommand(discordMessage) {
     const yenBefore = cu.yen;
     const yenAfter = Math.max(yenBefore - amount, 0);
     await cu.setYen(yenAfter);
-    const name = cu.getNicknameOrTitleWithInsignia();
     const message = `Took ${amount} yen out of circulation.`;
     await discordMessage.channel.send(threeTicks + message + threeTicks);
     await YenLog(message);

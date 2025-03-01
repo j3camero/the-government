@@ -11,6 +11,7 @@ const UserCache = require('./user-cache');
 async function CalculateChainOfCommand() {
     const recruitRank = RankMetadata.length - 1;
     const members = UserCache.GetAllUsersAsFlatList();
+    //console.log(`commissar_id,name,hc,dc,mc,r,y`);
     for (const m of members) {
 	if (!m.citizen || m.ban_conviction_time || m.ban_pardon_time) {
 	    await m.setRank(recruitRank);
@@ -24,6 +25,9 @@ async function CalculateChainOfCommand() {
 	const dc = m.calendar_day_count || 1;
 	const mc = m.calendar_month_count || 1;
 	const r = hc * Math.sqrt(dc * mc);
+	const name = m.getNickname();
+	const y = m.yen || 0;
+	//console.log(`${m.commissar_id},${name},${hc},${dc},${mc},${r},${y}`);
 	await m.setRankScore(r);
     }
     members.sort((a, b) => {

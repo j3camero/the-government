@@ -50,7 +50,7 @@ async function HandleCodeCommand(discordMessage) {
     if (!cu) {
 	return;
     }
-    const name = cu.getNicknameOrTitleWithInsignia();
+    const name = cu.getNicknameOrTitleWithInsignia(true);
     const pin = RandomPin();
     await discordMessage.author.send(pin);
     await discordMessage.channel.send(`Sent a random code to ${name}`);
@@ -112,33 +112,6 @@ async function MakeOnePresidentVoteOption(channel, playerName) {
     const text = `**${playerName}**`;
     const message = await channel.send(text);
     await message.react('✅');
-}
-
-async function HandlePresidentVoteCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const guild = await DiscordUtil.GetMainDiscordGuild();
-    const channel = await guild.channels.create({
-	name: 'presidential-erection',
-	type: 0,
-    });
-    const message = await channel.send('Whoever gets the most votes will be Mr. or Madam President in October 2024.');
-    await message.react('❤️');
-    const generalRankUsers = await UserCache.GetTopRankedUsers(20);
-    const candidateNames = [];
-    for (const user of generalRankUsers) {
-	if (user.commissar_id === 7) {
-	    continue;
-	}
-	const name = user.getNicknameOrTitleWithInsignia();
-	candidateNames.push(name);
-    }
-    for (const name of candidateNames) {
-	await MakeOnePresidentVoteOption(channel, name);
-    }
 }
 
 async function HandleHypeCommand(discordMessage) {
@@ -371,7 +344,7 @@ async function SpamInactiveRetiredGeneral(user, discordMessage) {
     if (discordMember.user.bot) {
 	return;
     }
-    const name = user.getNicknameOrTitleWithInsignia();
+    const name = user.getNicknameOrTitleWithInsignia(true);
     await discordMessage.channel.send(`Sending spam to inactive retired General ${name}`);
     let content = '**I need your help.**\n';
     content += 'Please vote in the new https://discord.com/channels/305840605328703500/1299963218265116753 . You would be doing me a huge favor.\n\n';
@@ -426,7 +399,7 @@ async function HandleBadgeCommand(discordMessage) {
     if (!authorUser) {
 	return;
     }
-    const authorName = authorUser.getNicknameOrTitleWithInsignia();
+    const authorName = authorUser.getNicknameOrTitleWithInsignia(true);
     const tokens = discordMessage.content.split(' ');
     if (tokens.length !== 4) {
 	await discordMessage.channel.send('Invalid arguments. USAGE: !badge give Berry @nickname');
@@ -476,7 +449,7 @@ async function HandleBadgeCommand(discordMessage) {
 	    return;
 	}
 	await DiscordUtil.AddRole(mentionedMember, juniorRole);
-	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia(true);
 	await discordMessage.channel.send(`${name} has been awarded the ${juniorRoleName} by ${authorName}`);
     } else if (tokens[1] === 'remove') {
 	if (!mentionedMember) {
@@ -494,7 +467,7 @@ async function HandleBadgeCommand(discordMessage) {
 	    return;
 	}
 	await DiscordUtil.RemoveRole(mentionedMember, juniorRole);
-	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia(true);
 	await discordMessage.channel.send(`${juniorRoleName} has been removed from ${name} by ${authorName}`);
     } else if (tokens[1] === 'color') {
 	const colorCode = tokens[3];
@@ -515,7 +488,7 @@ async function HandleCommitteeCommand(discordMessage) {
     if (!authorUser) {
 	return;
     }
-    const authorName = authorUser.getNicknameOrTitleWithInsignia();
+    const authorName = authorUser.getNicknameOrTitleWithInsignia(true);
     const tokens = discordMessage.content.split(' ');
     if (tokens.length !== 4) {
 	await discordMessage.channel.send('Invalid arguments. USAGE: !committee give Berry @nickname');
@@ -559,7 +532,7 @@ async function HandleCommitteeCommand(discordMessage) {
 	    return;
 	}
 	await DiscordUtil.AddRole(mentionedMember, role);
-	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia(true);
 	await discordMessage.channel.send(`${name} has been added to the ${roleName} by ${authorName}`);
     } else if (tokens[1] === 'remove') {
 	console.log('remove');
@@ -578,7 +551,7 @@ async function HandleCommitteeCommand(discordMessage) {
 	    return;
 	}
 	await DiscordUtil.RemoveRole(mentionedMember, role);
-	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia();
+	const name = mentionedCommissarUser.getNicknameOrTitleWithInsignia(true);
 	await discordMessage.channel.send(`${roleName} has been removed from ${name} by ${authorName}`);
     } else if (tokens[1] === 'color') {
 	const colorCode = tokens[3];
@@ -608,7 +581,7 @@ async function HandleNickCommand(discordMessage) {
     const discordId = discordMessage.author.id;
     const cu = await UserCache.GetCachedUserByDiscordId(discordId);
     await cu.setNick(filtered);
-    const newName = cu.getNicknameOrTitleWithInsignia();
+    const newName = cu.getNicknameOrTitleWithInsignia(true);
     await discordMessage.channel.send(`Changed name to ${newName}`);
 }
 
@@ -635,69 +608,6 @@ async function HandleBoopCommand(discordMessage) {
 	await UserCache.CreateNewDatabaseUser(mentionedMember);
 	await discordMessage.channel.send(`Successfully booped.`);
     }
-}
-
-// Removes any office that the mentioned user has.
-async function HandleImpeachCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(`ERROR: who to impeach? Example: !impeach @Jeff`);
-	return;
-    }
-    const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
-    if (!cu) {
-	await discordMessage.channel.send(`No user record for that discord member.`);
-    }
-    await cu.setOffice(null);
-    const name = cu.getNicknameOrTitleWithInsignia();
-    await discordMessage.channel.send(`Impeached ${name}`);
-}
-
-// Appoints the mentioned member as Mr. President
-async function HandlePrezCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(`ERROR: who to appoint? Example: !prez @Jeff`);
-	return;
-    }
-    const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
-    if (!cu) {
-	await discordMessage.channel.send(`No user record for that discord member.`);
-    }
-    const name = cu.getNicknameOrTitleWithInsignia();
-    await cu.setOffice('PREZ');
-    await discordMessage.channel.send(`${name} is now President`);
-}
-
-// Appoints the mentioned member as Mr. Vice President
-async function HandleVeepCommand(discordMessage) {
-    const author = await UserCache.GetCachedUserByDiscordId(discordMessage.author.id);
-    if (!author || author.commissar_id !== 7) {
-	// Auth: this command for developer use only.
-	return;
-    }
-    const mentionedMember = await DiscordUtil.ParseExactlyOneMentionedDiscordMember(discordMessage);
-    if (!mentionedMember) {
-	await discordMessage.channel.send(`ERROR: who to appoint? Example: !veep @Jeff`);
-	return;
-    }
-    const cu = await UserCache.GetCachedUserByDiscordId(mentionedMember.id);
-    if (!cu) {
-	await discordMessage.channel.send(`No user record for that discord member.`);
-    }
-    const name = cu.getNicknameOrTitleWithInsignia();
-    await cu.setOffice('VEEP');
-    await discordMessage.channel.send(`${name} is now Vice President`);
 }
 
 async function HandleTranscriptCommand(discordMessage) {
@@ -817,7 +727,7 @@ async function FulfillBuyOrder(discordMessage) {
     const oldCards = author.trump_cards || 0;
     console.log('oldCards', oldCards);
     const tradePrice = trumpNftPrice;
-    const name = author.getNicknameOrTitleWithInsignia();
+    const name = author.getNicknameOrTitleWithInsignia(true);
     let actionMessage = `${name} purchased this one-of-a-kind Donald Trump NFT for ${tradePrice} yen`;
     let newYen = oldYen - tradePrice;
     if (oldCards < 0) {
@@ -886,7 +796,7 @@ async function FulfillSellOrder(discordMessage) {
     const oldYen = author.yen || 0;
     const oldCards = author.trump_cards || 0;
     const tradePrice = trumpNftPrice - 1;
-    const name = author.getNicknameOrTitleWithInsignia();
+    const name = author.getNicknameOrTitleWithInsignia(true);
     let actionMessage = `${name} sold this Donald Trump NFT for ${tradePrice} yen`;
     let newYen = oldYen + tradePrice;
     const newCards = oldCards - 1;
@@ -982,7 +892,7 @@ async function UpdateTrumpChannel(trumpCard, probabilityAnnouncement) {
 	'-------------',
     ];
     for (const user of long) {
-	const name = user.getNicknameOrTitleWithInsignia();
+	const name = user.getNicknameOrTitleWithInsignia(true);
 	const payout = user.trump_cards * 100;
 	longLines.push(`${name} collects ${payout} yen`);
     }
@@ -993,7 +903,7 @@ async function UpdateTrumpChannel(trumpCard, probabilityAnnouncement) {
 	'---------------------',
     ];
     for (const user of short) {
-	const name = user.getNicknameOrTitleWithInsignia();
+	const name = user.getNicknameOrTitleWithInsignia(true);
 	const payout = -user.trump_cards * 100;
 	shortLines.push(`${name} collects ${payout} yen`);
     }
@@ -1045,9 +955,6 @@ async function Dispatch(discordMessage) {
 	'!friend': friend.HandleFriendCommand,
 	'!gender': HandleGenderCommand,
 	'!hype': HandleHypeCommand,
-	'!impeach': HandleImpeachCommand,
-	'!prez': HandlePrezCommand,
-	'!veep': HandleVeepCommand,
 	'!lottery': yen.DoLottery,
 	'!money': yen.HandleYenCommand,
 	'!nick': HandleNickCommand,
@@ -1057,7 +964,6 @@ async function Dispatch(discordMessage) {
 	'!pay': yen.HandlePayCommand,
 	'!ping': HandlePingCommand,
 	'!servervote': HandleServerVoteCommand,
-	'!presidentvote': HandlePresidentVoteCommand,
 	'!privateroomvote': HandlePrivateRoomVoteCommand,
 	//'!sell': HandleSellCommand,
 	'!spaminactiveretiredgenerals': HandleSpamInactiveRetiredGeneralsCommand,

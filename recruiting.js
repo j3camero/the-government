@@ -42,7 +42,7 @@ async function ScanInvitesForChanges() {
 	    await db.Query(sql, fields);
 	    const cu = await UserCache.GetCachedUserByDiscordId(invite.inviterId);
 	    if (cu) {
-		const name = cu.getNicknameOrTitleWithInsignia();
+		const name = cu.getNicknameOrTitleWithInsignia(true);
 		await DiscordUtil.MessagePublicChatChannel(`${name} got a recruiting point. #top-recruiters`);
 	    }
 	}
@@ -68,7 +68,7 @@ async function UpdateRecruitingLeaderboard(idToHighlight) {
 	if (!cu) {
 	    continue;
 	}
-	const name = cu.getNicknameOrTitleWithInsignia();
+	const name = cu.getNicknameOrTitleWithInsignia(true);
 	const formattedRecruitCount = recruitCount.toString().padStart(5);
 	const plus = discordId === idToHighlight ? '+' : ' ';
 	const line = `${plus}${formattedRecruitCount} ${name}`;
