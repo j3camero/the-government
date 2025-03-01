@@ -483,17 +483,18 @@ class CommissarUser {
     }
 
     getNicknameOrTitleWithInsignia(omitRankIndex) {
-	const name = this.getNicknameOrTitle();
-	const insignia = this.getInsignia();
-	if (!insignia) {
-	    return '999 Recruit';
-	}
-	if (omitRankIndex) {
-	    return `${name} ${insignia}`;
-	} else {
+	const tokens = [];
+	if (!omitRankIndex) {
 	    const formattedRankIndex = this.getFormattedRankIndex();
-	    return `${formattedRankIndex} ${name} ${insignia}`;
+	    tokens.push(formattedRankIndex);
 	}
+	const name = this.getNicknameOrTitle();
+	tokens.push(name);
+	const insignia = this.getInsignia();
+	if (insignia) {
+	    tokens.push(insignia);
+	}
+	return tokens.join(' ');
     }
 
     getRankNameAndInsignia() {
@@ -502,22 +503,6 @@ class CommissarUser {
 	const nameAndInsignia = this.getNicknameOrTitleWithInsignia();
 	return `${job.title} ${nameAndInsignia}`;
     }
-
-    // TODO finish this later.
-    /*getName(includeRankIndex, useTitleInsteadOfName, includeInsignia) {
-	let name = this.nick || this.nickname || this.commissar_id;
-	const rank = this.getRank();
-	if (!rank && rank !== 0) {
-	    return name;
-	}
-	if (useTitleInsteadOfName) {
-	    const job = RankMetadata[rank];
-	    if (job.titleOverride) {
-		const prefix = this.getGenderPrefix();
-		name = `${prefix} ${job.title}`;
-	    }
-	}
-    }*/
 
     getPossessivePronoun() {
 	if (this.gender === 'M') {
