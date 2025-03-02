@@ -406,6 +406,13 @@ async function HandlePossibleReaction(reaction, discordUser, clearConflictingRea
     }
     await reaction.users.remove(discordUser);
     await UpdateTrial(defendant);
+    try {
+	const guild = await DiscordUtil.GetMainDiscordGuild();
+	const jurorMember = await guild.members.fetch(discordUser.id);
+	await jurorMember.send('Your vote has been counted');
+    } catch (error) {
+	console.log(error);
+    }
 }
 
 // The given Discord message is already verified to start with the !pardon prefix.
