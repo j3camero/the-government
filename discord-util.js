@@ -233,7 +233,7 @@ async function ParseExactlyOneMentionedDiscordMember(discordMessage) {
 // multiple messages if too big.
 async function SendLongList(list, channel, diff) {
     const ifDiff = diff ? 'diff\n' : '';
-    const maxMessageLength = 1900;
+    const maxMessageLength = 1950;
     let message = '';
     for (const s of list) {
 	message += s + '\n';

@@ -11,7 +11,23 @@ const UserCache = require('./user-cache');
 async function CalculateChainOfCommand() {
     const recruitRank = RankMetadata.length - 1;
     const members = UserCache.GetAllUsersAsFlatList();
-    //console.log(`commissar_id,name,hc,dc,mc,r,y`);
+    // Do a pre-loop through to calculate the total time points for normalizing later.
+    // Keep both loops in sync to make sure they don't count different sets of members.
+    let totalTimePoints = 0;
+    for (const m of members) {
+	if (!m.citizen || m.ban_conviction_time || m.ban_pardon_time) {
+	    continue;
+	}
+	const hc = m.harmonic_centrality || 0;
+	const dc = m.calendar_day_count || 1;
+	const mc = m.calendar_month_count || 1;
+	const timePoints = hc * Math.sqrt(dc * mc);
+	totalTimePoints += timePoints;
+    }
+    if (totalTimePoints === 0) {
+	// Prevent divide-by-zero even though this shouldn't happen.
+	totalTimePoints = 1;
+    }
     for (const m of members) {
 	if (!m.citizen || m.ban_conviction_time || m.ban_pardon_time) {
 	    await m.setRank(recruitRank);
@@ -20,15 +36,14 @@ async function CalculateChainOfCommand() {
 	    await m.setHarmonicCentrality(0);
 	    continue;
 	}
-	//console.log(`${m.getNicknameOrTitleWithInsignia()},${m.harmonic_centrality},${m.calendar_day_count},${m.calendar_month_count}`);
 	const hc = m.harmonic_centrality || 0;
 	const dc = m.calendar_day_count || 1;
 	const mc = m.calendar_month_count || 1;
-	const r = hc * Math.sqrt(dc * mc);
-	const name = m.getNickname();
-	const y = m.yen || 0;
-	//console.log(`${m.commissar_id},${name},${hc},${dc},${mc},${r},${y}`);
-	await m.setRankScore(r);
+	const timePoints = hc * Math.sqrt(dc * mc);
+	const normalizedTimePoints = 100 * 1000 * timePoints / totalTimePoints;
+	const yen = m.yen || 0;
+	const newRankScore = normalizedTimePoints + yen;
+	await m.setRankScore(newRankScore);
     }
     members.sort((a, b) => {
 	return b.rank_score - a.rank_score;
@@ -38,7 +53,7 @@ async function CalculateChainOfCommand() {
     let usersAtRank = 0;
     let rankIndex = 0;
     for (const m of members) {
-	if (!m.citizen) {
+	if (!m.citizen || m.ban_conviction_time || m.ban_pardon_time) {
 	    continue;
 	}
 	while (usersAtRank >= RankMetadata[rank].count) {
@@ -54,6 +69,39 @@ async function CalculateChainOfCommand() {
 	rankIndex++;
 	usersAtRank++;
     }
+    const lines = [
+	'            time +   yen =  rank',
+	'           -----   -----   -----',
+    ];
+    for (const m of members) {
+	if (!m.citizen || m.ban_conviction_time || m.ban_pardon_time) {
+	    continue;
+	}
+	const hc = m.harmonic_centrality || 0;
+	const dc = m.calendar_day_count || 1;
+	const mc = m.calendar_month_count || 1;
+	const timePoints = hc * Math.sqrt(dc * mc);
+	const normalizedTimePoints = 100 * 1000 * timePoints / totalTimePoints;
+	const yen = m.yen || 0;
+	const newRankScore = normalizedTimePoints + yen;
+	if (newRankScore < 0.51) {
+	    continue;
+	}
+	const formattedName = m.getNickname().substring(0, 10).trim().padStart(10);
+	const formattedTimePoints = Math.round(normalizedTimePoints).toString().padStart(5);
+	const formattedYen = yen.toString().padStart(5);
+	// Score with length 6 so it can overflow into the space after the = sign.
+	const formattedScore = Math.round(newRankScore).toString().padStart(6);
+	// The space after the = sign is omitted on purpose to that the score can
+	// overflow into it if ever needed.
+	const lineToAdd = `${formattedName} ${formattedTimePoints} + ${formattedYen} =${formattedScore}`;
+	lines.push(lineToAdd);
+    }
+    const guild = await DiscordUtil.GetMainDiscordGuild();
+    const channelId = '1345522696808828988';
+    const channel = await guild.channels.resolve(channelId);
+    await channel.bulkDelete(99);
+    await DiscordUtil.SendLongList(lines, channel);
 }
 
 // A temporary in-memory cache of the highest rank seen per user.
